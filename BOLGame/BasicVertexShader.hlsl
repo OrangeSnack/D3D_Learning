@@ -1,5 +1,14 @@
 // ¡§¡° ºŒ¿Ã¥ı.
-float4 main(float4 pos : POSITION) : SV_POSITION
+struct PS_INPUT
 {
-	return pos;
+    float4 pos : SV_POSITION;
+    float4 color : COLOR;
+};
+
+PS_INPUT main(float4 pos : POSITION, float4 color : COLOR)
+{
+    PS_INPUT output;
+    output.pos = pos;
+    output.color = color;
+    return output;
 }
