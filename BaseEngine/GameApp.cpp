@@ -139,6 +139,7 @@ bool GameApp::Run()
 			Render();
 		}
 	}
+
 	return 0;
 }
 
