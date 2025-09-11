@@ -461,30 +461,29 @@ void TutorialApp::SetCBPos()
 {
 	float totalTime = GameTimer::m_Instance->TotalTime();
 
-	XMMATRIX cb1_Local = XMMatrixTranspose(
-		XMMatrixScaling(cb1Scale[0], cb1Scale[1], cb1Scale[2]) *
+	Matrix cb1_World = XMMatrixScaling(cb1Scale[0], cb1Scale[1], cb1Scale[2]) *
 		XMMatrixRotationRollPitchYaw(0.0f, totalTime, 0.0f) *
-		XMMatrixTranslation(cb1Pos[0], cb1Pos[1], cb1Pos[2]));
+		XMMatrixTranslation(cb1Pos[0], cb1Pos[1], cb1Pos[2]);
 
-	cb1.mWorld = XMMatrixIdentity() * cb1_Local;
+	cb1.mWorld = XMMatrixTranspose(cb1_World);
 	cb1.mView = XMMatrixTranspose(m_View);
 	cb1.mProjection = XMMatrixTranspose(m_Projection);
 
-	XMMATRIX cb2_Local = XMMatrixTranspose(
-		XMMatrixScaling(cb2Scale[0], cb2Scale[1], cb2Scale[2]) *
-		XMMatrixRotationRollPitchYaw(0.0f, totalTime, 0.0f) *
-		XMMatrixTranslation(cb2Pos[0], cb2Pos[1], cb2Pos[2]));
+	Matrix cb2_Local = XMMatrixScaling(cb2Scale[0], cb2Scale[1], cb2Scale[2]) *
+		XMMatrixRotationRollPitchYaw(0.0f, totalTime * 2.0f, 0.0f) *
+		XMMatrixTranslation(cb2Pos[0], cb2Pos[1], cb2Pos[2]);
+	Matrix cb2_World = cb2_Local * cb1_World;
 
-	cb2.mWorld = cb1.mWorld * cb2_Local;
+	cb2.mWorld = XMMatrixTranspose(cb2_World);
 	cb2.mView = XMMatrixTranspose(m_View);
 	cb2.mProjection = XMMatrixTranspose(m_Projection);
 
-	XMMATRIX cb3_Local = XMMatrixTranspose(
-		XMMatrixScaling(cb3Scale[0], cb3Scale[1], cb3Scale[2]) *
-		XMMatrixRotationRollPitchYaw(0.0f, totalTime, 0.0f) *
-		XMMatrixTranslation(cb3Pos[0], cb3Pos[1], cb3Pos[2]));
+	Matrix cb3_Local = XMMatrixScaling(cb3Scale[0], cb3Scale[1], cb3Scale[2]) *
+		XMMatrixRotationRollPitchYaw(0.0f, totalTime * 0.5f, 0.0f) *
+		XMMatrixTranslation(cb3Pos[0], cb3Pos[1], cb3Pos[2]);
+	Matrix cb3_World = cb3_Local * cb2_World;
 
-	cb3.mWorld = cb2.mWorld * cb3_Local;
+	cb3.mWorld = XMMatrixTranspose(cb3_World);
 	cb3.mView = XMMatrixTranspose(m_View);
 	cb3.mProjection = XMMatrixTranspose(m_Projection);
 }
