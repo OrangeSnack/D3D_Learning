@@ -39,14 +39,14 @@ public:
 	float camFarZ[2] = { 0.01f, 100.0f };
 	float camPrevpos[3] = { camPos[0],camPos[1],camPos[2] };
 
-	float cb1Pos[3] = { 0.0f, 0.0f, 0.0f };
-	float cb1Scale[3] = { 1.0f, 1.0f, 1.0f };
-
-	float cb2Pos[3] = { -5.0f, 0.0f, 0.0f };
-	float cb2Scale[3] = { 0.5f, 0.5f, 0.5f };
-
-	float cb3Pos[3] = { -5.0f, 0.0f, 0.0f };
-	float cb3Scale[3] = { 0.5f, 0.5f, 0.5f };
+	float cbPos[3][3] = {
+		{0.0f, 0.0f, 0.0f},
+		{ -5.0f, 0.0f, 0.0f },
+		{ -5.0f, 0.0f, 0.0f }};
+	float cbScale[3][3] = {
+		{ 1.0f, 1.0f, 1.0f },
+		{ 0.5f, 0.5f, 0.5f },
+		{ 0.5f, 0.5f, 0.5f }};
 
 	// 렌더링 인터페이스
 	ID3D11Device* m_pDevice = nullptr;						// 디바이스
@@ -72,9 +72,12 @@ public:
 	Matrix m_Projection;	// ndc좌표계 행렬
 
 	// 버퍼
-	ConstantBuffer cb1;
-	ConstantBuffer cb2;
-	ConstantBuffer cb3;
+	ConstantBuffer cb;
+	/*ConstantBuffer cb2;
+	ConstantBuffer cb3;*/
+
+	// 오브젝트 월드 매트릭스
+	std::vector<Matrix> objWorlds;
 
 	virtual bool Initialize(UINT Width, UINT Height);
 	virtual void Update();
@@ -95,7 +98,8 @@ public:
 	void GetVirtualMemoryInfo(std::string& out);
 
 public:
-	void SetCBPos();
+	void SetMatrix(Matrix mat, int index);
+	void SetCBPos(Matrix mat, int index);
 	void SetCamMat();
 
 	virtual LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);

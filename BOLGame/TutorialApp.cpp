@@ -56,7 +56,9 @@ void TutorialApp::Update()
 {
 	__super::Update();
  	
-	SetCBPos();
+	for (int i = 0; i < objWorlds.size(); i++) {
+		SetMatrix(objWorlds[i], i);
+	}
 	SetCamMat();
 }
 
@@ -81,16 +83,11 @@ void TutorialApp::Render()
 	m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
 
 	// cb1 렌더
-	m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
-	m_pDeviceContext->DrawIndexed(m_nIndices, 0, 0);
-
-	// cb2 렌더
-	m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb2, 0, 0);
-	m_pDeviceContext->DrawIndexed(m_nIndices, 0, 0);
-
-	// cb3 렌더
-	m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb3, 0, 0);
-	m_pDeviceContext->DrawIndexed(m_nIndices, 0, 0);
+	for (int i = 0; i < objWorlds.size(); i++) {
+		SetCBPos(objWorlds[i], i);
+		m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+		m_pDeviceContext->DrawIndexed(m_nIndices, 0, 0);
+	}
 
 	RenderGUI();
 
@@ -288,9 +285,12 @@ bool TutorialApp::InitScene()
 	HR_T(m_pDevice->CreateBuffer(&cbDesc, nullptr, &m_pConstantBuffer));
 
 	// 매트릭스 설정
-	cb1.mWorld = XMMatrixIdentity();
-	cb2.mWorld = XMMatrixIdentity();
-	cb3.mWorld = XMMatrixIdentity();
+	cb.mWorld = XMMatrixIdentity();
+
+	// 오브젝트 매트릭스 3개 생성
+	objWorlds.emplace_back(XMMatrixIdentity());
+	objWorlds.emplace_back(XMMatrixIdentity());
+	objWorlds.emplace_back(XMMatrixIdentity());
 
 	// 뷰 최초설정
 	XMVECTOR Eye = XMVectorSet(camPos[0], camPos[1], camPos[2], 0.0f);
@@ -383,12 +383,12 @@ void TutorialApp::RenderGUI()
 
 		ImGui::PushID(1);
 		ImGui::Text("Parent");
-		ImGui::DragFloat3("Position", cb1Pos, 0.05f, -1000.0f, 1000.0f);
-		ImGui::DragFloat3("Scale", cb1Scale, 0.05f, -1000.0f, 1000.0f);
+		ImGui::DragFloat3("Position", cbPos[0], 0.05f, -1000.0f, 1000.0f);
+		ImGui::DragFloat3("Scale", cbScale[0], 0.05f, -1000.0f, 1000.0f);
 		if (ImGui::Button("Reset")) {
-			for (auto& val : cb1Pos)
+			for (auto& val : cbPos[0])
 				val = 0.0f;
-			for (auto& val : cb1Scale)
+			for (auto& val : cbScale[0])
 				val = 1.0f;
 		}
 		ImGui::PopID();
@@ -396,13 +396,13 @@ void TutorialApp::RenderGUI()
 
 		ImGui::PushID(2);
 		ImGui::Text("Child1");
-		ImGui::DragFloat3("Position", cb2Pos, 0.05f, -1000.0f, 1000.0f);
-		ImGui::DragFloat3("Scale", cb2Scale, 0.05f, -1000.0f, 1000.0f);
+		ImGui::DragFloat3("Position", cbPos[1], 0.05f, -1000.0f, 1000.0f);
+		ImGui::DragFloat3("Scale", cbScale[1], 0.05f, -1000.0f, 1000.0f);
 		if (ImGui::Button("Reset")) {
-			cb2Pos[0] = -5.0f;
-			cb2Pos[1] = 0.0f;
-			cb2Pos[2] = 0.0f;
-			for (auto& val : cb2Scale)
+			cbPos[1][0] = -5.0f;
+			cbPos[1][1] = 0.0f;
+			cbPos[1][2] = 0.0f;
+			for (auto& val : cbScale[1])
 				val = 0.5f;
 		}
 		ImGui::PopID();
@@ -410,13 +410,13 @@ void TutorialApp::RenderGUI()
 
 		ImGui::PushID(3);
 		ImGui::Text("Child2");
-		ImGui::DragFloat3("Position", cb3Pos, 0.05f, -1000.0f, 1000.0f);
-		ImGui::DragFloat3("Scale", cb3Scale, 0.05f, -1000.0f, 1000.0f);
+		ImGui::DragFloat3("Position", cbPos[2], 0.05f, -1000.0f, 1000.0f);
+		ImGui::DragFloat3("Scale", cbScale[2], 0.05f, -1000.0f, 1000.0f);
 		if (ImGui::Button("Reset")) {
-			cb3Pos[0] = -5.0f;
-			cb3Pos[1] = 0.0f;
-			cb3Pos[2] = 0.0f;
-			for (auto& val : cb3Scale)
+			cbPos[2][0] = -5.0f;
+			cbPos[2][1] = 0.0f;
+			cbPos[2][2] = 0.0f;
+			for (auto& val : cbScale[2])
 				val = 0.5f;
 		}
 		ImGui::PopID();
@@ -457,35 +457,25 @@ void TutorialApp::GetVirtualMemoryInfo(std::string& out)
 	out += "PagefileUsage: " + std::to_string((pmc.PagefileUsage) / 1024 / 1024) + " MB";
 }
 
-void TutorialApp::SetCBPos()
+
+void TutorialApp::SetMatrix(Matrix mat, int index)
 {
 	float totalTime = GameTimer::m_Instance->TotalTime();
 
-	Matrix cb1_World = XMMatrixScaling(cb1Scale[0], cb1Scale[1], cb1Scale[2]) *
-		XMMatrixRotationRollPitchYaw(0.0f, totalTime, 0.0f) *
-		XMMatrixTranslation(cb1Pos[0], cb1Pos[1], cb1Pos[2]);
-
-	cb1.mWorld = XMMatrixTranspose(cb1_World);
-	cb1.mView = XMMatrixTranspose(m_View);
-	cb1.mProjection = XMMatrixTranspose(m_Projection);
-
-	Matrix cb2_Local = XMMatrixScaling(cb2Scale[0], cb2Scale[1], cb2Scale[2]) *
+	Matrix cb_Local = XMMatrixScaling(cbScale[index][0], cbScale[index][1], cbScale[index][2]) *
 		XMMatrixRotationRollPitchYaw(0.0f, totalTime * 2.0f, 0.0f) *
-		XMMatrixTranslation(cb2Pos[0], cb2Pos[1], cb2Pos[2]);
-	Matrix cb2_World = cb2_Local * cb1_World;
+		XMMatrixTranslation(cbPos[index][0], cbPos[index][1], cbPos[index][2]);
 
-	cb2.mWorld = XMMatrixTranspose(cb2_World);
-	cb2.mView = XMMatrixTranspose(m_View);
-	cb2.mProjection = XMMatrixTranspose(m_Projection);
+	Matrix cb_World = (index != 0) ? cb_Local * objWorlds[index - 1] : cb_Local;
 
-	Matrix cb3_Local = XMMatrixScaling(cb3Scale[0], cb3Scale[1], cb3Scale[2]) *
-		XMMatrixRotationRollPitchYaw(0.0f, totalTime * 0.5f, 0.0f) *
-		XMMatrixTranslation(cb3Pos[0], cb3Pos[1], cb3Pos[2]);
-	Matrix cb3_World = cb3_Local * cb2_World;
+	objWorlds[index] = cb_World;
+}
 
-	cb3.mWorld = XMMatrixTranspose(cb3_World);
-	cb3.mView = XMMatrixTranspose(m_View);
-	cb3.mProjection = XMMatrixTranspose(m_Projection);
+void TutorialApp::SetCBPos(Matrix mat, int index)
+{
+	cb.mWorld = XMMatrixTranspose(mat);
+	cb.mView = XMMatrixTranspose(m_View);
+	cb.mProjection = XMMatrixTranspose(m_Projection);
 }
 
 void TutorialApp::SetCamMat()
