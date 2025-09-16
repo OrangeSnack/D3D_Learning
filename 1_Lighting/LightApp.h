@@ -1,12 +1,16 @@
 #pragma once
-#include <windows.h>
-#include <d3d11.h>
-#include <directxtk/SimpleMath.h>
+#include <d3d11_4.h>
+#include "../BaseEngine/GameApp.h"
+
 #include <imgui.h>
+#include <wrl/client.h>
+#include <directxtk/SimpleMath.h>
+#include <string>
 #include <imgui_impl_win32.h>
 #include <imgui_impl_dx11.h>
-#include "../BaseEngine/GameApp.h"
-#include <vector>
+#include <Psapi.h>
+
+#pragma comment (lib, "d3d11.lib")
 
 using namespace DirectX::SimpleMath;
 using namespace DirectX;
@@ -24,8 +28,8 @@ struct ConstantBuffer
 	Matrix mProjection;
 	Matrix mNormalMatrix;
 
-	Vector4 vLightDir[2];
-	Vector4 vLightColor[2];
+	Vector4 vLightDir;
+	Vector4 vLightColor;
 	Vector4 vOutputColor;
 };
 
@@ -37,24 +41,39 @@ public:
 
 	Vector4 m_ClearColor = Vector4(0.45f, 0.55f, 0.60f, 1.00f);
 
-	// ImGui 변수
-	float camPos[3] = { 0.0f, 0.0f, -10.0f };
-	float camFov = 90.0f;
+	// 라이트
+	XMFLOAT4 m_LightColors = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);				// 라이트 색상
+	XMFLOAT4 m_InitialLightDirs = XMFLOAT4(-0.577f, 0.577f, -0.577f, 1.0f);	// 초기 라이트 방향
+	XMFLOAT4 m_CurrLightDirs = m_InitialLightDirs;							// 현재 라이트 방향
+	XMFLOAT4 m_LightDirsEvaluated = {};										// 계산된 라이트 방향
+
+	// VS 전달용 매트릭스
+	Matrix m_World;			// 월드좌표계 변환행렬
+	Matrix m_View;			// 카메라좌표계 변환행렬
+	Matrix m_Projection;	// ndc좌표계 변환행렬
+
+	// ImGui --------
+
+	// 카메라
+	float camFov = 45.0f;
 	float camFarZ[2] = { 0.01f, 100.0f };
-	float camPrevpos[3] = { camPos[0],camPos[1],camPos[2] };
 
-	float cbPos[3][3] = {
-		{0.0f, 0.0f, 0.0f},
-		{ -5.0f, 0.0f, 0.0f },
-		{ -5.0f, 0.0f, 0.0f } };
-	float cbScale[3][3] = {
-		{ 1.0f, 1.0f, 1.0f },
-		{ 0.5f, 0.5f, 0.5f },
-		{ 0.5f, 0.5f, 0.5f } };
+	// 오브젝트
+	float cbRotation[3] = {};		// pitch, yaw, roll
 
-	// DXGI
-	IDXGIFactory2* m_pDxgiFactory;
-	IDXGIAdapter2* m_pDxgiAdapter;
+	// 라이트
+	float lightDir[3] = {
+		m_InitialLightDirs.x,
+		m_InitialLightDirs.y,
+		m_InitialLightDirs.z
+	};
+	float ligthColor[3] = {
+		m_LightColors.x,
+		m_LightColors.y,
+		m_LightColors.z
+	};
+
+	// End ---------
 
 	// 렌더링 인터페이스
 	ID3D11Device* m_pDevice = nullptr;						// 디바이스
@@ -66,7 +85,7 @@ public:
 	// 렌더링 정보
 	ID3D11VertexShader* m_pVertexShader = nullptr;	// 정점 쉐이더
 	ID3D11PixelShader* m_pPixelShader = nullptr;	// 픽셀 쉐이더
-	ID3D11PixelShader* m_pPLightShader = nullptr;	// 픽셀 라이트 쉐이더
+	ID3D11PixelShader* m_pPLightShader = nullptr;	// 라이트 쉐이더
 	ID3D11InputLayout* m_pInputLayout = nullptr;	// 입력 레이아웃
 	ID3D11Buffer* m_pVertexBuffer = nullptr;		// 버텍스 버퍼
 	UINT m_VertexBufferStride = 0;					// 버텍스 하나의 크기
@@ -76,19 +95,9 @@ public:
 	ID3D11Buffer* m_pConstantBuffer = nullptr;		// 상수 버퍼
 	int m_nIndices = 0;								// 인덱스 개수
 
-	// 쉐이더 전달용 매트릭스
-	Matrix m_View;			// 카메라좌표계 행렬
-	Matrix m_Projection;	// ndc좌표계 행렬
-
-	// 버퍼
-	ConstantBuffer cb;
-
-	// 오브젝트 월드 매트릭스
-	std::vector<Matrix> objWorlds;
-
-	virtual bool Initialize(UINT Width, UINT Height);
-	virtual void Update();
-	virtual void Render();
+	bool Initialize(UINT Width, UINT Height) override;
+	void Update() override;
+	void Render() override;
 
 	bool InitD3D();
 	void UninitD3D();
@@ -102,10 +111,6 @@ public:
 	void RenderGUI();
 
 public:
-	void SetMatrix(Matrix mat, int index);
-	void SetCBPos(Matrix mat, int index);
-	void SetCamMat();
-
 	virtual LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 };
