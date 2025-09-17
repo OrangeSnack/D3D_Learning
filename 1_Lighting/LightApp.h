@@ -67,11 +67,6 @@ public:
 		m_InitialLightDirs.y,
 		m_InitialLightDirs.z
 	};
-	float ligthColor[3] = {
-		m_LightColors.x,
-		m_LightColors.y,
-		m_LightColors.z
-	};
 
 	// End ---------
 

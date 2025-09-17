@@ -373,6 +373,7 @@ void LightApp::RenderGUI()
 			lightDir[1] = m_InitialLightDirs.y;
 			lightDir[2] = m_InitialLightDirs.z;
 		}
+		ImGui::ColorEdit3("Color", (float*)&m_LightColors);
 		ImGui::PopID();
 		ImGui::NewLine();
 
