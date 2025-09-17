@@ -19,6 +19,7 @@ struct Vertex
 {
 	Vector3 Pos;		// 정점 위치 정보.
 	Vector3 Normal;
+	Vector2 Tex;
 };
 
 struct ConstantBuffer
@@ -41,7 +42,7 @@ public:
 
 	Vector4 m_ClearColor = Vector4(0.45f, 0.55f, 0.60f, 1.00f);
 
-	// 라이트
+	// Directional 라이트
 	XMFLOAT4 m_LightColors = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);				// 라이트 색상
 	XMFLOAT4 m_InitialLightDirs = XMFLOAT4(-0.577f, 0.577f, -0.577f, 1.0f);	// 초기 라이트 방향
 	XMFLOAT4 m_CurrLightDirs = m_InitialLightDirs;							// 현재 라이트 방향
@@ -83,11 +84,14 @@ public:
 	ID3D11PixelShader* m_pPLightShader = nullptr;	// 라이트 쉐이더
 	ID3D11InputLayout* m_pInputLayout = nullptr;	// 입력 레이아웃
 	ID3D11Buffer* m_pVertexBuffer = nullptr;		// 버텍스 버퍼
+	ID3D11Buffer* m_pIndexBuffer = nullptr;			// 인덱스 버퍼
+	ID3D11Buffer* m_pConstantBuffer = nullptr;		// 상수 버퍼
+	ID3D11ShaderResourceView* m_pTextureRV = nullptr;	// 텍스처 리소스 뷰.
+	ID3D11SamplerState* m_pSamplerLinear = nullptr;		// 샘플러 상태.
+
 	UINT m_VertexBufferStride = 0;					// 버텍스 하나의 크기
 	UINT m_VertexBufferOffset = 0;					// 버텍스 버퍼의 오프셋
 
-	ID3D11Buffer* m_pIndexBuffer = nullptr;			// 인덱스 버퍼
-	ID3D11Buffer* m_pConstantBuffer = nullptr;		// 상수 버퍼
 	int m_nIndices = 0;								// 인덱스 개수
 
 	bool Initialize(UINT Width, UINT Height) override;

@@ -1,6 +1,7 @@
 #include "LightApp.h"
 #include "../BaseEngine/Helper.h"
 #include <d3dcompiler.h>
+#include <Directxtk/DDSTextureLoader.h>
 
 #pragma comment(lib,"d3dcompiler.lib")
 
@@ -62,6 +63,18 @@ void LightApp::Render()
 	m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView, color);
 	m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
+	// Render Setting
+	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &m_VertexBufferStride, &m_VertexBufferOffset);
+	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
+	m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
+	m_pDeviceContext->VSSetConstantBuffers(0, 1, &m_pConstantBuffer);
+	m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
+	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_pConstantBuffer);
+	m_pDeviceContext->PSSetShaderResources(0, 1, &m_pTextureRV);
+	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
+
 	// Update matrix variables and lighting variables
 	ConstantBuffer cb1;
 	cb1.mWorld = XMMatrixTranspose(m_World);
@@ -72,22 +85,12 @@ void LightApp::Render()
 	cb1.vOutputColor = XMFLOAT4(0, 0, 0, 0);
 	m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
 
-
-	// Render the cube
-	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &m_VertexBufferStride, &m_VertexBufferOffset);
-	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
-	m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
-	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
-	m_pDeviceContext->VSSetConstantBuffers(0, 1, &m_pConstantBuffer);
-	m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
-	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_pConstantBuffer);
-
+	// Render Cube
 	m_pDeviceContext->DrawIndexed(m_nIndices, 0, 0);
 
 
 	// Render light	
-	XMMATRIX mLight = XMMatrixTranslationFromVector(5.0f * XMLoadFloat4(&m_LightDirsEvaluated));
+	XMMATRIX mLight = XMMatrixTranslationFromVector(5.0f *  XMVector3Normalize(XMLoadFloat4(&m_LightDirsEvaluated)));
 	XMMATRIX mLightScale = XMMatrixScaling(0.2f, 0.2f, 0.2f);
 	mLight = mLightScale * mLight;
 
@@ -99,11 +102,10 @@ void LightApp::Render()
 	m_pDeviceContext->PSSetShader(m_pPLightShader, nullptr, 0);
 	m_pDeviceContext->DrawIndexed(m_nIndices, 0, 0);
 
+	// GUI Render
 	RenderGUI();
 
-	//
 	// Present our back buffer to our front buffer
-	//
 	m_pSwapChain->Present(0, 0);
 }
 
@@ -196,6 +198,7 @@ bool LightApp::InitScene()
 	D3D11_INPUT_ELEMENT_DESC layout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 	HR_T(m_pDevice->CreateInputLayout(layout, ARRAYSIZE(layout), vertexShader->GetBufferPointer()
 		, vertexShader->GetBufferSize(), &m_pInputLayout));
@@ -216,35 +219,35 @@ bool LightApp::InitScene()
 	// 버텍스 정보
 	Vertex vertices[] =
 	{
-		{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(0.0f, 1.0f, 0.0f) },// Normal Y +	 
-		{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(0.0f, 1.0f, 0.0f) },
-		{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(0.0f, 1.0f, 0.0f) },
-		{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(0.0f, 1.0f, 0.0f) },
+		{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector2(1.0f, 0.0f) },// Normal Y +	 
+		{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector2(0.0f, 0.0f) },
+		{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector2(0.0f, 1.0f) },
+		{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector2(1.0f, 1.0f) },
 
-		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, -1.0f, 0.0f) },// Normal Y -		
-		{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f) },
-		{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f) },
-		{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f) },
+		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 0.0f) },// Normal Y -		
+		{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 0.0f) },
+		{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 1.0f) },
+		{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 1.0f) },
 
-		{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f) },//	Normal X -
-		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, 0.0f, 0.0f) },
-		{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(-1.0f, 0.0f, 0.0f) },
-		{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f) },
+		{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector2(0.0f, 1.0f) },//	Normal X -
+		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, 0.0f, 0.0f),	Vector2(1.0f, 1.0f) },
+		{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector2(1.0f, 0.0f) },
+		{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector2(0.0f, 0.0f) },
 
-		{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(1.0f, 0.0f, 0.0f) },// Normal X +
-		{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f) },
-		{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f) },
-		{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(1.0f, 0.0f, 0.0f) },
+		{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector2(1.0f, 1.0f) },// Normal X +
+		{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector2(0.0f, 1.0f) },
+		{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector2(0.0f, 0.0f) },
+		{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector2(1.0f, 0.0f) },
 
-		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f) }, // Normal Z -
-		{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f) },
-		{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f) },
-		{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f) },
+		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f),	Vector2(0.0f, 1.0f) }, // Normal Z -
+		{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector2(1.0f, 1.0f) },
+		{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector2(1.0f, 0.0f) },
+		{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector2(0.0f, 0.0f) },
 
-		{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f) },// Normal Z +
-		{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f) },
-		{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f) },
-		{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f) },
+		{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(1.0f, 1.0f) },// Normal Z +
+		{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(0.0f, 1.0f) },
+		{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(0.0f, 0.0f) },
+		{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(1.0f, 0.0f) },
 	};
 
 	// 버텍스 버퍼 생성.
@@ -291,6 +294,20 @@ bool LightApp::InitScene()
 	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	bd.CPUAccessFlags = 0;
 	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pConstantBuffer));
+
+	// 텍스쳐 로딩
+	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Erpin_Icon.dds", nullptr, &m_pTextureRV));
+
+	// 샘플러 생성
+	D3D11_SAMPLER_DESC sampDesc = {};
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sampDesc.MinLOD = 0;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	HR_T(m_pDevice->CreateSamplerState(&sampDesc, &m_pSamplerLinear));
 
 	// 초기값설정
 	m_World = XMMatrixIdentity();
@@ -368,12 +385,14 @@ void LightApp::RenderGUI()
 		ImGui::PushID(1);
 		ImGui::SeparatorText("LightDir");
 		ImGui::SliderFloat3("LightDir", lightDir, -1.0f, 1.0f);
+		ImGui::ColorEdit3("Color", (float*)&m_LightColors);
 		if (ImGui::Button("Reset")) {
 			lightDir[0] = m_InitialLightDirs.x;
 			lightDir[1] = m_InitialLightDirs.y;
 			lightDir[2] = m_InitialLightDirs.z;
+
+			m_LightColors = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
-		ImGui::ColorEdit3("Color", (float*)&m_LightColors);
 		ImGui::PopID();
 		ImGui::NewLine();
 

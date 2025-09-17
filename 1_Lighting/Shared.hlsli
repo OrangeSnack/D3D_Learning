@@ -1,16 +1,7 @@
-struct PS_INPUT
-{
-    float4 Pos : SV_POSITION;
-    float3 Norm : TEXCOORD0;
-};
+Texture2D _tex0 : register(t0);
+SamplerState _sp0 : register(s0);
 
-struct VS_INPUT
-{
-    float4 Pos : POSITION;
-    float3 Norm : NORMAL;
-};
-
-cbuffer ConstantBuffer : register(b0)
+cbuffer _cb0 : register(b0)
 {
     matrix World;
     matrix View;
@@ -20,3 +11,19 @@ cbuffer ConstantBuffer : register(b0)
     float4 vLightColor;
     float4 vOutputColor;
 }
+
+struct PS_INPUT
+{
+    float4 Pos : SV_POSITION;
+    float3 Norm : NORMAL;
+    float2 Tex : TEXCOORD0;
+};
+
+struct VS_INPUT
+{
+    float4 Pos : POSITION;
+    float3 Norm : NORMAL;
+    float2 Tex : TEXCOORD0;
+};
+
+
