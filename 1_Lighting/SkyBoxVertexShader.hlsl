@@ -11,7 +11,7 @@ VS_SKYOUT main(VS_SKYIN input)
     float4 posH = mul(float4(dir, 1.0f), Projection);
     
     output.PosH = posH;
-    output.PosH.z = output.PosH.w * 0.99f;
+    output.PosH.z = output.PosH.w;
     
     return output;
 }
