@@ -175,6 +175,8 @@ bool LightApp::InitD3D()
 	HR_T(m_pDevice->CreateDepthStencilView(textureDepthStencil, &dsv, &m_pDepthStencilView));
 	SAFE_RELEASE(textureDepthStencil);
 
+	// 레더라이즈 desc 생성
+
 	return true;
 }
 

@@ -26,4 +26,9 @@ struct VS_INPUT
     float2 Tex : TEXCOORD0;
 };
 
+struct VS_SKYOUT
+{
+    float4 Pos : SV_POSITION;
+    float3 TexCoord : TEXCOORD0;
+};
 
