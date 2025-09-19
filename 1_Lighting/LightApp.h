@@ -88,6 +88,14 @@ public:
 	ID3D11Buffer* m_pConstantBuffer = nullptr;		// 상수 버퍼
 	ID3D11ShaderResourceView* m_pTextureRV = nullptr;	// 텍스처 리소스 뷰.
 	ID3D11SamplerState* m_pSamplerLinear = nullptr;		// 샘플러 상태.
+	ID3D11RasterizerState* m_defaultRS = nullptr;		// 기본 RS
+	
+	// 스카이박스
+	ID3D11VertexShader* m_pSkyVertexShader = nullptr;	// 스카이박스 정점 쉐이더
+	ID3D11PixelShader* m_pSkyPixelShader = nullptr;	// 스카이박스 픽셀 쉐이더
+	ID3D11InputLayout* m_pSkyInputLayout = nullptr;	// 스카이박스입력 레이아웃
+	ID3D11RasterizerState* m_SkyboxRS = nullptr;	// 스카이박스 전용 RS
+	ID3D11ShaderResourceView* m_pSkyTextureRV = nullptr;	// 스카이박스 텍스처 리소스 뷰.
 
 	UINT m_VertexBufferStride = 0;					// 버텍스 하나의 크기
 	UINT m_VertexBufferOffset = 0;					// 버텍스 버퍼의 오프셋

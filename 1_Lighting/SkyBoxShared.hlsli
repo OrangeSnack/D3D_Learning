@@ -6,6 +6,10 @@ cbuffer _cb0 : register(b0)
     matrix World;
     matrix View;
     matrix Projection;
+    matrix NormalMatrix;
+    float4 vLightDir;
+    float4 vLightColor;
+    float4 vOutputColor;
 }
 
 struct VS_SKYOUT

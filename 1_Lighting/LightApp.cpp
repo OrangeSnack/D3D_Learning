@@ -55,25 +55,6 @@ void LightApp::Update()
 void LightApp::Render()
 {
 	float color[4] = { 0.0f, 0.5f, 0.5f, 1.0f };
-	// 렌더타겟 설정
-	m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
-
-
-	// Clear 
-	m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView, color);
-	m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
-
-	// Render Setting
-	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &m_VertexBufferStride, &m_VertexBufferOffset);
-	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
-	m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
-	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
-	m_pDeviceContext->VSSetConstantBuffers(0, 1, &m_pConstantBuffer);
-	m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
-	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_pConstantBuffer);
-	m_pDeviceContext->PSSetShaderResources(0, 1, &m_pTextureRV);
-	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
 
 	// Update matrix variables and lighting variables
 	ConstantBuffer cb1;
@@ -85,7 +66,45 @@ void LightApp::Render()
 	cb1.vOutputColor = XMFLOAT4(0, 0, 0, 0);
 	m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
 
+	// Clear 
+	m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView, color);
+	m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	// Render Setting
+	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &m_VertexBufferStride, &m_VertexBufferOffset);
+	m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+	m_pDeviceContext->VSSetConstantBuffers(0, 1, &m_pConstantBuffer);
+	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_pConstantBuffer);
+
+	// ----- 스카이박스 렌더링 -----
+
+	// 스카이박스용 렌더타겟 설정
+	m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, NULL);
+
+	// 스카이박스 렌더링
+	m_pDeviceContext->IASetInputLayout(m_pSkyInputLayout);
+	m_pDeviceContext->VSSetShader(m_pSkyVertexShader, nullptr, 0);
+	m_pDeviceContext->PSSetShader(m_pSkyPixelShader, nullptr, 0);
+	m_pDeviceContext->PSSetShaderResources(0, 1, &m_pSkyTextureRV);
+	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
+	m_pDeviceContext->RSSetState(m_SkyboxRS);
+
+	m_pDeviceContext->DrawIndexed(m_nIndices, 0, 0);
+
+	// ----- 큐브 렌더링 -----
+
+	// 렌더타겟 설정
+	m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
+
 	// Render Cube
+	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
+	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
+	m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
+	m_pDeviceContext->PSSetShaderResources(0, 1, &m_pTextureRV);
+	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
+	m_pDeviceContext->RSSetState(m_defaultRS);
+
 	m_pDeviceContext->DrawIndexed(m_nIndices, 0, 0);
 
 
@@ -175,8 +194,6 @@ bool LightApp::InitD3D()
 	HR_T(m_pDevice->CreateDepthStencilView(textureDepthStencil, &dsv, &m_pDepthStencilView));
 	SAFE_RELEASE(textureDepthStencil);
 
-	// 레더라이즈 desc 생성
-
 	return true;
 }
 
@@ -206,6 +223,18 @@ bool LightApp::InitScene()
 		, vertexShader->GetBufferSize(), &m_pInputLayout));
 	SAFE_RELEASE(vertexShader);
 
+	// 스카이박스 레이아웃 생성
+	HR_T(CompileShaderFromFile(L"SkyBoxVertexShader.hlsl", "main", "vs_4_0", &vertexShader));
+	HR_T(m_pDevice->CreateVertexShader(vertexShader->GetBufferPointer(), vertexShader->GetBufferSize(),
+		NULL, &m_pSkyVertexShader));
+
+	D3D11_INPUT_ELEMENT_DESC sky_layout[] = {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0}
+	};
+	HR_T(m_pDevice->CreateInputLayout(sky_layout, ARRAYSIZE(sky_layout), vertexShader->GetBufferPointer(),
+		vertexShader->GetBufferSize(), &m_pSkyInputLayout));
+	SAFE_RELEASE(vertexShader);
+
 	// 픽셀 쉐이더 컴파일
 	ID3D10Blob* pixelShader = nullptr;
 	HR_T(CompileShaderFromFile(L"BasicPixelShader.hlsl", "main", "ps_4_0", &pixelShader));
@@ -216,6 +245,11 @@ bool LightApp::InitScene()
 	HR_T(CompileShaderFromFile(L"SolidPixelShader.hlsl", "main", "ps_4_0", &pixelShader));
 	HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
 		pixelShader->GetBufferSize(), NULL, &m_pPLightShader));
+	SAFE_RELEASE(pixelShader);
+
+	HR_T(CompileShaderFromFile(L"SkyBoxPixelShader.hlsl", "main", "ps_4_0", &pixelShader));
+	HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
+		pixelShader->GetBufferSize(), NULL, &m_pSkyPixelShader));
 	SAFE_RELEASE(pixelShader);
 
 	// 버텍스 정보
@@ -299,6 +333,7 @@ bool LightApp::InitScene()
 
 	// 텍스쳐 로딩
 	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Erpin_Icon.dds", nullptr, &m_pTextureRV));
+	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/CubeMap.dds", nullptr, &m_pSkyTextureRV));
 
 	// 샘플러 생성
 	D3D11_SAMPLER_DESC sampDesc = {};
@@ -319,17 +354,57 @@ bool LightApp::InitScene()
 	m_View = XMMatrixLookAtLH(Eye, At, Up);
 	m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_ClientWidth / (FLOAT)m_ClientHeight, 0.01f, 100.0f);
 
+	// 래스터라이저 속성 생성
+	D3D11_RASTERIZER_DESC skyRsDesc = {};
+	skyRsDesc.FillMode = D3D11_FILL_SOLID;
+	skyRsDesc.CullMode = D3D11_CULL_BACK;
+	skyRsDesc.FrontCounterClockwise = TRUE;
+	skyRsDesc.DepthBias = 0;
+	skyRsDesc.DepthBiasClamp = 0.0f;
+	skyRsDesc.SlopeScaledDepthBias = 0.0f;
+	skyRsDesc.DepthClipEnable = TRUE;
+	skyRsDesc.ScissorEnable = FALSE;
+	skyRsDesc.MultisampleEnable = FALSE;
+	skyRsDesc.AntialiasedLineEnable = FALSE;
+	HR_T(m_pDevice->CreateRasterizerState(&skyRsDesc, &m_SkyboxRS));
+
+	D3D11_RASTERIZER_DESC defaultRsDesc = {};
+	defaultRsDesc.FillMode = D3D11_FILL_SOLID;
+	defaultRsDesc.CullMode = D3D11_CULL_BACK;
+	defaultRsDesc.FrontCounterClockwise = FALSE;
+	defaultRsDesc.DepthBias = 0;
+	defaultRsDesc.DepthBiasClamp = 0.0f;
+	defaultRsDesc.SlopeScaledDepthBias = 0.0f;
+	defaultRsDesc.DepthClipEnable = TRUE;
+	defaultRsDesc.ScissorEnable = FALSE;
+	defaultRsDesc.MultisampleEnable = FALSE;
+	defaultRsDesc.AntialiasedLineEnable = FALSE;
+	HR_T(m_pDevice->CreateRasterizerState(&defaultRsDesc, &m_defaultRS));
+
 	return true;
 }
 
 void LightApp::UninitScene()
 {
 	SAFE_RELEASE(m_pVertexBuffer);
+	SAFE_RELEASE(m_pConstantBuffer);
 	SAFE_RELEASE(m_pVertexShader);
+	SAFE_RELEASE(m_pSkyVertexShader);
+	SAFE_RELEASE(m_pPLightShader);
 	SAFE_RELEASE(m_pPixelShader);
+	SAFE_RELEASE(m_pSkyPixelShader);
 	SAFE_RELEASE(m_pInputLayout);
 	SAFE_RELEASE(m_pIndexBuffer);
 	SAFE_RELEASE(m_pDepthStencilView);
+	SAFE_RELEASE(m_pTextureRV);
+	SAFE_RELEASE(m_pSamplerLinear);
+	SAFE_RELEASE(m_defaultRS);
+
+	SAFE_RELEASE(m_pSkyVertexShader);
+	SAFE_RELEASE(m_pSkyPixelShader);
+	SAFE_RELEASE(m_pSkyInputLayout);
+	SAFE_RELEASE(m_SkyboxRS);
+	SAFE_RELEASE(m_pSkyTextureRV);
 }
 
 bool LightApp::InitImGUI()
