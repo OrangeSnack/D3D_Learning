@@ -15,7 +15,7 @@ cbuffer _cb0 : register(b0)
 struct VS_SKYOUT
 { 
     float4 PosH : SV_POSITION;
-    float3 TexCoord : TEXCOORD0;
+    float3 Dir : Direction;
 };
 
 struct VS_SKYIN
