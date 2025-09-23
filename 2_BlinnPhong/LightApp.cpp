@@ -64,6 +64,7 @@ void LightApp::Render()
 	cb1.vLightDir = m_LightDirsEvaluated;
 	cb1.vLightColor = m_LightColors;
 	cb1.vOutputColor = XMFLOAT4(0, 0, 0, 0);
+	cb1.camPos = (Vector4) m_Camera.m_Position;
 	m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
 
 	// Clear 
@@ -98,10 +99,14 @@ void LightApp::Render()
 	m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
 
 	// Render Cube
+#ifndef CUBE_TEXTURE
+#define CUBE_TEXTURE
+	static ID3D11ShaderResourceView* cubeRV[2] = { m_pTextureRV, m_pSkyTextureRV };
+#endif // !CUBE_TEXTURE
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
 	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
 	m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
-	m_pDeviceContext->PSSetShaderResources(0, 1, &m_pTextureRV);
+	m_pDeviceContext->PSSetShaderResources(0, 2, cubeRV);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
 	m_pDeviceContext->RSSetState(m_defaultRS);
 
@@ -333,8 +338,10 @@ bool LightApp::InitScene()
 
 	// 텍스쳐 로딩
 	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Erpin_Icon.dds", nullptr, &m_pTextureRV));
+	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Church.dds", nullptr, &m_pSkyTextureRV));
 	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/CubeMap.dds", nullptr, &m_pSkyTextureRV));
-	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Hanako.dds", nullptr, &m_pSkyTextureRV));
+	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Hanako.dds", nullptr, &m_pSkyTextureRV));
+	
 	// 샘플러 생성
 	D3D11_SAMPLER_DESC sampDesc = {};
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -487,6 +494,19 @@ void LightApp::RenderGUI()
 			camFarZ[1] = 100.0f;
 
 			camFov = 45.0f;
+		}
+		ImGui::PopID();
+		ImGui::NewLine();
+
+		ImGui::PushID(3);
+		ImGui::SeparatorText("Reflection");
+		ImGui::ColorEdit3("Ambients", (float*)&m_Ambients);
+		ImGui::ColorEdit3("Diffuse", (float*)&m_Diffuse);
+		ImGui::ColorEdit3("Specular", (float*)&m_Specular);
+		if (ImGui::Button("Reset")) {
+			m_Ambients = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+			m_Diffuse = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+			m_Specular = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 		ImGui::PopID();
 		ImGui::NewLine();

@@ -7,13 +7,19 @@ float4 main(PS_INPUT input) : SV_TARGET
     
     float intensity = saturate(dot(normalize((float3) vLightDir), input.Norm));
     float shadow = lerp(0.2f, 1.5f, intensity);
-    float4 texColor = _tex0.Sample(_sp0, input.Tex);
     
-    finalColor.rgb = texColor.rgb * vLightColor.rgb * shadow;
+    float4 texColor = _tex0.Sample(_sp0, input.Tex);
+    float3 cubemapColor = _cubemap.Sample(_sp0, reflect(input.Dir, input.Norm));
+    
+    finalColor.rgb = texColor.rgb * vLightColor.rgb * cubemapColor * shadow;
     finalColor.a = 1;
    
     return finalColor;
     
     // 라이팅X
     //return _tex0.Sample(_sp0, input.Tex);
+    
+    // 큐브맵만
+    //finalColor.rgb = cubemapColor;
+    //finalColor.a = 1;
 }

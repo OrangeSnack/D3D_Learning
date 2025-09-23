@@ -1,4 +1,5 @@
 Texture2D _tex0 : register(t0);
+TextureCube _cubemap : register(t1);
 SamplerState _sp0 : register(s0);
 
 cbuffer _cb0 : register(b0)
@@ -10,6 +11,10 @@ cbuffer _cb0 : register(b0)
     float4 vLightDir;
     float4 vLightColor;
     float4 vOutputColor;
+    float4 camPos;
+    float4 ambient;
+    float4 diffuse;
+    float4 specular;
 }
 
 struct PS_INPUT
@@ -17,6 +22,7 @@ struct PS_INPUT
     float4 Pos : SV_POSITION;
     float3 Norm : NORMAL;
     float2 Tex : TEXCOORD0;
+    float3 Dir : DIRECTION;
 };
 
 struct VS_INPUT

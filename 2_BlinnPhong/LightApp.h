@@ -32,6 +32,11 @@ struct ConstantBuffer
 	Vector4 vLightDir;
 	Vector4 vLightColor;
 	Vector4 vOutputColor;
+
+	Vector4 camPos;
+	Vector4 ambient;
+	Vector4 diffuse;
+	Vector4 specular;
 };
 
 class LightApp : public GameApp
@@ -68,6 +73,11 @@ public:
 		m_InitialLightDirs.y,
 		m_InitialLightDirs.z
 	};
+
+	// 리플렉션
+	Vector4 m_Ambients = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+	Vector4 m_Diffuse = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+	Vector4 m_Specular = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	// End ---------
 
