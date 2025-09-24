@@ -31,12 +31,19 @@ struct ConstantBuffer
 
 	Vector4 vLightDir;
 	Vector4 vLightColor;
-	Vector4 vOutputColor;
 
 	Vector4 camPos;
+
 	Vector4 ambient;
 	Vector4 diffuse;
 	Vector4 specular;
+
+	Vector4 Matambient;
+	Vector4 Matdiffuse;
+	Vector4 Matspecular;
+
+	int shiness;
+	Vector3 padding;
 };
 
 class LightApp : public GameApp
@@ -49,7 +56,7 @@ public:
 
 	// Directional 라이트
 	XMFLOAT4 m_LightColors = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);				// 라이트 색상
-	XMFLOAT4 m_InitialLightDirs = XMFLOAT4(-0.577f, 0.577f, -0.577f, 1.0f);	// 초기 라이트 방향
+	XMFLOAT4 m_InitialLightDirs = XMFLOAT4(0.0f, 0.0f, -1.0f, 1.0f);	// 초기 라이트 방향
 	XMFLOAT4 m_CurrLightDirs = m_InitialLightDirs;							// 현재 라이트 방향
 	XMFLOAT4 m_LightDirsEvaluated = {};										// 계산된 라이트 방향
 
@@ -66,6 +73,7 @@ public:
 
 	// 오브젝트
 	float cbRotation[3] = {};		// pitch, yaw, roll
+	float scaleFactor = 5.0f;
 
 	// 라이트
 	float lightDir[3] = {
@@ -73,11 +81,16 @@ public:
 		m_InitialLightDirs.y,
 		m_InitialLightDirs.z
 	};
-
-	// 리플렉션
-	Vector4 m_Ambients = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+	Vector4 m_Ambients = Vector4(0.3f, 0.3f, 0.3f, 1.0f);
 	Vector4 m_Diffuse = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	Vector4 m_Specular = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	// 메테리얼
+	Vector4 m_MatAmbients = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+	Vector4 m_MatDiffuse = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+	Vector4 m_MatSpecular = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	int m_Shiness = 32;
 
 	// End ---------
 

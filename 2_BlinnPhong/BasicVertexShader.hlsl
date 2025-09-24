@@ -11,7 +11,8 @@ PS_INPUT main(VS_INPUT input)
     
     output.Norm = normalize(mul(input.Norm, (float3x3) World));
     
-    output.Dir = (float3) (mul(input.Pos, World)) - camPos;
+    float4 calPos = mul(input.Pos, World);
+    output.CamDir = normalize(calPos - camPos);
     
     return output;
 }

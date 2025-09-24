@@ -38,7 +38,9 @@ void LightApp::Update()
 	__super::Update();
 
 	//float t = GameTimer::m_Instance->TotalTime();
-	m_World = XMMatrixRotationRollPitchYaw(cbRotation[0], cbRotation[1], cbRotation[2]);
+	m_World = 
+		XMMatrixScaling(scaleFactor, scaleFactor, scaleFactor) *
+		XMMatrixRotationRollPitchYaw(cbRotation[0], cbRotation[1], cbRotation[2]);
 
 	// 라이트 방향
 	m_CurrLightDirs.x = lightDir[0];
@@ -63,8 +65,14 @@ void LightApp::Render()
 	cb1.mProjection = XMMatrixTranspose(m_Projection);
 	cb1.vLightDir = m_LightDirsEvaluated;
 	cb1.vLightColor = m_LightColors;
-	cb1.vOutputColor = XMFLOAT4(0, 0, 0, 0);
 	cb1.camPos = (Vector4) m_Camera.m_Position;
+	cb1.ambient = m_Ambients;
+	cb1.diffuse = m_Diffuse;
+	cb1.specular = m_Specular;
+	cb1.Matambient = m_MatAmbients;
+	cb1.Matdiffuse = m_MatDiffuse;
+	cb1.Matspecular = m_MatSpecular;
+	cb1.shiness = m_Shiness;
 	m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
 
 	// Clear 
@@ -114,13 +122,13 @@ void LightApp::Render()
 
 
 	// Render light	
-	XMMATRIX mLight = XMMatrixTranslationFromVector(5.0f *  XMVector3Normalize(XMLoadFloat4(&m_LightDirsEvaluated)));
-	XMMATRIX mLightScale = XMMatrixScaling(0.2f, 0.2f, 0.2f);
+	XMMATRIX mLight = XMMatrixTranslationFromVector(scaleFactor * 2.0f *  XMVector3Normalize(XMLoadFloat4(&m_LightDirsEvaluated)));
+	float lightSize = scaleFactor / 20.0f;
+	XMMATRIX mLightScale = XMMatrixScaling(lightSize, lightSize, lightSize);
 	mLight = mLightScale * mLight;
 
 	// Update the world variable to reflect the current light
 	cb1.mWorld = XMMatrixTranspose(mLight);
-	cb1.vOutputColor = m_LightColors;
 	m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
 
 	m_pDeviceContext->PSSetShader(m_pPLightShader, nullptr, 0);
@@ -459,28 +467,17 @@ void LightApp::RenderGUI()
 		ImGui::PushID(0);
 		ImGui::SeparatorText("Object");
 		ImGui::DragFloat3("Rotation", cbRotation, 0.01f, -360.0f, 360.0f);
+		ImGui::SliderFloat("Scale", &scaleFactor, 1.0f, 50.0f);
+
 		if (ImGui::Button("Reset")) {
 			for (auto& val : cbRotation)
 				val = 0.0f;
+			scaleFactor = 5.0f;
 		}
 		ImGui::PopID();
 		ImGui::NewLine();
 
 		ImGui::PushID(1);
-		ImGui::SeparatorText("LightDir");
-		ImGui::SliderFloat3("LightDir", lightDir, -1.0f, 1.0f);
-		ImGui::ColorEdit3("Color", (float*)&m_LightColors);
-		if (ImGui::Button("Reset")) {
-			lightDir[0] = m_InitialLightDirs.x;
-			lightDir[1] = m_InitialLightDirs.y;
-			lightDir[2] = m_InitialLightDirs.z;
-
-			m_LightColors = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-		}
-		ImGui::PopID();
-		ImGui::NewLine();
-
-		ImGui::PushID(2);
 		ImGui::SeparatorText("Camera");
 
 		ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.35f);
@@ -498,19 +495,45 @@ void LightApp::RenderGUI()
 		ImGui::PopID();
 		ImGui::NewLine();
 
-		ImGui::PushID(3);
-		ImGui::SeparatorText("Reflection");
-		ImGui::ColorEdit3("Ambients", (float*)&m_Ambients);
-		ImGui::ColorEdit3("Diffuse", (float*)&m_Diffuse);
-		ImGui::ColorEdit3("Specular", (float*)&m_Specular);
+		ImGui::PushID(2);
+		ImGui::SeparatorText("Light");
+		ImGui::SliderFloat3("LightDir", lightDir, -1.0f, 1.0f);
+		ImGui::ColorEdit4("Color(l_i)", (float*)&m_LightColors);
+		ImGui::ColorEdit4("Ambients(l_a)", (float*)&m_Ambients);
+		ImGui::ColorEdit4("Diffuse", (float*)&m_Diffuse);
+		ImGui::ColorEdit4("Specular", (float*)&m_Specular);
 		if (ImGui::Button("Reset")) {
-			m_Ambients = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+			m_Ambients = Vector4(0.3f, 0.3f, 0.3f, 1.0f);
 			m_Diffuse = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 			m_Specular = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+
+			lightDir[0] = m_InitialLightDirs.x;
+			lightDir[1] = m_InitialLightDirs.y;
+			lightDir[2] = m_InitialLightDirs.z;
+
+			m_LightColors = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 		ImGui::PopID();
 		ImGui::NewLine();
 
+
+		ImGui::PushID(3);
+		ImGui::SeparatorText("Material");
+
+		ImGui::ColorEdit4("MatAmbients(k_a)", (float*)&m_MatAmbients);
+		ImGui::ColorEdit4("MatDiffuse(k_d)", (float*)&m_MatDiffuse);
+		ImGui::ColorEdit4("MatSpecular(k_s)", (float*)&m_MatSpecular);
+		ImGui::SliderInt("Shiness(a)", &m_Shiness, 32, 256);
+		if (ImGui::Button("Reset")) {
+			m_MatAmbients = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+			m_MatDiffuse = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+			m_MatSpecular = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+			m_Shiness = 32;
+		}
+
+		
+
+		ImGui::PopID();
 		ImGui::End();
 	}
 
