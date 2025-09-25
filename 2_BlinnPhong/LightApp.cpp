@@ -113,10 +113,14 @@ void LightApp::Render()
 #endif // !CUBE_TEXTURE
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
 	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
-	m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
 	m_pDeviceContext->PSSetShaderResources(0, 2, cubeRV);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
 	m_pDeviceContext->RSSetState(m_defaultRS);
+
+	if (useBlinn)
+		m_pDeviceContext->PSSetShader(m_pBlinnPixelShader, nullptr, 0);
+	else
+		m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
 
 	m_pDeviceContext->DrawIndexed(m_nIndices, 0, 0);
 
@@ -253,6 +257,11 @@ bool LightApp::InitScene()
 	HR_T(CompileShaderFromFile(L"BasicPixelShader.hlsl", "main", "ps_4_0", &pixelShader));
 	HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
 		pixelShader->GetBufferSize(), NULL, &m_pPixelShader));
+	SAFE_RELEASE(pixelShader);
+
+	HR_T(CompileShaderFromFile(L"BlinnPhongPixelShader.hlsl", "main", "ps_4_0", &pixelShader));
+	HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
+		pixelShader->GetBufferSize(), NULL, &m_pBlinnPixelShader));
 	SAFE_RELEASE(pixelShader);
 
 	HR_T(CompileShaderFromFile(L"SolidPixelShader.hlsl", "main", "ps_4_0", &pixelShader));
@@ -472,7 +481,7 @@ void LightApp::RenderGUI()
 		if (ImGui::Button("Reset")) {
 			for (auto& val : cbRotation)
 				val = 0.0f;
-			scaleFactor = 5.0f;
+			scaleFactor = 10.0f;
 		}
 		ImGui::PopID();
 		ImGui::NewLine();
@@ -497,6 +506,7 @@ void LightApp::RenderGUI()
 
 		ImGui::PushID(2);
 		ImGui::SeparatorText("Light");
+		ImGui::Checkbox("BlinnPhong", &useBlinn);
 		ImGui::SliderFloat3("LightDir", lightDir, -1.0f, 1.0f);
 		ImGui::ColorEdit4("Color(l_i)", (float*)&m_LightColors);
 		ImGui::ColorEdit4("Ambients(l_a)", (float*)&m_Ambients);

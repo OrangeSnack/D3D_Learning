@@ -73,7 +73,7 @@ public:
 
 	// 오브젝트
 	float cbRotation[3] = {};		// pitch, yaw, roll
-	float scaleFactor = 5.0f;
+	float scaleFactor = 10.0f;
 
 	// 라이트
 	float lightDir[3] = {
@@ -91,6 +91,7 @@ public:
 	Vector4 m_MatSpecular = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	int m_Shiness = 32;
+	bool useBlinn = true;
 
 	// End ---------
 
@@ -103,7 +104,8 @@ public:
 
 	// 렌더링 정보
 	ID3D11VertexShader* m_pVertexShader = nullptr;	// 정점 쉐이더
-	ID3D11PixelShader* m_pPixelShader = nullptr;	// 픽셀 쉐이더
+	ID3D11PixelShader* m_pPixelShader = nullptr;	// 퐁 픽셀 쉐이더
+	ID3D11PixelShader* m_pBlinnPixelShader = nullptr;	// 블린 퐁 픽셀 쉐이더
 	ID3D11PixelShader* m_pPLightShader = nullptr;	// 라이트 쉐이더
 	ID3D11InputLayout* m_pInputLayout = nullptr;	// 입력 레이아웃
 	ID3D11Buffer* m_pVertexBuffer = nullptr;		// 버텍스 버퍼

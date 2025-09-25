@@ -52,6 +52,9 @@
     <FxCompile Include="SkyBoxPixelShader.hlsl">
       <Filter>Shader\Skybox</Filter>
     </FxCompile>
+    <FxCompile Include="BlinnPhongPixelShader.hlsl">
+      <Filter>Shader\Basic</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shared.hlsli">
