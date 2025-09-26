@@ -109,7 +109,7 @@ void LightApp::Render()
 
 
 	// Render light	
-	XMMATRIX mLight = XMMatrixTranslationFromVector(5.0f *  XMVector3Normalize(XMLoadFloat4(&m_LightDirsEvaluated)));
+	XMMATRIX mLight = XMMatrixTranslationFromVector(5.0f *  XMVector3Normalize(-XMLoadFloat4(&m_LightDirsEvaluated)));
 	XMMATRIX mLightScale = XMMatrixScaling(0.2f, 0.2f, 0.2f);
 	mLight = mLightScale * mLight;
 
@@ -333,8 +333,8 @@ bool LightApp::InitScene()
 
 	// 텍스쳐 로딩
 	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Erpin_Icon.dds", nullptr, &m_pTextureRV));
-	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/CubeMap.dds", nullptr, &m_pSkyTextureRV));
-	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Hanako.dds", nullptr, &m_pSkyTextureRV));
+	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/CubeMap.dds", nullptr, &m_pSkyTextureRV));
+	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Hanako.dds", nullptr, &m_pSkyTextureRV));
 	// 샘플러 생성
 	D3D11_SAMPLER_DESC sampDesc = {};
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;

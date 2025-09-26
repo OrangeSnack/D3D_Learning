@@ -44,7 +44,7 @@ public:
 
 	// Directional 라이트
 	XMFLOAT4 m_LightColors = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);				// 라이트 색상
-	XMFLOAT4 m_InitialLightDirs = XMFLOAT4(-0.577f, 0.577f, -0.577f, 1.0f);	// 초기 라이트 방향
+	XMFLOAT4 m_InitialLightDirs = XMFLOAT4(0.577f, -0.577f, 0.577f, 1.0f);	// 초기 라이트 방향
 	XMFLOAT4 m_CurrLightDirs = m_InitialLightDirs;							// 현재 라이트 방향
 	XMFLOAT4 m_LightDirsEvaluated = {};										// 계산된 라이트 방향
 
