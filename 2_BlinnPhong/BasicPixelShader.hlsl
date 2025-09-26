@@ -16,11 +16,11 @@ float4 main(PS_INPUT input) : SV_TARGET
     float4 ambientColor = ambient * matAmbient * texColor * cubemapColor;
     
     //diffuse
-    float4 diff = saturate(dot(input.Norm, lightDir)) * diffuse * vLightColor;
+    float4 diff = saturate(dot(input.Norm, -lightDir)) * diffuse * vLightColor;
     float4 diffuseColor = diff * matDiffuse * texColor;
     
     //specular
-    float4 specularColor = pow(saturate(dot(reflect(-lightDir, input.Norm), -camDir)), shiness) * specular * matSpecular * vLightColor;
+    float4 specularColor = pow(saturate(dot(reflect(lightDir, input.Norm), -camDir)), shiness) * specular * matSpecular * vLightColor;
     
     
     finalColor.rgb = (ambientColor.rgb + diffuseColor.rgb + specularColor.rgb);

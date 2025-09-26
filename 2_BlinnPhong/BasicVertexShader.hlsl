@@ -9,7 +9,7 @@ PS_INPUT main(VS_INPUT input)
     output.Pos = mul(output.Pos, Projection);
     output.Tex = input.Tex;
     
-    output.Norm = normalize(mul(input.Norm, (float3x3) World));
+    output.Norm = normalize(mul(input.Norm, NormalMatrix));
     
     float4 calPos = mul(input.Pos, World);
     output.CamDir = normalize(calPos - camPos);
