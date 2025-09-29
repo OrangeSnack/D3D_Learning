@@ -63,7 +63,7 @@ void LightApp::Render()
 	cb1.mWorld = XMMatrixTranspose(m_World);
 	cb1.mView = XMMatrixTranspose(m_View);
 	cb1.mProjection = XMMatrixTranspose(m_Projection);
-	cb1.mNormalMatrix = XMMatrixTranspose(XMMatrixInverse(nullptr, m_World));
+	cb1.mNormalMatrix = XMMatrixInverse(nullptr, m_World);
 	cb1.vLightDir = m_LightDirsEvaluated;
 	cb1.vLightColor = m_LightColors;
 	cb1.camPos = (Vector4) m_Camera.m_Position;
