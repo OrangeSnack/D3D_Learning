@@ -2,6 +2,7 @@
 #include "../BaseEngine/Helper.h"
 #include <d3dcompiler.h>
 #include <Directxtk/DDSTextureLoader.h>
+#include <directxtk/WICTextureLoader.h>
 
 #pragma comment(lib,"d3dcompiler.lib")
 
@@ -110,11 +111,11 @@ void LightApp::Render()
 	// Render Cube
 #ifndef CUBE_TEXTURE
 #define CUBE_TEXTURE
-	static ID3D11ShaderResourceView* cubeRV[2] = { m_pTextureRV, m_pSkyTextureRV };
+	static ID3D11ShaderResourceView* cubeRV[3] = { m_pTextureRV, m_pNormalRV, m_pSkyTextureRV};
 #endif // !CUBE_TEXTURE
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
 	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
-	m_pDeviceContext->PSSetShaderResources(0, 2, cubeRV);
+	m_pDeviceContext->PSSetShaderResources(0, 3, cubeRV);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
 	m_pDeviceContext->RSSetState(m_defaultRS);
 
@@ -355,11 +356,14 @@ bool LightApp::InitScene()
 	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pConstantBuffer));
 
 	// 텍스쳐 로딩
-	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Erpin_Icon.dds", nullptr, &m_pTextureRV));
+	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/Erpin.dds", nullptr, &m_pTextureRV));
+	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/Erpin.png", nullptr, &m_pTextureRV));
+	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/NormalMap.png", nullptr, &m_pNormalRV));
 	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Church.dds", nullptr, &m_pSkyTextureRV));
 	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/CubeMap.dds", nullptr, &m_pSkyTextureRV));
 	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Hanako.dds", nullptr, &m_pSkyTextureRV));
-	
+
+
 	// 샘플러 생성
 	D3D11_SAMPLER_DESC sampDesc = {};
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
