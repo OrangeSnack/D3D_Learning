@@ -17,11 +17,9 @@ using namespace DirectX;
 
 struct Vertex
 {
-	Vector3 Pos;		// 정점 위치 정보
-	Vector3 Normal;		// 노멀
-	Vector3 Tangent;	// 탄젠트
-	Vector3 BiNormal;	// Bi노멀
-	Vector2 Tex;		// 텍스쳐 UV
+	Vector3 Pos;		// 정점 위치 정보.
+	Vector3 Normal;
+	Vector2 Tex;
 };
 
 struct ConstantBuffer
@@ -115,7 +113,6 @@ public:
 	ID3D11Buffer* m_pConstantBuffer = nullptr;		// 상수 버퍼
 	ID3D11ShaderResourceView* m_pTextureRV = nullptr;	// 텍스처 리소스 뷰.
 	ID3D11ShaderResourceView* m_pNormalRV = nullptr;	// 노멀맵 리소스 뷰.
-	ID3D11ShaderResourceView* m_pSpecularRV = nullptr;	// 스페큘러맵 리소스 뷰.
 	ID3D11SamplerState* m_pSamplerLinear = nullptr;		// 샘플러 상태.
 	ID3D11RasterizerState* m_defaultRS = nullptr;		// 기본 RS
 	

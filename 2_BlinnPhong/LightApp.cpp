@@ -111,11 +111,11 @@ void LightApp::Render()
 	// Render Cube
 #ifndef CUBE_TEXTURE
 #define CUBE_TEXTURE
-	static ID3D11ShaderResourceView* cubeRV[4] = { m_pTextureRV, m_pNormalRV, m_pSpecularRV, m_pSkyTextureRV};
+	static ID3D11ShaderResourceView* cubeRV[3] = { m_pTextureRV, m_pNormalRV, m_pSkyTextureRV};
 #endif // !CUBE_TEXTURE
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
 	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
-	m_pDeviceContext->PSSetShaderResources(0, 4, cubeRV);
+	m_pDeviceContext->PSSetShaderResources(0, 3, cubeRV);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
 	m_pDeviceContext->RSSetState(m_defaultRS);
 
@@ -236,9 +236,7 @@ bool LightApp::InitScene()
 	D3D11_INPUT_ELEMENT_DESC layout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 36, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 	HR_T(m_pDevice->CreateInputLayout(layout, ARRAYSIZE(layout), vertexShader->GetBufferPointer()
 		, vertexShader->GetBufferSize(), &m_pInputLayout));
@@ -281,35 +279,35 @@ bool LightApp::InitScene()
 	// 버텍스 정보
 	Vertex vertices[] =
 	{
-		{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(1.0f, 0.0f) },// Normal Y +	 
-		{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(0.0f, 0.0f) },
-		{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(0.0f, 1.0f) },
-		{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(1.0f, 1.0f) },
+		{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector2(1.0f, 0.0f) },// Normal Y +	 
+		{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector2(0.0f, 0.0f) },
+		{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector2(0.0f, 1.0f) },
+		{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector2(1.0f, 1.0f) },
 
-		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, -1.0f, 0.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(0.0f, 0.0f) },// Normal Y -		
-		{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(1.0f, 0.0f) },
-		{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(1.0f, 1.0f) },
-		{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(0.0f, 1.0f) },
+		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 0.0f) },// Normal Y -		
+		{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 0.0f) },
+		{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 1.0f) },
+		{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 1.0f) },
 
-		{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 1.0f) },//	Normal X -
-		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 1.0f) },
-		{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 0.0f) },
-		{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 0.0f) },
+		{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector2(0.0f, 1.0f) },//	Normal X -
+		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, 0.0f, 0.0f),	Vector2(1.0f, 1.0f) },
+		{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector2(1.0f, 0.0f) },
+		{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector2(0.0f, 0.0f) },
 
-		{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 1.0f) },// Normal X +
-		{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 1.0f) },
-		{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 0.0f) },
-		{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 0.0f) },
+		{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector2(1.0f, 1.0f) },// Normal X +
+		{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector2(0.0f, 1.0f) },
+		{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector2(0.0f, 0.0f) },
+		{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector2(1.0f, 0.0f) },
 
-		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 1.0f) }, // Normal Z -
-		{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 1.0f) },
-		{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 0.0f) },
-		{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 0.0f) },
+		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f),	Vector2(0.0f, 1.0f) }, // Normal Z -
+		{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector2(1.0f, 1.0f) },
+		{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector2(1.0f, 0.0f) },
+		{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector2(0.0f, 0.0f) },
 
-		{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 1.0f) },// Normal Z +
-		{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 1.0f) },
-		{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 0.0f) },
-		{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 0.0f) },
+		{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(1.0f, 1.0f) },// Normal Z +
+		{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(0.0f, 1.0f) },
+		{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(0.0f, 0.0f) },
+		{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(1.0f, 0.0f) },
 	};
 
 	// 버텍스 버퍼 생성.
@@ -358,11 +356,9 @@ bool LightApp::InitScene()
 	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pConstantBuffer));
 
 	// 텍스쳐 로딩
+	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/Erpin.dds", nullptr, &m_pTextureRV));
 	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/Erpin.png", nullptr, &m_pTextureRV));
 	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/NormalMap.png", nullptr, &m_pNormalRV));
-	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/SpecularMap.png", nullptr, &m_pSpecularRV));
-	//HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Floor/floor_tile_a.png", nullptr, &m_pTextureRV));
-	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Texture/Floor/floor_tile_n.dds", nullptr, &m_pNormalRV));	// 노멀맵을 WIC png로 불러오면 쌉창이남. 왜??
 	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Church.dds", nullptr, &m_pSkyTextureRV));
 	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/CubeMap.dds", nullptr, &m_pSkyTextureRV));
 	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Hanako.dds", nullptr, &m_pSkyTextureRV));
