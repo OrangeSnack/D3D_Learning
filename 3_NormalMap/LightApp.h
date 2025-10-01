@@ -17,11 +17,9 @@ using namespace DirectX;
 
 struct Vertex
 {
-	Vector3 Pos;		// 정점 위치 정보
-	Vector3 Normal;		// 노멀
-	Vector3 Tangent;	// 탄젠트
-	Vector3 BiNormal;	// Bi노멀
-	Vector2 Tex;		// 텍스쳐 UV
+	Vector3 Pos;		// 정점 위치 정보.
+	Vector3 Normal;
+	Vector2 Tex;
 };
 
 struct ConstantBuffer

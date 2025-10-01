@@ -31,16 +31,13 @@ struct PS_INPUT
     float4 Pos : SV_POSITION;
     float4 W_Pos : POSITION;
     float3 Norm : NORMAL;
-    float3 Tan : TANGENT;
-    float3 BiNorm : BINORMAL;
     float2 Tex : TEXCOORD0;
+    float3 CamPos : CAMPOS;
 };
 
 struct VS_INPUT
 {
     float4 Pos : POSITION;
-    float2 Tex : TEXCOORD0;
     float3 Norm : NORMAL;
-    float3 Tan : TANGENT;
-    float3 BiNorm : BINORMAL;
+    float2 Tex : TEXCOORD0;
 };

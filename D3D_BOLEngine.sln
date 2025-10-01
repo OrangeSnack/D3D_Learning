@@ -9,7 +9,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BaseEngine", "BaseEngine\Ba
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "1_Lighting_Skybox", "1_Lighting\1_Lighting.vcxproj", "{E15ECBF5-E013-4895-925A-468C5C5A4453}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "2_BlinnPhong", "2_BlinnPhong\2_BlinnPhong.vcxproj", "{A6E112CA-5976-430C-9766-591E850DC518}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "3_NormalMap", "2_BlinnPhong\2_BlinnPhong.vcxproj", "{A6E112CA-5976-430C-9766-591E850DC518}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "2_BlinnPhong", "3_NormalMap\3_NormalMap.vcxproj", "{3E80175F-7695-463D-A3AB-5B058BED7DB3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,14 @@ Global
 		{A6E112CA-5976-430C-9766-591E850DC518}.Release|x64.Build.0 = Release|x64
 		{A6E112CA-5976-430C-9766-591E850DC518}.Release|x86.ActiveCfg = Release|Win32
 		{A6E112CA-5976-430C-9766-591E850DC518}.Release|x86.Build.0 = Release|Win32
+		{3E80175F-7695-463D-A3AB-5B058BED7DB3}.Debug|x64.ActiveCfg = Debug|x64
+		{3E80175F-7695-463D-A3AB-5B058BED7DB3}.Debug|x64.Build.0 = Debug|x64
+		{3E80175F-7695-463D-A3AB-5B058BED7DB3}.Debug|x86.ActiveCfg = Debug|Win32
+		{3E80175F-7695-463D-A3AB-5B058BED7DB3}.Debug|x86.Build.0 = Debug|Win32
+		{3E80175F-7695-463D-A3AB-5B058BED7DB3}.Release|x64.ActiveCfg = Release|x64
+		{3E80175F-7695-463D-A3AB-5B058BED7DB3}.Release|x64.Build.0 = Release|x64
+		{3E80175F-7695-463D-A3AB-5B058BED7DB3}.Release|x86.ActiveCfg = Release|Win32
+		{3E80175F-7695-463D-A3AB-5B058BED7DB3}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -236,9 +236,7 @@ bool LightApp::InitScene()
 	D3D11_INPUT_ELEMENT_DESC layout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 36, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 	HR_T(m_pDevice->CreateInputLayout(layout, ARRAYSIZE(layout), vertexShader->GetBufferPointer()
 		, vertexShader->GetBufferSize(), &m_pInputLayout));
@@ -281,35 +279,35 @@ bool LightApp::InitScene()
 	// 버텍스 정보
 	Vertex vertices[] =
 	{
-		{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(1.0f, 0.0f) },// Normal Y +	 
-		{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(0.0f, 0.0f) },
-		{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(0.0f, 1.0f) },
-		{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(1.0f, 1.0f) },
+		{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector2(1.0f, 0.0f) },// Normal Y +	 
+		{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector2(0.0f, 0.0f) },
+		{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector2(0.0f, 1.0f) },
+		{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector2(1.0f, 1.0f) },
 
-		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, -1.0f, 0.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(0.0f, 0.0f) },// Normal Y -		
-		{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(1.0f, 0.0f) },
-		{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(1.0f, 1.0f) },
-		{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(0.0f, 1.0f) },
+		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 0.0f) },// Normal Y -		
+		{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 0.0f) },
+		{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 1.0f) },
+		{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 1.0f) },
 
-		{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 1.0f) },//	Normal X -
-		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 1.0f) },
-		{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 0.0f) },
-		{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 0.0f) },
+		{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector2(0.0f, 1.0f) },//	Normal X -
+		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, 0.0f, 0.0f),	Vector2(1.0f, 1.0f) },
+		{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector2(1.0f, 0.0f) },
+		{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector2(0.0f, 0.0f) },
 
-		{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 1.0f) },// Normal X +
-		{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 1.0f) },
-		{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 0.0f) },
-		{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 0.0f) },
+		{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector2(1.0f, 1.0f) },// Normal X +
+		{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector2(0.0f, 1.0f) },
+		{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector2(0.0f, 0.0f) },
+		{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector2(1.0f, 0.0f) },
 
-		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 1.0f) }, // Normal Z -
-		{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 1.0f) },
-		{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 0.0f) },
-		{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 0.0f) },
+		{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f),	Vector2(0.0f, 1.0f) }, // Normal Z -
+		{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector2(1.0f, 1.0f) },
+		{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector2(1.0f, 0.0f) },
+		{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector2(0.0f, 0.0f) },
 
-		{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 1.0f) },// Normal Z +
-		{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 1.0f) },
-		{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 0.0f) },
-		{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 0.0f) },
+		{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(1.0f, 1.0f) },// Normal Z +
+		{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(0.0f, 1.0f) },
+		{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(0.0f, 0.0f) },
+		{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(1.0f, 0.0f) },
 	};
 
 	// 버텍스 버퍼 생성.
@@ -358,10 +356,9 @@ bool LightApp::InitScene()
 	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pConstantBuffer));
 
 	// 텍스쳐 로딩
+	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/Erpin.dds", nullptr, &m_pTextureRV));
 	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/Erpin.png", nullptr, &m_pTextureRV));
 	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/NormalMap.png", nullptr, &m_pNormalRV));
-	//HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Floor/floor_tile_a.png", nullptr, &m_pTextureRV));
-	//HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Floor/floor_tile_n.png", nullptr, &m_pNormalRV));
 	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Church.dds", nullptr, &m_pSkyTextureRV));
 	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/CubeMap.dds", nullptr, &m_pSkyTextureRV));
 	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Hanako.dds", nullptr, &m_pSkyTextureRV));
