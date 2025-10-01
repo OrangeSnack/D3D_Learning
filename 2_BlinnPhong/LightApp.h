@@ -115,6 +115,7 @@ public:
 	ID3D11Buffer* m_pConstantBuffer = nullptr;		// 상수 버퍼
 	ID3D11ShaderResourceView* m_pTextureRV = nullptr;	// 텍스처 리소스 뷰.
 	ID3D11ShaderResourceView* m_pNormalRV = nullptr;	// 노멀맵 리소스 뷰.
+	ID3D11ShaderResourceView* m_pSpecularRV = nullptr;	// 스페큘러맵 리소스 뷰.
 	ID3D11SamplerState* m_pSamplerLinear = nullptr;		// 샘플러 상태.
 	ID3D11RasterizerState* m_defaultRS = nullptr;		// 기본 RS
 	

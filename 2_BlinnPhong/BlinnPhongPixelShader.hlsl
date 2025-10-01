@@ -31,7 +31,8 @@ float4 main(PS_INPUT input) : SV_TARGET
     
     //specular
     float3 middleVector = normalize(-lightDir + -camDir);
-    float4 specularColor = pow(saturate(dot(middleVector, normal)), shiness) * intensity * specular * matSpecular * vLightColor;
+    float4 specularImage = _spec.Sample(_sp0, input.Tex);
+    float4 specularColor = pow(saturate(dot(middleVector, normal)), shiness) * intensity * specularImage * specular * matSpecular * vLightColor;
     
     finalColor.rgb = (ambientColor.rgb + diffuseColor.rgb + specularColor.rgb);
     finalColor.a = 1;

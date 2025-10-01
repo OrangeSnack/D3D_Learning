@@ -21,18 +21,19 @@ float4 main(PS_INPUT input) : SV_TARGET
     float3 normal = normalize(mul(normalMap, tbn));
     
     //reflect
-    float4 cubemapColor = _cubemap.Sample(_sp0, reflect(camDir, input.Norm));
+    float4 cubemapColor = _cubemap.Sample(_sp0, reflect(camDir, normal));
     
     //ambient
     float4 ambientColor = ambient * matAmbient * texColor * cubemapColor;
     //float4 ambientColor = cubemapColor * ambient;
     
     //diffuse
-    float4 diff = saturate(dot(input.Norm, -lightDir)) * diffuse * vLightColor;
+    float4 diff = saturate(dot(normal, -lightDir)) * diffuse * vLightColor;
     float4 diffuseColor = diff * matDiffuse * texColor;
     
     //specular
-    float4 specularColor = pow(saturate(dot(reflect(lightDir, input.Norm), -camDir)), shiness) * specular * matSpecular * vLightColor;
+    float4 specularImage = _spec.Sample(_sp0, input.Tex);
+    float4 specularColor = pow(saturate(dot(reflect(lightDir, normal), -camDir)), shiness) * specularImage * specular * matSpecular * vLightColor;
     
     
     finalColor.rgb = (ambientColor.rgb + diffuseColor.rgb + specularColor.rgb);

@@ -111,11 +111,11 @@ void LightApp::Render()
 	// Render Cube
 #ifndef CUBE_TEXTURE
 #define CUBE_TEXTURE
-	static ID3D11ShaderResourceView* cubeRV[3] = { m_pTextureRV, m_pNormalRV, m_pSkyTextureRV};
+	static ID3D11ShaderResourceView* cubeRV[4] = { m_pTextureRV, m_pNormalRV, m_pSpecularRV, m_pSkyTextureRV};
 #endif // !CUBE_TEXTURE
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
 	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
-	m_pDeviceContext->PSSetShaderResources(0, 3, cubeRV);
+	m_pDeviceContext->PSSetShaderResources(0, 4, cubeRV);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
 	m_pDeviceContext->RSSetState(m_defaultRS);
 
@@ -358,10 +358,11 @@ bool LightApp::InitScene()
 	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pConstantBuffer));
 
 	// 텍스쳐 로딩
-	//HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/Erpin.png", nullptr, &m_pTextureRV));
-	//HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/NormalMap.png", nullptr, &m_pNormalRV));
-	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Floor/floor_tile_a.png", nullptr, &m_pTextureRV));
-	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Floor/floor_tile_n.png", nullptr, &m_pNormalRV));
+	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/Erpin.png", nullptr, &m_pTextureRV));
+	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/NormalMap.png", nullptr, &m_pNormalRV));
+	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/SpecularMap.png", nullptr, &m_pSpecularRV));
+	//HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Floor/floor_tile_a.png", nullptr, &m_pTextureRV));
+	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Texture/Floor/floor_tile_n.dds", nullptr, &m_pNormalRV));	// 노멀맵을 WIC png로 불러오면 쌉창이남. 왜??
 	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Church.dds", nullptr, &m_pSkyTextureRV));
 	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/CubeMap.dds", nullptr, &m_pSkyTextureRV));
 	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Hanako.dds", nullptr, &m_pSkyTextureRV));
