@@ -358,10 +358,10 @@ bool LightApp::InitScene()
 	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pConstantBuffer));
 
 	// 텍스쳐 로딩
-	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/Erpin.png", nullptr, &m_pTextureRV));
-	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/NormalMap.png", nullptr, &m_pNormalRV));
-	//HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Floor/floor_tile_a.png", nullptr, &m_pTextureRV));
-	//HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Floor/floor_tile_n.png", nullptr, &m_pNormalRV));
+	//HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/Erpin.png", nullptr, &m_pTextureRV));
+	//HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/NormalMap.png", nullptr, &m_pNormalRV));
+	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Floor/floor_tile_a.png", nullptr, &m_pTextureRV));
+	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Floor/floor_tile_n.png", nullptr, &m_pNormalRV));
 	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Church.dds", nullptr, &m_pSkyTextureRV));
 	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/CubeMap.dds", nullptr, &m_pSkyTextureRV));
 	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Hanako.dds", nullptr, &m_pSkyTextureRV));
