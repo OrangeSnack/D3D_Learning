@@ -83,8 +83,8 @@ void MeshApp::Render()
 
 	// Render Setting
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &m_VertexBufferStride, &m_VertexBufferOffset);
-	m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pCubeVertexBuffer, &m_VertexBufferStride, &m_VertexBufferOffset);
+	m_pDeviceContext->IASetIndexBuffer(m_pCubeIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
 	m_pDeviceContext->VSSetConstantBuffers(0, 1, &m_pConstantBuffer);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_pConstantBuffer);
 
@@ -101,19 +101,21 @@ void MeshApp::Render()
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
 	m_pDeviceContext->RSSetState(m_SkyboxRS);
 
-	m_pDeviceContext->DrawIndexed(m_nIndices, 0, 0);
+	m_pDeviceContext->DrawIndexed(m_nCubeIndices, 0, 0);
 
-	// ----- 큐브 렌더링 -----
+	// ----- 모델 렌더링 -----
 
 	// 렌더타겟 설정
 	m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
 
-	// Render Cube
-#ifndef CUBE_TEXTURE
-#define CUBE_TEXTURE
-	static ID3D11ShaderResourceView* cubeRV[4] = { m_pTextureRV, m_pNormalRV, m_pSpecularRV, m_pSkyTextureRV};
-#endif // !CUBE_TEXTURE
+#ifndef MODEL_TEXTURE
+#define MODEL_TEXTURE
+	static ID3D11ShaderResourceView* cubeRV[4] = { m_pTextureRV, m_pNormalRV, m_pSpecularRV, m_pSkyTextureRV };
+#endif // !MODEL_TEXTURE
+
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
+	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &m_VertexBufferStride, &m_VertexBufferOffset);
+	m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
 	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
 	m_pDeviceContext->PSSetShaderResources(0, 4, cubeRV);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
@@ -126,19 +128,18 @@ void MeshApp::Render()
 
 	m_pDeviceContext->DrawIndexed(m_nIndices, 0, 0);
 
-
 	// Render light	
-	XMMATRIX mLight = XMMatrixTranslationFromVector(scaleFactor * 2.0f *  XMVector3Normalize(-XMLoadFloat4(&m_LightDirsEvaluated)));
-	float lightSize = scaleFactor / 20.0f;
-	XMMATRIX mLightScale = XMMatrixScaling(lightSize, lightSize, lightSize);
-	mLight = mLightScale * mLight;
+	//XMMATRIX mLight = XMMatrixTranslationFromVector(scaleFactor * 2.0f * XMVector3Normalize(-XMLoadFloat4(&m_LightDirsEvaluated)));
+	//float lightSize = scaleFactor / 20.0f;
+	//XMMATRIX mLightScale = XMMatrixScaling(lightSize, lightSize, lightSize);
+	//mLight = mLightScale * mLight;
 
-	// Update the world variable to reflect the current light
-	cb1.mWorld = XMMatrixTranspose(mLight);
-	m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
+	//// Update the world variable to reflect the current light
+	//cb1.mWorld = XMMatrixTranspose(mLight);
+	//m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
 
-	m_pDeviceContext->PSSetShader(m_pPLightShader, nullptr, 0);
-	m_pDeviceContext->DrawIndexed(m_nIndices, 0, 0);
+	//m_pDeviceContext->PSSetShader(m_pPLightShader, nullptr, 0);
+	//m_pDeviceContext->DrawIndexed(m_nCubeIndices, 0, 0);
 
 	// GUI Render
 	RenderGUI();
@@ -277,114 +278,57 @@ bool MeshApp::InitScene()
 	HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
 		pixelShader->GetBufferSize(), NULL, &m_pSkyPixelShader));
 	SAFE_RELEASE(pixelShader);
-
+	
 	// 모델 로딩
-	model.LoadFile("Plana.fbx");
-	aiMesh* mesh = model.scene->mMeshes[0];
-	std::vector<Vertex> vertices;
+	model.LoadFile("../Resources/Models/haniwa/haniwa.fbx");
 
-	for (int i = 0; i < mesh->mNumVertices; i++) {
-		Vertex v;
-		
-		v.Pos = Vector3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
-		
-		if (mesh->HasNormals()) {
-			v.Normal = Vector3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
-		}
+	std::vector<Vertex> modelVertices;
+	std::vector<WORD> modelIndices;
+	LoadVertex(&modelVertices, model.scene->mMeshes[0]);
+	LoadIndex(&modelIndices, model.scene->mMeshes[0]);
 
-		if (mesh->HasTangentsAndBitangents()) {
-			v.Tangent = Vector3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
-			v.BiNormal = Vector3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
-		}
-
-		if (mesh->HasTextureCoords(0)) {
-			v.Tex = Vector2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
-		}
-
-		vertices.push_back(v);
-	}
-
-
-	// 버텍스 정보
-	//Vertex vertices[] =
-	//{
-	//	{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(1.0f, 0.0f) },// Normal Y +	 
-	//	{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(0.0f, 0.0f) },
-	//	{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(0.0f, 1.0f) },
-	//	{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(0.0f, 1.0f, 0.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(1.0f, 1.0f) },
-
-	//	{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, -1.0f, 0.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(0.0f, 0.0f) },// Normal Y -		
-	//	{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(1.0f, 0.0f) },
-	//	{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(1.0f, 1.0f) },
-	//	{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector2(0.0f, 1.0f) },
-
-	//	{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 1.0f) },//	Normal X -
-	//	{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 1.0f) },
-	//	{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 0.0f) },
-	//	{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 0.0f) },
-
-	//	{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 1.0f) },// Normal X +
-	//	{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 1.0f) },
-	//	{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 0.0f) },
-	//	{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 0.0f) },
-
-	//	{ Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 1.0f) }, // Normal Z -
-	//	{ Vector3(1.0f, -1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 1.0f) },
-	//	{ Vector3(1.0f, 1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 0.0f) },
-	//	{ Vector3(-1.0f, 1.0f, -1.0f),	Vector3(0.0f, 0.0f, -1.0f),	Vector3(1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 0.0f) },
-
-	//	{ Vector3(-1.0f, -1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 1.0f) },// Normal Z +
-	//	{ Vector3(1.0f, -1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 1.0f) },
-	//	{ Vector3(1.0f, 1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(0.0f, 0.0f) },
-	//	{ Vector3(-1.0f, 1.0f, 1.0f),	Vector3(0.0f, 0.0f, 1.0f),	Vector3(-1.0f, 0.0f, 0.0f),	Vector3(0.0f, -1.0f, 0.0f),	Vector2(1.0f, 0.0f) },
-	//};
-
-	// 버텍스 버퍼 생성.
+	cube.LoadFile("../Resources/Models/Cube/Cube.fbx");
+	std::vector<Vertex> cubeVertices;
+	std::vector<WORD> cubeIndices;
+	LoadVertex(&cubeVertices, cube.scene->mMeshes[0]);
+	LoadIndex(&cubeIndices, cube.scene->mMeshes[0]);
+	
+	// 모델 버퍼 생성.
+	// Vertex
 	D3D11_BUFFER_DESC bd = {};
-	/*bd.ByteWidth = sizeof(Vertex) * ARRAYSIZE(vertices);*/
-	bd.ByteWidth = sizeof(Vertex) * vertices.size();
+	bd.ByteWidth = sizeof(Vertex) * modelVertices.size();
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bd.Usage = D3D11_USAGE_DEFAULT;
 	bd.CPUAccessFlags = 0;
 
 	D3D11_SUBRESOURCE_DATA vbData = {};
-	vbData.pSysMem = vertices.data();
+	vbData.pSysMem = modelVertices.data();
 	HR_T(m_pDevice->CreateBuffer(&bd, &vbData, &m_pVertexBuffer));
 
-	// 버텍스 버퍼 바인딩.
-	//m_VertexBufferStride = sizeof(Vertex);
-	m_VertexBufferStride = sizeof(aiVector3D);
-	m_VertexBufferOffset = 0;
+	bd.ByteWidth = sizeof(Vertex) * cubeVertices.size();
+	vbData.pSysMem = cubeVertices.data();
+	HR_T(m_pDevice->CreateBuffer(&bd, &vbData, &m_pCubeVertexBuffer));
 
-	// 4. Render() 에서 파이프라인에 바인딩할 인덱스 버퍼 생성
-	/*WORD indices[] =
-	{
-		3,1,0, 2,1,3,
-		6,4,5, 7,4,6,
-		11,9,8, 10,9,11,
-		14,12,13, 15,12,14,
-		19,17,16, 18,17,19,
-		22,20,21, 23,20,22
-	};*/
-
-	std::vector<WORD> indices;
-
-	// 인덱스 개수 저장.
-	/*m_nIndices = ARRAYSIZE(indices);*/
-	m_nIndices = mesh->mFaces->mNumIndices;
-
-	for (int i = 0; i < m_nIndices; i++) {
-		indices.push_back(WORD(mesh->mFaces->mIndices[i]));
-	}
-
+	// Index
 	bd = {};
-	bd.ByteWidth = sizeof(WORD) * m_nIndices;
+	bd.ByteWidth = sizeof(WORD) * modelIndices.size();
 	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	bd.Usage = D3D11_USAGE_DEFAULT;
 	bd.CPUAccessFlags = 0;
 	D3D11_SUBRESOURCE_DATA ibData = {};
-	ibData.pSysMem = indices.data();
+	ibData.pSysMem = modelIndices.data();
 	HR_T(m_pDevice->CreateBuffer(&bd, &ibData, &m_pIndexBuffer));
+
+	bd.ByteWidth = sizeof(WORD) * cubeIndices.size();
+	ibData.pSysMem = cubeIndices.data();
+	HR_T(m_pDevice->CreateBuffer(&bd, &ibData, &m_pCubeIndexBuffer));
+
+	// 버텍스 버퍼 바인딩.
+	m_VertexBufferStride = sizeof(Vertex);
+	m_VertexBufferOffset = 0;
+	m_nIndices = modelIndices.size();
+	m_nCubeIndices = cubeIndices.size();
+	
 
 	// Render() 에서 파이프라인에 바인딩할 상수 버퍼 생성	
 	bd.Usage = D3D11_USAGE_DEFAULT;
@@ -521,12 +465,12 @@ void MeshApp::RenderGUI()
 		ImGui::PushID(0);
 		ImGui::SeparatorText("Object");
 		ImGui::DragFloat3("Rotation", cbRotation, 0.01f, -360.0f, 360.0f);
-		ImGui::SliderFloat("Scale", &scaleFactor, 1.0f, 50.0f);
+		ImGui::SliderFloat("Scale", &scaleFactor, 0.1f, 50.0f);
 
 		if (ImGui::Button("Reset")) {
 			for (auto& val : cbRotation)
 				val = 0.0f;
-			scaleFactor = 10.0f;
+			scaleFactor = 1.0f;
 		}
 		ImGui::PopID();
 		ImGui::NewLine();
@@ -605,4 +549,40 @@ LRESULT CALLBACK MeshApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 		return true;
 
 	return __super::WndProc(hWnd, message, wParam, lParam);
+}
+
+bool MeshApp::LoadVertex(std::vector<Vertex>* _vertices, const aiMesh* _mesh)
+{
+	for (int i = 0; i < _mesh->mNumVertices; i++) {
+		Vertex v;
+
+		v.Pos = Vector3(_mesh->mVertices[i].x, _mesh->mVertices[i].y, _mesh->mVertices[i].z);
+
+		if (_mesh->HasNormals()) {
+			v.Normal = Vector3(_mesh->mNormals[i].x, _mesh->mNormals[i].y, _mesh->mNormals[i].z);
+		}
+
+		if (_mesh->HasTangentsAndBitangents()) {
+			v.Tangent = Vector3(_mesh->mTangents[i].x, _mesh->mTangents[i].y, _mesh->mTangents[i].z);
+			v.BiNormal = Vector3(_mesh->mBitangents[i].x, _mesh->mBitangents[i].y, _mesh->mBitangents[i].z);
+		}
+
+		if (_mesh->HasTextureCoords(0)) {
+			v.Tex = Vector2(_mesh->mTextureCoords[0][i].x, _mesh->mTextureCoords[0][i].y);
+		}
+
+		_vertices->push_back(v);
+	}
+
+	return true;
+}
+
+bool MeshApp::LoadIndex(std::vector<WORD>* _indices, const aiMesh* _mesh)
+{
+	for (int i = 0; i < _mesh->mNumFaces; i++) {
+		for(int j = 0; j < _mesh->mFaces[i].mNumIndices; j++)
+			_indices->push_back(WORD(_mesh->mFaces[i].mIndices[j]));
+	}
+
+	return true;
 }
