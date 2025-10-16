@@ -114,8 +114,6 @@ void MeshApp::Render()
 #endif // !MODEL_TEXTURE
 
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
-	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &m_VertexBufferStride, &m_VertexBufferOffset);
-	m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
 	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
 	m_pDeviceContext->PSSetShaderResources(0, 4, cubeRV);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
@@ -126,7 +124,19 @@ void MeshApp::Render()
 	else
 		m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
 
-	m_pDeviceContext->DrawIndexed(m_nIndices, 0, 0);
+	/*m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer[0], &m_VertexBufferStride, &m_VertexBufferOffset);
+	m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer[0], DXGI_FORMAT_R16_UINT, 0);
+
+	m_pDeviceContext->DrawIndexed(m_nIndices[0], 0, 0);*/
+
+
+	for (int i = 1; i < m_pVertexBuffer.size(); i++) {
+		m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer[i], &m_VertexBufferStride, &m_VertexBufferOffset);
+		m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer[i], DXGI_FORMAT_R16_UINT, 0);
+
+		m_pDeviceContext->DrawIndexed(m_nIndices[i], 0, 0);
+	}
+	
 
 	// Render light	
 	//XMMATRIX mLight = XMMatrixTranslationFromVector(scaleFactor * 2.0f * XMVector3Normalize(-XMLoadFloat4(&m_LightDirsEvaluated)));
@@ -280,12 +290,19 @@ bool MeshApp::InitScene()
 	SAFE_RELEASE(pixelShader);
 	
 	// 모델 로딩
-	model.LoadFile("../Resources/Models/haniwa/haniwa.fbx");
+	model.LoadFile("../Resources/Models/Miyu/Miyu3.fbx");
+	std::vector<std::vector<Vertex>> modelVertices;
+	std::vector<std::vector<WORD>> modelIndices;
 
-	std::vector<Vertex> modelVertices;
-	std::vector<WORD> modelIndices;
-	LoadVertex(&modelVertices, model.scene->mMeshes[0]);
-	LoadIndex(&modelIndices, model.scene->mMeshes[0]);
+	for(int i = 0; i < model.scene->mNumMeshes; i++) {
+		std::vector<Vertex> tempV;
+		std::vector<WORD> tempI;
+		LoadVertex(&tempV, model.scene->mMeshes[i]);
+		LoadIndex(&tempI, model.scene->mMeshes[i]);
+
+		modelVertices.push_back(tempV);
+		modelIndices.push_back(tempI);
+	}
 
 	cube.LoadFile("../Resources/Models/Cube/Cube.fbx");
 	std::vector<Vertex> cubeVertices;
@@ -296,14 +313,22 @@ bool MeshApp::InitScene()
 	// 모델 버퍼 생성.
 	// Vertex
 	D3D11_BUFFER_DESC bd = {};
-	bd.ByteWidth = sizeof(Vertex) * modelVertices.size();
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bd.Usage = D3D11_USAGE_DEFAULT;
 	bd.CPUAccessFlags = 0;
 
 	D3D11_SUBRESOURCE_DATA vbData = {};
-	vbData.pSysMem = modelVertices.data();
-	HR_T(m_pDevice->CreateBuffer(&bd, &vbData, &m_pVertexBuffer));
+	
+	for (int i = 0; i < modelVertices.size(); i++) {
+		bd.ByteWidth = sizeof(Vertex) * modelVertices[i].size();
+		vbData.pSysMem = modelVertices[i].data();
+
+		ID3D11Buffer* tempBuffer = nullptr;
+		HR_T(m_pDevice->CreateBuffer(&bd, &vbData, &tempBuffer));
+
+		if (tempBuffer)
+			m_pVertexBuffer.push_back(tempBuffer);
+	}
 
 	bd.ByteWidth = sizeof(Vertex) * cubeVertices.size();
 	vbData.pSysMem = cubeVertices.data();
@@ -311,13 +336,24 @@ bool MeshApp::InitScene()
 
 	// Index
 	bd = {};
-	bd.ByteWidth = sizeof(WORD) * modelIndices.size();
 	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	bd.Usage = D3D11_USAGE_DEFAULT;
 	bd.CPUAccessFlags = 0;
+
 	D3D11_SUBRESOURCE_DATA ibData = {};
-	ibData.pSysMem = modelIndices.data();
-	HR_T(m_pDevice->CreateBuffer(&bd, &ibData, &m_pIndexBuffer));
+
+
+	for (int i = 0; i < modelIndices.size(); i++) {
+		bd.ByteWidth = sizeof(WORD) * modelIndices[i].size();
+		ibData.pSysMem = modelIndices[i].data();
+
+		ID3D11Buffer* tempBuffer = nullptr;
+		HR_T(m_pDevice->CreateBuffer(&bd, &ibData, &tempBuffer));
+
+		if(tempBuffer)
+			m_pIndexBuffer.push_back(tempBuffer);
+	}
+
 
 	bd.ByteWidth = sizeof(WORD) * cubeIndices.size();
 	ibData.pSysMem = cubeIndices.data();
@@ -326,7 +362,9 @@ bool MeshApp::InitScene()
 	// 버텍스 버퍼 바인딩.
 	m_VertexBufferStride = sizeof(Vertex);
 	m_VertexBufferOffset = 0;
-	m_nIndices = modelIndices.size();
+
+	for(const auto& indices : modelIndices)
+		m_nIndices.push_back(indices.size());
 	m_nCubeIndices = cubeIndices.size();
 	
 
@@ -399,7 +437,8 @@ bool MeshApp::InitScene()
 
 void MeshApp::UninitScene()
 {
-	SAFE_RELEASE(m_pVertexBuffer);
+	for (auto& buffer : m_pVertexBuffer) SAFE_RELEASE(buffer); m_pVertexBuffer.clear();
+	for (auto& buffer : m_pIndexBuffer) SAFE_RELEASE(buffer); m_pIndexBuffer.clear();
 	SAFE_RELEASE(m_pConstantBuffer);
 	SAFE_RELEASE(m_pVertexShader);
 	SAFE_RELEASE(m_pSkyVertexShader);
@@ -407,7 +446,6 @@ void MeshApp::UninitScene()
 	SAFE_RELEASE(m_pPixelShader);
 	SAFE_RELEASE(m_pSkyPixelShader);
 	SAFE_RELEASE(m_pInputLayout);
-	SAFE_RELEASE(m_pIndexBuffer);
 	SAFE_RELEASE(m_pDepthStencilView);
 	SAFE_RELEASE(m_pTextureRV);
 	SAFE_RELEASE(m_pSamplerLinear);
@@ -465,7 +503,7 @@ void MeshApp::RenderGUI()
 		ImGui::PushID(0);
 		ImGui::SeparatorText("Object");
 		ImGui::DragFloat3("Rotation", cbRotation, 0.01f, -360.0f, 360.0f);
-		ImGui::SliderFloat("Scale", &scaleFactor, 0.1f, 50.0f);
+		ImGui::DragFloat("Scale", &scaleFactor, 0.001f, 0.001f, 10.0f);
 
 		if (ImGui::Button("Reset")) {
 			for (auto& val : cbRotation)

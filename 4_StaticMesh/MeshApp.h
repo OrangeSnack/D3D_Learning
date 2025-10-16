@@ -121,10 +121,10 @@ public:
 	ID3D11RasterizerState* m_defaultRS = nullptr;		// 기본 RS
 	
 	// FBX 모델
-	Model model;			// 모델 클래스
-	ID3D11Buffer* m_pVertexBuffer = nullptr;		// 모델 버텍스 버퍼
-	ID3D11Buffer* m_pIndexBuffer = nullptr;			// 모델 인덱스 버퍼
-	unsigned int m_nIndices = 0;					// 인덱스 개수
+	Model model;									// 모델 클래스
+	std::vector<ID3D11Buffer*> m_pVertexBuffer;		// 모델 버텍스 버퍼
+	std::vector<ID3D11Buffer*> m_pIndexBuffer;		// 모델 인덱스 버퍼
+	std::vector<UINT> m_nIndices;					// 인덱스 개수
 
 	// Cube
 	Model cube;

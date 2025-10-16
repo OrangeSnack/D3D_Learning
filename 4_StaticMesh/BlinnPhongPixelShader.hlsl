@@ -21,7 +21,7 @@ float4 main(PS_INPUT input) : SV_TARGET
     float4 cubemapColor = _cubemap.Sample(_sp0, reflect(camDir, normal));
     
     //ambient
-    float4 ambientColor = ambient * matAmbient * texColor * cubemapColor;
+    float4 ambientColor = ambient * matAmbient * texColor;// * cubemapColor;
     //float4 ambientColor = ambient * cubemapColor;
     
     //diffuse
