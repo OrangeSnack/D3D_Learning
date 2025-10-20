@@ -50,6 +50,13 @@ struct ConstantBuffer
 	Vector3 padding;
 };
 
+struct Materials {
+	ID3D11ShaderResourceView* diffuse = nullptr;		// 디퓨즈맵
+	ID3D11ShaderResourceView* specular = nullptr;		// 스펙큘러맵
+	ID3D11ShaderResourceView* normal = nullptr;			// 노멀맵
+	ID3D11ShaderResourceView* emission = nullptr;		// 발광맵
+};
+
 class MeshApp : public GameApp
 {
 public:
@@ -121,11 +128,12 @@ public:
 	ID3D11RasterizerState* m_defaultRS = nullptr;		// 기본 RS
 	
 	// FBX 모델
-	Model model;									// 모델 클래스
-	std::vector<ID3D11Buffer*> m_pVertexBuffer;		// 모델 버텍스 버퍼
-	std::vector<ID3D11Buffer*> m_pIndexBuffer;		// 모델 인덱스 버퍼
-	std::vector<UINT> m_nIndices;					// 인덱스 개수
-
+	Model model;										// 모델 클래스
+	std::vector<Materials> m_pMaterials;				// 모델 메테리얼
+	std::vector<ID3D11Buffer*> m_pVertexBuffer;			// 모델 버텍스 버퍼
+	std::vector<ID3D11Buffer*> m_pIndexBuffer;			// 모델 인덱스 버퍼
+	std::vector<UINT> m_nIndices;						// 인덱스 개수
+	
 	// Cube
 	Model cube;
 	ID3D11Buffer* m_pCubeVertexBuffer = nullptr;	// 큐브 버텍스 버퍼
@@ -164,5 +172,6 @@ public:
 
 	bool LoadVertex(std::vector<Vertex>* _vertices, const aiMesh* _mesh);
 	bool LoadIndex(std::vector<WORD>* _indices, const aiMesh* _mesh);
+	bool LoadMaterials(std::vector<Materials>* _out, const Model* _model);
 };
 

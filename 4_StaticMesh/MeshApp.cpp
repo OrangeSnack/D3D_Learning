@@ -290,7 +290,7 @@ bool MeshApp::InitScene()
 	SAFE_RELEASE(pixelShader);
 	
 	// 모델 로딩
-	model.LoadFile("../Resources/Models/Miyu/Miyu3.fbx");
+	model.LoadFile("../Resources/Models/Zelda/zelda.fbx");
 	std::vector<std::vector<Vertex>> modelVertices;
 	std::vector<std::vector<WORD>> modelIndices;
 
@@ -384,7 +384,7 @@ bool MeshApp::InitScene()
 	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Church.dds", nullptr, &m_pSkyTextureRV));
 	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/CubeMap.dds", nullptr, &m_pSkyTextureRV));
 	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Hanako.dds", nullptr, &m_pSkyTextureRV));
-
+	
 
 	// 샘플러 생성
 	D3D11_SAMPLER_DESC sampDesc = {};
@@ -620,6 +620,24 @@ bool MeshApp::LoadIndex(std::vector<WORD>* _indices, const aiMesh* _mesh)
 	for (int i = 0; i < _mesh->mNumFaces; i++) {
 		for(int j = 0; j < _mesh->mFaces[i].mNumIndices; j++)
 			_indices->push_back(WORD(_mesh->mFaces[i].mIndices[j]));
+	}
+
+	return true;
+}
+
+bool MeshApp::LoadMaterials(std::vector<Materials>* _out, const Model* _model)
+{
+	const aiScene* scene = _model->scene;
+	for (int i = 0; i < _model->scene->mNumMaterials; i++) {
+		// TODO :: 메테리얼으로 ResourceView 만들기
+		
+		if (scene->mMaterials[i]->GetTextureCount(aiTextureType_DIFFUSE)) {
+			aiString aiStr;
+			scene->mMaterials[i]->GetTexture(aiTextureType_DIFFUSE, 0, &aiStr);
+			std::wstring path = aiStr.C_Str();
+			HR_T(CreateWICTextureFromFile(m_pDevice, ));
+		}
+			
 	}
 
 	return true;
