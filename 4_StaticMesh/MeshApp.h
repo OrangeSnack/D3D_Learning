@@ -54,7 +54,7 @@ struct Materials {
 	ID3D11ShaderResourceView* diffuse = nullptr;		// µðÇ»Áî¸Ê
 	ID3D11ShaderResourceView* specular = nullptr;		// ½ºÆåÅ§·¯¸Ê
 	ID3D11ShaderResourceView* normal = nullptr;			// ³ë¸Ö¸Ê
-	ID3D11ShaderResourceView* emission = nullptr;		// ¹ß±¤¸Ê
+	ID3D11ShaderResourceView* emissive = nullptr;		// ¹ß±¤¸Ê
 };
 
 class MeshApp : public GameApp
@@ -133,6 +133,7 @@ public:
 	std::vector<ID3D11Buffer*> m_pVertexBuffer;			// ¸ðµ¨ ¹öÅØ½º ¹öÆÛ
 	std::vector<ID3D11Buffer*> m_pIndexBuffer;			// ¸ðµ¨ ÀÎµ¦½º ¹öÆÛ
 	std::vector<UINT> m_nIndices;						// ÀÎµ¦½º °³¼ö
+	ID3D11ShaderResourceView* modelRV[4];				// ¸ÞÅ×¸®¾ó
 	
 	// Cube
 	Model cube;
@@ -172,6 +173,6 @@ public:
 
 	bool LoadVertex(std::vector<Vertex>* _vertices, const aiMesh* _mesh);
 	bool LoadIndex(std::vector<WORD>* _indices, const aiMesh* _mesh);
-	bool LoadMaterials(std::vector<Materials>* _out, const Model* _model);
+	bool LoadMaterials(std::vector<Materials>& _out, const Model* _model);
 };
 

@@ -3,6 +3,7 @@
 #include <d3dcompiler.h>
 #include <Directxtk/DDSTextureLoader.h>
 #include <directxtk/WICTextureLoader.h>
+#include <filesystem>
 
 #pragma comment(lib,"d3dcompiler.lib")
 
@@ -108,14 +109,8 @@ void MeshApp::Render()
 	// 렌더타겟 설정
 	m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
 
-#ifndef MODEL_TEXTURE
-#define MODEL_TEXTURE
-	static ID3D11ShaderResourceView* cubeRV[4] = { m_pTextureRV, m_pNormalRV, m_pSpecularRV, m_pSkyTextureRV };
-#endif // !MODEL_TEXTURE
-
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
 	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
-	m_pDeviceContext->PSSetShaderResources(0, 4, cubeRV);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
 	m_pDeviceContext->RSSetState(m_defaultRS);
 
@@ -133,6 +128,14 @@ void MeshApp::Render()
 	for (int i = 1; i < m_pVertexBuffer.size(); i++) {
 		m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer[i], &m_VertexBufferStride, &m_VertexBufferOffset);
 		m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer[i], DXGI_FORMAT_R16_UINT, 0);
+		
+		UINT matIdx = model.scene->mMeshes[i]->mMaterialIndex;
+		modelRV[0] = m_pMaterials[matIdx].diffuse;
+		modelRV[1] = m_pMaterials[matIdx].normal;
+		modelRV[2] = m_pMaterials[matIdx].specular;
+		modelRV[3] = m_pSkyTextureRV;
+
+		m_pDeviceContext->PSSetShaderResources(0, 4, modelRV);
 
 		m_pDeviceContext->DrawIndexed(m_nIndices[i], 0, 0);
 	}
@@ -309,6 +312,7 @@ bool MeshApp::InitScene()
 	std::vector<WORD> cubeIndices;
 	LoadVertex(&cubeVertices, cube.scene->mMeshes[0]);
 	LoadIndex(&cubeIndices, cube.scene->mMeshes[0]);
+	LoadMaterials(m_pMaterials, &model);
 	
 	// 모델 버퍼 생성.
 	// Vertex
@@ -625,19 +629,59 @@ bool MeshApp::LoadIndex(std::vector<WORD>* _indices, const aiMesh* _mesh)
 	return true;
 }
 
-bool MeshApp::LoadMaterials(std::vector<Materials>* _out, const Model* _model)
+bool MeshApp::LoadMaterials(std::vector<Materials>& _out, const Model* _model)
 {
 	const aiScene* scene = _model->scene;
+
+	if (!_model->scene->HasMaterials())
+		return false;
+
+	_out.resize(_model->scene->mNumMaterials);
+
 	for (int i = 0; i < _model->scene->mNumMaterials; i++) {
 		// TODO :: 메테리얼으로 ResourceView 만들기
-		
-		if (scene->mMaterials[i]->GetTextureCount(aiTextureType_DIFFUSE)) {
-			aiString aiStr;
-			scene->mMaterials[i]->GetTexture(aiTextureType_DIFFUSE, 0, &aiStr);
-			std::wstring path = aiStr.C_Str();
-			HR_T(CreateWICTextureFromFile(m_pDevice, ));
+		aiString aiStr;
+		aiMaterial* aiMat = scene->mMaterials[i];
+
+		// 디퓨즈
+		if (aiMat->GetTextureCount(aiTextureType_DIFFUSE)) {
+			if (aiMat->GetTexture(aiTextureType_DIFFUSE, 0, &aiStr) == aiReturn_SUCCESS) {
+				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+				std::filesystem::path relativePath = _model->filePath / p.filename();
+
+				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].diffuse));
+			}
 		}
-			
+
+		// 스페큘러
+		if (aiMat->GetTextureCount(aiTextureType_SPECULAR)) {
+			if (aiMat->GetTexture(aiTextureType_SPECULAR, 0, &aiStr) == aiReturn_SUCCESS) {
+				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+				std::filesystem::path relativePath = _model->filePath / p.filename();
+
+				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].specular));
+			}
+		}
+
+		// 노말
+		if (aiMat->GetTextureCount(aiTextureType_NORMALS)) {
+			if (aiMat->GetTexture(aiTextureType_NORMALS, 0, &aiStr) == aiReturn_SUCCESS) {
+				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+				std::filesystem::path relativePath = _model->filePath / p.filename();
+
+				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
+			}
+		}
+
+		// 이미션
+		if (aiMat->GetTextureCount(aiTextureType_EMISSIVE)) {
+			if (aiMat->GetTexture(aiTextureType_EMISSIVE, 0, &aiStr) == aiReturn_SUCCESS) {
+				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+				std::filesystem::path relativePath = _model->filePath / p.filename();
+
+				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].emissive));
+			}
+		}
 	}
 
 	return true;

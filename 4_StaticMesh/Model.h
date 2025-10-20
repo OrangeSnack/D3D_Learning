@@ -3,6 +3,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <filesystem>
 
 class Model
 {
@@ -20,6 +21,7 @@ public:
 		aiProcess_PreTransformVertices;		// 노드의 변환행렬을 적용한 버텍스 생성한다.  *StaticMesh로 처리할때만
 
 	const aiScene* scene = nullptr;
+	std::filesystem::path filePath;
 
 public:
 	bool LoadFile(std::string _filePath);
