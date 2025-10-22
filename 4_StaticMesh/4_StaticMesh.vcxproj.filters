@@ -61,6 +61,9 @@
     <FxCompile Include="BlinnPhongPixelShader.hlsl">
       <Filter>Shader\Basic</Filter>
     </FxCompile>
+    <FxCompile Include="AlphaClipPixelShader.hlsl">
+      <Filter>Shader\Basic</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shared.hlsli">

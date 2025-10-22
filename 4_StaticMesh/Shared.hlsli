@@ -1,7 +1,8 @@
 Texture2D _tex0 : register(t0);
 Texture2D _norm : register(t1);
 Texture2D _spec : register(t2);
-TextureCube _cubemap : register(t3);
+Texture2D _emis : register(t3);
+TextureCube _cubemap : register(t4);
 SamplerState _sp0 : register(s0);
 
 cbuffer _cb0 : register(b0)

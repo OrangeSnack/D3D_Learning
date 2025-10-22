@@ -3,9 +3,12 @@
 
 float4 main(PS_INPUT input) : SV_TARGET
 {
+    // 알파테스트
+    float4 texColor = _tex0.Sample(_sp0, input.Tex);
+    clip(texColor.a - 0.1f);
+    
     //Blinnphong 모델
     float4 finalColor = 0;
-    float4 texColor = _tex0.Sample(_sp0, input.Tex);
     float4 emitColor = _emis.Sample(_sp0, input.Tex);
     float3 lightDir = normalize((float3) vLightDir);
     float3 camDir = normalize(input.W_Pos - camPos);
@@ -24,12 +27,8 @@ float4 main(PS_INPUT input) : SV_TARGET
         normal = normalize(mul(normalMap, tbn));
     }
     
-    //env_reflect
-    float4 cubemapColor = _cubemap.Sample(_sp0, reflect(camDir, normal));
-    
     //ambient
-    float4 ambientColor = ambient * matAmbient * texColor;// * cubemapColor;
-    //float4 ambientColor = ambient * cubemapColor;
+    float4 ambientColor = ambient * matAmbient * texColor;
     
     //diffuse
     float4 intensity = saturate(dot(normal, -lightDir));
@@ -42,7 +41,7 @@ float4 main(PS_INPUT input) : SV_TARGET
     float4 specularColor = pow(saturate(dot(middleVector, normal)), shiness) * intensity * specularImage * specular * matSpecular * vLightColor;
     
     finalColor.rgb = (ambientColor.rgb + diffuseColor.rgb + specularColor.rgb + emitColor.rgb);
-    finalColor.a = texColor.a;
+    finalColor.a = 1;
    
     return finalColor;
 }

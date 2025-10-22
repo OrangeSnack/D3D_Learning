@@ -6,6 +6,7 @@ float4 main(PS_INPUT input) : SV_TARGET
     //phong ¸ðµ¨
     float4 finalColor = 0;
     float4 texColor = _tex0.Sample(_sp0, input.Tex);
+    float4 emitColor = _emis.Sample(_sp0, input.Tex);
     float3 lightDir = normalize((float3) vLightDir);
     float3 camDir = normalize(input.W_Pos - camPos);
 
@@ -36,7 +37,7 @@ float4 main(PS_INPUT input) : SV_TARGET
     float4 specularColor = pow(saturate(dot(reflect(lightDir, normal), -camDir)), shiness) * specularImage * specular * matSpecular * vLightColor;
     
     
-    finalColor.rgb = (ambientColor.rgb + diffuseColor.rgb + specularColor.rgb);
+    finalColor.rgb = (ambientColor.rgb + diffuseColor.rgb + specularColor.rgb + emitColor.rgb);
     finalColor.a = 1;
    
     return finalColor;
