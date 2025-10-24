@@ -4,12 +4,12 @@
 #include <Directxtk/DDSTextureLoader.h>
 #include <directxtk/WICTextureLoader.h>
 #include <filesystem>
+#include <algorithm>
 
 #pragma comment(lib,"d3dcompiler.lib")
 
 MeshApp::MeshApp(HINSTANCE hInstance) : GameApp(hInstance)
 {
-	
 }
 
 MeshApp::~MeshApp()
@@ -54,6 +54,9 @@ void MeshApp::Update()
 	// 프로젝션 매트릭스 설정
 	m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4 * (camFov / 45.0f), m_ClientWidth / (FLOAT)m_ClientHeight, camFarZ[0], camFarZ[1]);
 	m_Camera.GetViewMatrix(m_View);
+
+	// 메시 순서 결정
+	//std::sort(model);
 }
 
 void MeshApp::Render()
@@ -84,8 +87,6 @@ void MeshApp::Render()
 
 	// Render Setting
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pCubeVertexBuffer, &m_VertexBufferStride, &m_VertexBufferOffset);
-	m_pDeviceContext->IASetIndexBuffer(m_pCubeIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
 	m_pDeviceContext->VSSetConstantBuffers(0, 1, &m_pConstantBuffer);
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_pConstantBuffer);
 
@@ -102,7 +103,8 @@ void MeshApp::Render()
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
 	m_pDeviceContext->RSSetState(m_SkyboxRS);
 
-	m_pDeviceContext->DrawIndexed(m_nCubeIndices, 0, 0);
+	cube->Draw(m_pDeviceContext, nullptr, false);
+	//m_pDeviceContext->DrawIndexed(m_nCubeIndices, 0, 0);
 
 	// ----- 모델 렌더링 -----
 
@@ -113,46 +115,31 @@ void MeshApp::Render()
 	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
 	m_pDeviceContext->RSSetState(m_defaultRS);
+	m_pDeviceContext->OMSetBlendState(m_pAlphaBS, nullptr, 0xFFFFFFFF);
 
-	if (useBlinn)
+	if (useClip)
 		m_pDeviceContext->PSSetShader(m_pBlinnPixelShader, nullptr, 0);
 	else
-		m_pDeviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
+		m_pDeviceContext->PSSetShader(m_pDiffuseShader, nullptr, 0);
 
-	/*m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer[0], &m_VertexBufferStride, &m_VertexBufferOffset);
-	m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer[0], DXGI_FORMAT_R16_UINT, 0);
-
-	m_pDeviceContext->DrawIndexed(m_nIndices[0], 0, 0);*/
-
-
-	for (int i = 1; i < m_pVertexBuffer.size(); i++) {
+	/*for (int i = 0; i < m_pVertexBuffer.size(); i++) {
 		m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer[i], &m_VertexBufferStride, &m_VertexBufferOffset);
-		m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer[i], DXGI_FORMAT_R16_UINT, 0);
-		
+		m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer[i], DXGI_FORMAT_R32_UINT, 0);
+
 		UINT matIdx = model.scene->mMeshes[i]->mMaterialIndex;
 		modelRV[0] = m_pMaterials[matIdx].diffuse;
 		modelRV[1] = m_pMaterials[matIdx].normal;
 		modelRV[2] = m_pMaterials[matIdx].specular;
-		modelRV[3] = m_pSkyTextureRV;
+		modelRV[3] = m_pMaterials[matIdx].emissive;
+		modelRV[4] = m_pSkyTextureRV;
 
-		m_pDeviceContext->PSSetShaderResources(0, 4, modelRV);
+		m_pDeviceContext->PSSetShaderResources(0, 5, modelRV);
 
 		m_pDeviceContext->DrawIndexed(m_nIndices[i], 0, 0);
-	}
-	
+	}*/
 
-	// Render light	
-	//XMMATRIX mLight = XMMatrixTranslationFromVector(scaleFactor * 2.0f * XMVector3Normalize(-XMLoadFloat4(&m_LightDirsEvaluated)));
-	//float lightSize = scaleFactor / 20.0f;
-	//XMMATRIX mLightScale = XMMatrixScaling(lightSize, lightSize, lightSize);
-	//mLight = mLightScale * mLight;
-
-	//// Update the world variable to reflect the current light
-	//cb1.mWorld = XMMatrixTranspose(mLight);
-	//m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
-
-	//m_pDeviceContext->PSSetShader(m_pPLightShader, nullptr, 0);
-	//m_pDeviceContext->DrawIndexed(m_nCubeIndices, 0, 0);
+	// 이걸로 대체
+	model->Draw(m_pDeviceContext, nullptr);
 
 	// GUI Render
 	RenderGUI();
@@ -227,6 +214,48 @@ bool MeshApp::InitD3D()
 	HR_T(m_pDevice->CreateDepthStencilView(textureDepthStencil, &dsv, &m_pDepthStencilView));
 	SAFE_RELEASE(textureDepthStencil);
 
+	// 래스터라이저 속성 생성
+	D3D11_RASTERIZER_DESC skyRsDesc = {};
+	skyRsDesc.FillMode = D3D11_FILL_SOLID;
+	skyRsDesc.CullMode = D3D11_CULL_BACK;
+	skyRsDesc.FrontCounterClockwise = TRUE;
+	skyRsDesc.DepthBias = 0;
+	skyRsDesc.DepthBiasClamp = 0.0f;
+	skyRsDesc.SlopeScaledDepthBias = 0.0f;
+	skyRsDesc.DepthClipEnable = TRUE;
+	skyRsDesc.ScissorEnable = FALSE;
+	skyRsDesc.MultisampleEnable = FALSE;
+	skyRsDesc.AntialiasedLineEnable = FALSE;
+	HR_T(m_pDevice->CreateRasterizerState(&skyRsDesc, &m_SkyboxRS));
+
+	D3D11_RASTERIZER_DESC defaultRsDesc = {};
+	defaultRsDesc.FillMode = D3D11_FILL_SOLID;
+	defaultRsDesc.CullMode = D3D11_CULL_BACK;
+	defaultRsDesc.FrontCounterClockwise = FALSE;
+	defaultRsDesc.DepthBias = 0;
+	defaultRsDesc.DepthBiasClamp = 0.0f;
+	defaultRsDesc.SlopeScaledDepthBias = 0.0f;
+	defaultRsDesc.DepthClipEnable = TRUE;
+	defaultRsDesc.ScissorEnable = FALSE;
+	defaultRsDesc.MultisampleEnable = FALSE;
+	defaultRsDesc.AntialiasedLineEnable = FALSE;
+	HR_T(m_pDevice->CreateRasterizerState(&defaultRsDesc, &m_defaultRS));
+
+	// 알파 블랜딩 생성
+	D3D11_BLEND_DESC blendDesc = {};
+	blendDesc.RenderTarget[0].BlendEnable = TRUE;
+	blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	HR_T(m_pDevice->CreateBlendState(&blendDesc, &m_pAlphaBS));
+	
+	// 기본 블랜딩 가져오기
+	m_pDeviceContext->OMGetBlendState(&m_pDefaultBS, nullptr, nullptr);
+
 	return true;
 }
 
@@ -291,102 +320,32 @@ bool MeshApp::InitScene()
 	HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
 		pixelShader->GetBufferSize(), NULL, &m_pSkyPixelShader));
 	SAFE_RELEASE(pixelShader);
+
+	HR_T(CompileShaderFromFile(L"AlphaClipPixelShader.hlsl", "main", "ps_4_0", &pixelShader));
+	HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
+		pixelShader->GetBufferSize(), NULL, &m_pDiffuseShader));
+	SAFE_RELEASE(pixelShader);
 	
 	// 모델 로딩
-	model.LoadFile("../Resources/Models/Zelda/zelda.fbx");
-	std::vector<std::vector<Vertex>> modelVertices;
-	std::vector<std::vector<WORD>> modelIndices;
+	model = std::make_unique<Model>(m_pDevice);
+	cube = std::make_unique<Model>(m_pDevice);
 
-	for(int i = 0; i < model.scene->mNumMeshes; i++) {
-		std::vector<Vertex> tempV;
-		std::vector<WORD> tempI;
-		LoadVertex(&tempV, model.scene->mMeshes[i]);
-		LoadIndex(&tempI, model.scene->mMeshes[i]);
+	//model.LoadFile("../Resources/Models/Mass/Character.fbx");
+	//model.LoadFile("../Resources/Models/Zelda/Zelda.fbx");
+	model->LoadFile(L"../Resources/Models/Tree/Tree.fbx");
+	cube->LoadFile(L"../Resources/Models/Cube/Cube.fbx");
 
-		modelVertices.push_back(tempV);
-		modelIndices.push_back(tempI);
-	}
-
-	cube.LoadFile("../Resources/Models/Cube/Cube.fbx");
-	std::vector<Vertex> cubeVertices;
-	std::vector<WORD> cubeIndices;
-	LoadVertex(&cubeVertices, cube.scene->mMeshes[0]);
-	LoadIndex(&cubeIndices, cube.scene->mMeshes[0]);
-	LoadMaterials(m_pMaterials, &model);
-	
-	// 모델 버퍼 생성.
-	// Vertex
+	// Render() 에서 파이프라인에 바인딩할 상수 버퍼 생성
 	D3D11_BUFFER_DESC bd = {};
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.CPUAccessFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA vbData = {};
-	
-	for (int i = 0; i < modelVertices.size(); i++) {
-		bd.ByteWidth = sizeof(Vertex) * modelVertices[i].size();
-		vbData.pSysMem = modelVertices[i].data();
-
-		ID3D11Buffer* tempBuffer = nullptr;
-		HR_T(m_pDevice->CreateBuffer(&bd, &vbData, &tempBuffer));
-
-		if (tempBuffer)
-			m_pVertexBuffer.push_back(tempBuffer);
-	}
-
-	bd.ByteWidth = sizeof(Vertex) * cubeVertices.size();
-	vbData.pSysMem = cubeVertices.data();
-	HR_T(m_pDevice->CreateBuffer(&bd, &vbData, &m_pCubeVertexBuffer));
-
-	// Index
-	bd = {};
-	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.CPUAccessFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA ibData = {};
-
-
-	for (int i = 0; i < modelIndices.size(); i++) {
-		bd.ByteWidth = sizeof(WORD) * modelIndices[i].size();
-		ibData.pSysMem = modelIndices[i].data();
-
-		ID3D11Buffer* tempBuffer = nullptr;
-		HR_T(m_pDevice->CreateBuffer(&bd, &ibData, &tempBuffer));
-
-		if(tempBuffer)
-			m_pIndexBuffer.push_back(tempBuffer);
-	}
-
-
-	bd.ByteWidth = sizeof(WORD) * cubeIndices.size();
-	ibData.pSysMem = cubeIndices.data();
-	HR_T(m_pDevice->CreateBuffer(&bd, &ibData, &m_pCubeIndexBuffer));
-
-	// 버텍스 버퍼 바인딩.
-	m_VertexBufferStride = sizeof(Vertex);
-	m_VertexBufferOffset = 0;
-
-	for(const auto& indices : modelIndices)
-		m_nIndices.push_back(indices.size());
-	m_nCubeIndices = cubeIndices.size();
-	
-
-	// Render() 에서 파이프라인에 바인딩할 상수 버퍼 생성	
 	bd.Usage = D3D11_USAGE_DEFAULT;
 	bd.ByteWidth = sizeof(ConstantBuffer);
 	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	bd.CPUAccessFlags = 0;
 	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pConstantBuffer));
 
-	// 텍스쳐 로딩
-	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/Erpin.png", nullptr, &m_pTextureRV));
-	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/NormalMap.png", nullptr, &m_pNormalRV));
-	HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Erpin/SpecularMap.png", nullptr, &m_pSpecularRV));
-	//HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Floor/floor_tile_a.png", nullptr, &m_pTextureRV));
-	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Texture/Floor/floor_tile_n.dds", nullptr, &m_pNormalRV));	// 노멀맵을 WIC png로 불러오면 쌉창이남. 왜??
-	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Church.dds", nullptr, &m_pSkyTextureRV));
-	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/CubeMap.dds", nullptr, &m_pSkyTextureRV));
+	// 스카이박스 텍스쳐 로딩
+	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Church.dds", nullptr, &m_pSkyTextureRV));
+	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/CubeMap.dds", nullptr, &m_pSkyTextureRV));
 	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Hanako.dds", nullptr, &m_pSkyTextureRV));
 	
 
@@ -409,40 +368,11 @@ bool MeshApp::InitScene()
 	m_View = XMMatrixLookAtLH(Eye, At, Up);
 	m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_ClientWidth / (FLOAT)m_ClientHeight, 0.01f, 100.0f);
 
-	// 래스터라이저 속성 생성
-	D3D11_RASTERIZER_DESC skyRsDesc = {};
-	skyRsDesc.FillMode = D3D11_FILL_SOLID;
-	skyRsDesc.CullMode = D3D11_CULL_BACK;
-	skyRsDesc.FrontCounterClockwise = TRUE;
-	skyRsDesc.DepthBias = 0;
-	skyRsDesc.DepthBiasClamp = 0.0f;
-	skyRsDesc.SlopeScaledDepthBias = 0.0f;
-	skyRsDesc.DepthClipEnable = TRUE;
-	skyRsDesc.ScissorEnable = FALSE;
-	skyRsDesc.MultisampleEnable = FALSE;
-	skyRsDesc.AntialiasedLineEnable = FALSE;
-	HR_T(m_pDevice->CreateRasterizerState(&skyRsDesc, &m_SkyboxRS));
-
-	D3D11_RASTERIZER_DESC defaultRsDesc = {};
-	defaultRsDesc.FillMode = D3D11_FILL_SOLID;
-	defaultRsDesc.CullMode = D3D11_CULL_BACK;
-	defaultRsDesc.FrontCounterClockwise = FALSE;
-	defaultRsDesc.DepthBias = 0;
-	defaultRsDesc.DepthBiasClamp = 0.0f;
-	defaultRsDesc.SlopeScaledDepthBias = 0.0f;
-	defaultRsDesc.DepthClipEnable = TRUE;
-	defaultRsDesc.ScissorEnable = FALSE;
-	defaultRsDesc.MultisampleEnable = FALSE;
-	defaultRsDesc.AntialiasedLineEnable = FALSE;
-	HR_T(m_pDevice->CreateRasterizerState(&defaultRsDesc, &m_defaultRS));
-
 	return true;
 }
 
 void MeshApp::UninitScene()
 {
-	for (auto& buffer : m_pVertexBuffer) SAFE_RELEASE(buffer); m_pVertexBuffer.clear();
-	for (auto& buffer : m_pIndexBuffer) SAFE_RELEASE(buffer); m_pIndexBuffer.clear();
 	SAFE_RELEASE(m_pConstantBuffer);
 	SAFE_RELEASE(m_pVertexShader);
 	SAFE_RELEASE(m_pSkyVertexShader);
@@ -537,7 +467,7 @@ void MeshApp::RenderGUI()
 
 		ImGui::PushID(2);
 		ImGui::SeparatorText("Light");
-		ImGui::Checkbox("BlinnPhong", &useBlinn);
+		ImGui::Checkbox("BlinnPhong", &useClip);
 		ImGui::SliderFloat3("LightDir", lightDir, -1.0f, 1.0f);
 		ImGui::ColorEdit4("Color(l_i)", (float*)&m_LightColors);
 		ImGui::ColorEdit4("Ambients(l_a)", (float*)&m_Ambients);
@@ -593,96 +523,96 @@ LRESULT CALLBACK MeshApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 	return __super::WndProc(hWnd, message, wParam, lParam);
 }
 
-bool MeshApp::LoadVertex(std::vector<Vertex>* _vertices, const aiMesh* _mesh)
-{
-	for (int i = 0; i < _mesh->mNumVertices; i++) {
-		Vertex v;
+//bool MeshApp::LoadVertex(std::vector<Vertex>* _vertices, const aiMesh* _mesh)
+//{
+//	for (int i = 0; i < _mesh->mNumVertices; i++) {
+//		Vertex v;
+//
+//		v.Pos = Vector3(_mesh->mVertices[i].x, _mesh->mVertices[i].y, _mesh->mVertices[i].z);
+//
+//		if (_mesh->HasNormals()) {
+//			v.Normal = Vector3(_mesh->mNormals[i].x, _mesh->mNormals[i].y, _mesh->mNormals[i].z);
+//		}
+//
+//		if (_mesh->HasTangentsAndBitangents()) {
+//			v.Tangent = Vector3(_mesh->mTangents[i].x, _mesh->mTangents[i].y, _mesh->mTangents[i].z);
+//			v.BiNormal = Vector3(_mesh->mBitangents[i].x, _mesh->mBitangents[i].y, _mesh->mBitangents[i].z);
+//		}
+//
+//		if (_mesh->HasTextureCoords(0)) {
+//			v.Tex = Vector2(_mesh->mTextureCoords[0][i].x, _mesh->mTextureCoords[0][i].y);
+//		}
+//
+//		_vertices->push_back(v);
+//	}
+//
+//	return true;
+//}
 
-		v.Pos = Vector3(_mesh->mVertices[i].x, _mesh->mVertices[i].y, _mesh->mVertices[i].z);
-
-		if (_mesh->HasNormals()) {
-			v.Normal = Vector3(_mesh->mNormals[i].x, _mesh->mNormals[i].y, _mesh->mNormals[i].z);
-		}
-
-		if (_mesh->HasTangentsAndBitangents()) {
-			v.Tangent = Vector3(_mesh->mTangents[i].x, _mesh->mTangents[i].y, _mesh->mTangents[i].z);
-			v.BiNormal = Vector3(_mesh->mBitangents[i].x, _mesh->mBitangents[i].y, _mesh->mBitangents[i].z);
-		}
-
-		if (_mesh->HasTextureCoords(0)) {
-			v.Tex = Vector2(_mesh->mTextureCoords[0][i].x, _mesh->mTextureCoords[0][i].y);
-		}
-
-		_vertices->push_back(v);
-	}
-
-	return true;
-}
-
-bool MeshApp::LoadIndex(std::vector<WORD>* _indices, const aiMesh* _mesh)
-{
-	for (int i = 0; i < _mesh->mNumFaces; i++) {
-		for(int j = 0; j < _mesh->mFaces[i].mNumIndices; j++)
-			_indices->push_back(WORD(_mesh->mFaces[i].mIndices[j]));
-	}
-
-	return true;
-}
-
-bool MeshApp::LoadMaterials(std::vector<Materials>& _out, const Model* _model)
-{
-	const aiScene* scene = _model->scene;
-
-	if (!_model->scene->HasMaterials())
-		return false;
-
-	_out.resize(_model->scene->mNumMaterials);
-
-	for (int i = 0; i < _model->scene->mNumMaterials; i++) {
-		// TODO :: 메테리얼으로 ResourceView 만들기
-		aiString aiStr;
-		aiMaterial* aiMat = scene->mMaterials[i];
-
-		// 디퓨즈
-		if (aiMat->GetTextureCount(aiTextureType_DIFFUSE)) {
-			if (aiMat->GetTexture(aiTextureType_DIFFUSE, 0, &aiStr) == aiReturn_SUCCESS) {
-				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
-				std::filesystem::path relativePath = _model->filePath / p.filename();
-
-				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].diffuse));
-			}
-		}
-
-		// 스페큘러
-		if (aiMat->GetTextureCount(aiTextureType_SPECULAR)) {
-			if (aiMat->GetTexture(aiTextureType_SPECULAR, 0, &aiStr) == aiReturn_SUCCESS) {
-				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
-				std::filesystem::path relativePath = _model->filePath / p.filename();
-
-				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].specular));
-			}
-		}
-
-		// 노말
-		if (aiMat->GetTextureCount(aiTextureType_NORMALS)) {
-			if (aiMat->GetTexture(aiTextureType_NORMALS, 0, &aiStr) == aiReturn_SUCCESS) {
-				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
-				std::filesystem::path relativePath = _model->filePath / p.filename();
-
-				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
-			}
-		}
-
-		// 이미션
-		if (aiMat->GetTextureCount(aiTextureType_EMISSIVE)) {
-			if (aiMat->GetTexture(aiTextureType_EMISSIVE, 0, &aiStr) == aiReturn_SUCCESS) {
-				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
-				std::filesystem::path relativePath = _model->filePath / p.filename();
-
-				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].emissive));
-			}
-		}
-	}
-
-	return true;
-}
+//bool MeshApp::LoadIndex(std::vector<UINT>* _indices, const aiMesh* _mesh)
+//{
+//	for (int i = 0; i < _mesh->mNumFaces; i++) {
+//		for(int j = 0; j < _mesh->mFaces[i].mNumIndices; j++)
+//			_indices->push_back(UINT(_mesh->mFaces[i].mIndices[j]));
+//	}
+//
+//	return true;
+//}
+//
+//bool MeshApp::LoadMaterials(std::vector<Materials>& _out, const Model* _model)
+//{
+//	const aiScene* scene = _model->scene;
+//
+//	if (!_model->scene->HasMaterials())
+//		return false;
+//
+//	_out.resize(_model->scene->mNumMaterials);
+//
+//	for (int i = 0; i < _model->scene->mNumMaterials; i++) {
+//		// TODO :: 메테리얼으로 ResourceView 만들기
+//		aiString aiStr;
+//		aiMaterial* aiMat = scene->mMaterials[i];
+//
+//		// 디퓨즈
+//		if (aiMat->GetTextureCount(aiTextureType_DIFFUSE)) {
+//			if (aiMat->GetTexture(aiTextureType_DIFFUSE, 0, &aiStr) == aiReturn_SUCCESS) {
+//				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+//				std::filesystem::path relativePath = _model->filePath / p.filename();
+//
+//				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].diffuse));
+//			}
+//		}
+//
+//		// 스페큘러
+//		if (aiMat->GetTextureCount(aiTextureType_SPECULAR)) {
+//			if (aiMat->GetTexture(aiTextureType_SPECULAR, 0, &aiStr) == aiReturn_SUCCESS) {
+//				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+//				std::filesystem::path relativePath = _model->filePath / p.filename();
+//
+//				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].specular));
+//			}
+//		}
+//
+//		// 노말
+//		if (aiMat->GetTextureCount(aiTextureType_NORMALS)) {
+//			if (aiMat->GetTexture(aiTextureType_NORMALS, 0, &aiStr) == aiReturn_SUCCESS) {
+//				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+//				std::filesystem::path relativePath = _model->filePath / p.filename();
+//
+//				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
+//			}
+//		}
+//
+//		// 이미션
+//		if (aiMat->GetTextureCount(aiTextureType_EMISSIVE)) {
+//			if (aiMat->GetTexture(aiTextureType_EMISSIVE, 0, &aiStr) == aiReturn_SUCCESS) {
+//				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+//				std::filesystem::path relativePath = _model->filePath / p.filename();
+//
+//				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].emissive));
+//			}
+//		}
+//	}
+//
+//	return true;
+//}

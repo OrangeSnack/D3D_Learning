@@ -9,22 +9,10 @@
 #include <imgui_impl_win32.h>
 #include <imgui_impl_dx11.h>
 #include <Psapi.h>
-
 #include "Model.h"
+#include <memory>
 
 #pragma comment (lib, "d3d11.lib")
-
-using namespace DirectX::SimpleMath;
-using namespace DirectX;
-
-struct Vertex
-{
-	Vector3 Pos;		// 정점 위치 정보
-	Vector3 Normal;		// 노멀
-	Vector3 Tangent;	// 탄젠트
-	Vector3 BiNormal;	// Bi노멀
-	Vector2 Tex;		// 텍스쳐 UV
-};
 
 struct ConstantBuffer
 {
@@ -48,13 +36,6 @@ struct ConstantBuffer
 
 	int shiness;
 	Vector3 padding;
-};
-
-struct Materials {
-	ID3D11ShaderResourceView* diffuse = nullptr;		// 디퓨즈맵
-	ID3D11ShaderResourceView* specular = nullptr;		// 스펙큘러맵
-	ID3D11ShaderResourceView* normal = nullptr;			// 노멀맵
-	ID3D11ShaderResourceView* emissive = nullptr;		// 발광맵
 };
 
 class MeshApp : public GameApp
@@ -102,7 +83,8 @@ public:
 	Vector4 m_MatSpecular = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	int m_Shiness = 32;
-	bool useBlinn = true;
+	bool useClip = true;
+	bool useAlphaBS = false;
 
 	// End ---------
 
@@ -126,32 +108,22 @@ public:
 	ID3D11ShaderResourceView* m_pSpecularRV = nullptr;	// 스페큘러맵 리소스 뷰.
 	ID3D11SamplerState* m_pSamplerLinear = nullptr;		// 샘플러 상태.
 	ID3D11RasterizerState* m_defaultRS = nullptr;		// 기본 RS
+	ID3D11ShaderResourceView* m_pRenderImage = nullptr;	// 렌더링 이미지 복사본 (알파블랜딩용)
 	
-	// FBX 모델
-	Model model;										// 모델 클래스
-	std::vector<Materials> m_pMaterials;				// 모델 메테리얼
-	std::vector<ID3D11Buffer*> m_pVertexBuffer;			// 모델 버텍스 버퍼
-	std::vector<ID3D11Buffer*> m_pIndexBuffer;			// 모델 인덱스 버퍼
-	std::vector<UINT> m_nIndices;						// 인덱스 개수
-	ID3D11ShaderResourceView* modelRV[4];				// 메테리얼
-	
-	// Cube
-	Model cube;
-	ID3D11Buffer* m_pCubeVertexBuffer = nullptr;	// 큐브 버텍스 버퍼
-	ID3D11Buffer* m_pCubeIndexBuffer = nullptr;		// 큐브 인덱스 버퍼
-	unsigned int m_nCubeIndices = 0;				// 인덱스 개수
+	ID3D11BlendState* m_pAlphaBS = nullptr;				// 알파블랜드 스테이트
+	ID3D11BlendState* m_pDefaultBS = nullptr;			// 기본블랜드 스테이트
 
+	// FBX 모델
+	std::unique_ptr<Model> model;
+	ID3D11PixelShader* m_pDiffuseShader = nullptr;			// 디퓨즈 전용 쉐이더
+	
 	// 스카이박스
+	std::unique_ptr<Model> cube;
 	ID3D11VertexShader* m_pSkyVertexShader = nullptr;	// 스카이박스 정점 쉐이더
 	ID3D11PixelShader* m_pSkyPixelShader = nullptr;	// 스카이박스 픽셀 쉐이더
 	ID3D11InputLayout* m_pSkyInputLayout = nullptr;	// 스카이박스입력 레이아웃
 	ID3D11RasterizerState* m_SkyboxRS = nullptr;	// 스카이박스 전용 RS
 	ID3D11ShaderResourceView* m_pSkyTextureRV = nullptr;	// 스카이박스 텍스처 리소스 뷰.
-
-	UINT m_VertexBufferStride = 0;					// 버텍스 하나의 크기
-	UINT m_VertexBufferOffset = 0;					// 버텍스 버퍼의 오프셋
-
-	
 
 	bool Initialize(UINT Width, UINT Height) override;
 	void Update() override;
@@ -170,9 +142,5 @@ public:
 
 public:
 	virtual LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-
-	bool LoadVertex(std::vector<Vertex>* _vertices, const aiMesh* _mesh);
-	bool LoadIndex(std::vector<WORD>* _indices, const aiMesh* _mesh);
-	bool LoadMaterials(std::vector<Materials>& _out, const Model* _model);
 };
 
