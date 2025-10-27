@@ -40,9 +40,34 @@ void MeshApp::Update()
 	__super::Update();
 
 	//float t = GameTimer::m_Instance->TotalTime();
-	m_World = 
-		XMMatrixScaling(scaleFactor, scaleFactor, scaleFactor) *
-		XMMatrixRotationRollPitchYaw(cbRotation[0], cbRotation[1], cbRotation[2]);
+
+	// 프로젝션 매트릭스 설정
+	m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4 * (camFov / 45.0f), m_ClientWidth / (FLOAT)m_ClientHeight, camFarZ[0], camFarZ[1]);
+	m_Camera.GetViewMatrix(m_View);
+
+	// 오브젝트 매트릭스 업데이트
+	for (auto& mt : models) {
+		mt->transform.m_World =
+			Matrix::CreateScale(mt->transform.Scale) *
+			Matrix::CreateFromYawPitchRoll(mt->transform.Rotation.y, mt->transform.Rotation.x, mt->transform.Rotation.z) *
+			Matrix::CreateTranslation(mt->transform.Position);
+	}
+
+	// 알파소팅 업데이트
+	if (useAS) {
+		std::sort(models.begin(), models.end(), [&](std::unique_ptr<Object>& md1, std::unique_ptr<Object>& md2) {
+			return (md1->transform.m_World * m_View)._43 > (md2->transform.m_World * m_View)._43; });
+	}
+	else {
+		auto it = std::find_if(models.begin(), models.end(), [](std::unique_ptr<Object>& md) {return md->name == "Tree"; });
+	
+		if(it != models.begin())
+			std::swap(*it, models[0]);
+	}
+
+	//m_World = 
+	//	XMMatrixScaling(scaleFactor, scaleFactor, scaleFactor) *
+	//	XMMatrixRotationRollPitchYaw(cbRotation[0], cbRotation[1], cbRotation[2]);
 
 	// 라이트 방향
 	m_CurrLightDirs.x = lightDir[0];
@@ -50,13 +75,6 @@ void MeshApp::Update()
 	m_CurrLightDirs.z = lightDir[2];
 
 	m_LightDirsEvaluated = m_CurrLightDirs;
-
-	// 프로젝션 매트릭스 설정
-	m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4 * (camFov / 45.0f), m_ClientWidth / (FLOAT)m_ClientHeight, camFarZ[0], camFarZ[1]);
-	m_Camera.GetViewMatrix(m_View);
-
-	// 메시 순서 결정
-	//std::sort(model);
 }
 
 void MeshApp::Render()
@@ -65,10 +83,10 @@ void MeshApp::Render()
 
 	// Update matrix variables and lighting variables
 	ConstantBuffer cb1;
-	cb1.mWorld = XMMatrixTranspose(m_World);
+	cb1.mWorld = XMMatrixTranspose(Matrix::Identity);
 	cb1.mView = XMMatrixTranspose(m_View);
 	cb1.mProjection = XMMatrixTranspose(m_Projection);
-	cb1.mNormalMatrix = XMMatrixInverse(nullptr, m_World);
+	cb1.mNormalMatrix = XMMatrixInverse(nullptr, Matrix::Identity);
 	cb1.vLightDir = m_LightDirsEvaluated;
 	cb1.vLightColor = m_LightColors;
 	cb1.camPos = (Vector4) m_Camera.m_Position;
@@ -117,7 +135,7 @@ void MeshApp::Render()
 	m_pDeviceContext->RSSetState(m_defaultRS);
 	m_pDeviceContext->OMSetBlendState(m_pAlphaBS, nullptr, 0xFFFFFFFF);
 
-	if (useClip)
+	if (useAB)
 		m_pDeviceContext->PSSetShader(m_pBlinnPixelShader, nullptr, 0);
 	else
 		m_pDeviceContext->PSSetShader(m_pDiffuseShader, nullptr, 0);
@@ -139,7 +157,12 @@ void MeshApp::Render()
 	}*/
 
 	// 이걸로 대체
-	model->Draw(m_pDeviceContext, nullptr);
+	for (int i = 0; i < models.size(); i++) {
+		cb1.mWorld = XMMatrixTranspose(models[i]->transform.m_World);
+		cb1.mNormalMatrix = XMMatrixInverse(nullptr, models[i]->transform.m_World);
+		m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
+		models[i]->model.Draw(m_pDeviceContext, nullptr);
+	}
 
 	// GUI Render
 	RenderGUI();
@@ -327,12 +350,20 @@ bool MeshApp::InitScene()
 	SAFE_RELEASE(pixelShader);
 	
 	// 모델 로딩
-	model = std::make_unique<Model>(m_pDevice);
+	for (int i = 0; i < 3; i++) {
+		models.push_back({ std::make_unique<Object>(m_pDevice)});
+	}
+
+	//model = std::make_unique<Model>(m_pDevice);
 	cube = std::make_unique<Model>(m_pDevice);
 
-	//model.LoadFile("../Resources/Models/Mass/Character.fbx");
-	//model.LoadFile("../Resources/Models/Zelda/Zelda.fbx");
-	model->LoadFile(L"../Resources/Models/Tree/Tree.fbx");
+	models[0]->model.LoadFile(L"../Resources/Models/Mass/Character.fbx");
+	models[0]->name = "Jane Doe";
+	models[1]->model.LoadFile(L"../Resources/Models/Zelda/Zelda.fbx");
+	models[1]->name = "Zelda";
+	models[2]->model.LoadFile(L"../Resources/Models/Tree/Tree.fbx");
+	models[2]->name = "Tree";
+
 	cube->LoadFile(L"../Resources/Models/Cube/Cube.fbx");
 
 	// Render() 에서 파이프라인에 바인딩할 상수 버퍼 생성
@@ -361,12 +392,17 @@ bool MeshApp::InitScene()
 	HR_T(m_pDevice->CreateSamplerState(&sampDesc, &m_pSamplerLinear));
 
 	// 초기값설정
-	m_World = XMMatrixIdentity();
 	XMVECTOR Eye = XMVectorSet(0.0f, 4.0f, -10.0f, 0.0f);
 	XMVECTOR At = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	XMVECTOR Up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	m_View = XMMatrixLookAtLH(Eye, At, Up);
 	m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_ClientWidth / (FLOAT)m_ClientHeight, 0.01f, 100.0f);
+
+	models[0]->transform.Scale = { 0.01f, 0.01f, 0.01f };
+	models[1]->transform.Scale = { 0.01f, 0.01f, 0.01f };
+
+	models[0]->transform.Position = { 5.0f, 0.0f, 0.0f };
+	models[1]->transform.Position = { -5.0f, 0.0f, 0.0f };
 
 	return true;
 }
@@ -434,18 +470,18 @@ void MeshApp::RenderGUI()
 	{
 		ImGui::Begin("Controller");
 
-		ImGui::PushID(0);
-		ImGui::SeparatorText("Object");
-		ImGui::DragFloat3("Rotation", cbRotation, 0.01f, -360.0f, 360.0f);
-		ImGui::DragFloat("Scale", &scaleFactor, 0.001f, 0.001f, 10.0f);
+		//ImGui::PushID(0);
+		//ImGui::SeparatorText("Object");
+		///*ImGui::DragFloat3("Rotation", cbRotation, 0.01f, -360.0f, 360.0f);
+		//ImGui::DragFloat("Scale", &scaleFactor, 0.001f, 0.001f, 10.0f);*/
 
-		if (ImGui::Button("Reset")) {
-			for (auto& val : cbRotation)
-				val = 0.0f;
-			scaleFactor = 1.0f;
-		}
-		ImGui::PopID();
-		ImGui::NewLine();
+		///*if (ImGui::Button("Reset")) {
+		//	for (auto& val : cbRotation)
+		//		val = 0.0f;
+		//	scaleFactor = 1.0f;
+		//}*/
+		//ImGui::PopID();
+		//ImGui::NewLine();
 
 		ImGui::PushID(1);
 		ImGui::SeparatorText("Camera");
@@ -467,7 +503,8 @@ void MeshApp::RenderGUI()
 
 		ImGui::PushID(2);
 		ImGui::SeparatorText("Light");
-		ImGui::Checkbox("BlinnPhong", &useClip);
+		ImGui::Checkbox("AlphaBlend", &useAB);
+		ImGui::Checkbox("AlphaSort", &useAS);
 		ImGui::SliderFloat3("LightDir", lightDir, -1.0f, 1.0f);
 		ImGui::ColorEdit4("Color(l_i)", (float*)&m_LightColors);
 		ImGui::ColorEdit4("Ambients(l_a)", (float*)&m_Ambients);

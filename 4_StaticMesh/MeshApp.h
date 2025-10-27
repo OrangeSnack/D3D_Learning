@@ -38,6 +38,23 @@ struct ConstantBuffer
 	Vector3 padding;
 };
 
+struct Transform {
+	Matrix m_World = Matrix::Identity;		// 월드좌표계 변환행렬
+	Vector3 Position = Vector3::Zero;		// x, y, z Position
+	Vector3 Rotation = Vector3::Zero;		// pitch, yaw, roll
+	Vector3 Scale = { 1.0f, 1.0f, 1.0f };	// x, y, z Scale
+	Matrix* Parent = nullptr;				// Parent Matrix
+};
+
+struct Object
+{
+	Object(ID3D11Device* _device) : model(_device) {}
+
+	std::string name;
+	Model model;
+	Transform transform;
+};
+
 class MeshApp : public GameApp
 {
 public:
@@ -53,7 +70,6 @@ public:
 	XMFLOAT4 m_LightDirsEvaluated = {};										// 계산된 라이트 방향
 
 	// VS 전달용 매트릭스
-	Matrix m_World;			// 월드좌표계 변환행렬
 	Matrix m_View;			// 카메라좌표계 변환행렬
 	Matrix m_Projection;	// ndc좌표계 변환행렬
 
@@ -64,8 +80,9 @@ public:
 	float camFarZ[2] = { 0.01f, 100.0f };
 
 	// 오브젝트
-	float cbRotation[3] = {};		// pitch, yaw, roll
-	float scaleFactor = 1.0f;
+	std::vector<Transform> modelFactor;
+	//float cbRotation[3] = {};
+	//float scaleFactor = 1.0f;
 
 	// 라이트
 	float lightDir[3] = {
@@ -83,8 +100,8 @@ public:
 	Vector4 m_MatSpecular = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	int m_Shiness = 32;
-	bool useClip = true;
-	bool useAlphaBS = false;
+	bool useAB = true;		// 알파블랜드 사용
+	bool useAS = true;		// 알파소팅 사용
 
 	// End ---------
 
@@ -96,11 +113,6 @@ public:
 	ID3D11DepthStencilView* m_pDepthStencilView = nullptr;  // 깊이값 처리를 위한 뎊스스텐실 뷰
 
 	// 렌더링 정보
-	ID3D11VertexShader* m_pVertexShader = nullptr;	// 정점 쉐이더
-	ID3D11PixelShader* m_pPixelShader = nullptr;	// 퐁 픽셀 쉐이더
-	ID3D11PixelShader* m_pBlinnPixelShader = nullptr;	// 블린 퐁 픽셀 쉐이더
-	ID3D11PixelShader* m_pPLightShader = nullptr;	// 라이트 쉐이더
-	ID3D11InputLayout* m_pInputLayout = nullptr;	// 입력 레이아웃
 	
 	ID3D11Buffer* m_pConstantBuffer = nullptr;		// 상수 버퍼
 	ID3D11ShaderResourceView* m_pTextureRV = nullptr;	// 텍스처 리소스 뷰.
@@ -114,8 +126,14 @@ public:
 	ID3D11BlendState* m_pDefaultBS = nullptr;			// 기본블랜드 스테이트
 
 	// FBX 모델
-	std::unique_ptr<Model> model;
-	ID3D11PixelShader* m_pDiffuseShader = nullptr;			// 디퓨즈 전용 쉐이더
+	std::vector<std::unique_ptr<Object>> models;			// 모델 저장
+	//std::unique_ptr<Model> model;
+	ID3D11PixelShader* m_pDiffuseShader = nullptr;		// 디퓨즈 전용 쉐이더
+	ID3D11VertexShader* m_pVertexShader = nullptr;	// 정점 쉐이더
+	ID3D11PixelShader* m_pPixelShader = nullptr;	// 퐁 픽셀 쉐이더
+	ID3D11PixelShader* m_pBlinnPixelShader = nullptr;	// 블린 퐁 픽셀 쉐이더
+	ID3D11PixelShader* m_pPLightShader = nullptr;	// 라이트 쉐이더
+	ID3D11InputLayout* m_pInputLayout = nullptr;	// 입력 레이아웃
 	
 	// 스카이박스
 	std::unique_ptr<Model> cube;
