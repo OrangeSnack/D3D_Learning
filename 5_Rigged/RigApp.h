@@ -10,33 +10,10 @@
 #include <imgui_impl_dx11.h>
 #include <Psapi.h>
 #include "StaticMesh.h"
+#include "SkeletalMesh.h"
 #include <memory>
 
 #pragma comment (lib, "d3d11.lib")
-
-struct ConstantBuffer
-{
-	Matrix mWorld;
-	Matrix mView;
-	Matrix mProjection;
-	Matrix mNormalMatrix;
-
-	Vector4 vLightDir;
-	Vector4 vLightColor;
-
-	Vector4 camPos;
-
-	Vector4 ambient;
-	Vector4 diffuse;
-	Vector4 specular;
-
-	Vector4 Matambient;
-	Vector4 Matdiffuse;
-	Vector4 Matspecular;
-
-	int shiness;
-	Vector3 padding;
-};
 
 struct Transform {
 	Matrix m_World = Matrix::Identity;		// 월드좌표계 변환행렬
@@ -46,12 +23,13 @@ struct Transform {
 	Matrix* Parent = nullptr;				// Parent Matrix
 };
 
+template <typename T>
 struct Object
 {
 	Object(ID3D11Device* _device) : model(_device) {}
 
 	std::string name;
-	StaticMesh model;
+	T model;
 	Transform transform;
 };
 
@@ -126,7 +104,8 @@ public:
 	ID3D11BlendState* m_pDefaultBS = nullptr;			// 기본블랜드 스테이트
 
 	// FBX 모델
-	std::vector<std::unique_ptr<Object>> models;			// 모델 저장
+	std::vector < std::unique_ptr<Object<StaticMesh>>> models;		// 모델 저장
+	std::vector < std::unique_ptr<Object<SkeletalMesh>>> skeletal_models;
 	//std::unique_ptr<Model> model;
 	ID3D11PixelShader* m_pDiffuseShader = nullptr;		// 디퓨즈 전용 쉐이더
 	ID3D11VertexShader* m_pVertexShader = nullptr;	// 정점 쉐이더

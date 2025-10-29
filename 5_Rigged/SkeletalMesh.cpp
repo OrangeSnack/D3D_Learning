@@ -1,17 +1,20 @@
-#include "StaticMesh.h"
+#include "SkeletalMesh.h"
 #include <iostream>
 #include <directxtk/WICTextureLoader.h>
 #include "../BaseEngine/Helper.h"
+#include <queue>
+#include <stack>
+
 using namespace DirectX::SimpleMath;
 using namespace DirectX;
 
-StaticMesh::~StaticMesh()
+SkeletalMesh::~SkeletalMesh()
 {
 	for (auto& buffer : m_pVertexBuffer) SAFE_RELEASE(buffer); m_pVertexBuffer.clear();
 	for (auto& buffer : m_pIndexBuffer) SAFE_RELEASE(buffer); m_pIndexBuffer.clear();
 }
 
-bool StaticMesh::LoadFile(std::wstring _filePath)
+bool SkeletalMesh::LoadFile(std::wstring _filePath)
 {
 	// 파일경로 저장
 	std::filesystem::path p = _filePath.c_str();
@@ -21,11 +24,35 @@ bool StaticMesh::LoadFile(std::wstring _filePath)
 	filePath = p.parent_path();
 
 	scene = importer.ReadFile(p.string(), importFlags);
+
 	
+
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
 		std::string error = importer.GetErrorString();
 		std::cerr << "Assimp Error: " << importer.GetErrorString() << std::endl;
 		return false;
+	}
+
+	// 노드탐색하며 월드매트릭스 만들기
+	std::stack<aiNode*> nodes;
+	nodes.push(scene->mRootNode);
+
+	while (!nodes.empty()) {
+		aiNode* temp = nodes.top();
+		nodes.pop();
+		
+		aiNode* currPar = temp->mParent;
+		aiMatrix4x4 tempMat = temp->mTransformation;
+		while (currPar != nullptr) {
+			tempMat = currPar->mTransformation * tempMat;
+			currPar = currPar->mParent;
+		}
+		nodeWorld.push_back(tempMat);
+
+		// 자식노드 추가
+		for (int i = 0; i < temp->mNumChildren; i++) {
+			nodes.push(temp->mChildren[i]);
+		}
 	}
 
 	// 버텍스, 인덱스 로딩
@@ -43,7 +70,7 @@ bool StaticMesh::LoadFile(std::wstring _filePath)
 	}
 
 	// 메테리얼 로딩
-	LoadMaterials(m_pMaterials, this);
+	LoadMaterials(m_nMaterials, this);
 
 	// 모델 버퍼 생성.
 	// Vertex
@@ -95,7 +122,7 @@ bool StaticMesh::LoadFile(std::wstring _filePath)
 	return true;
 }
 
-bool StaticMesh::LoadVertex(std::vector<Vertex>* _vertices, const aiMesh* _mesh)
+bool SkeletalMesh::LoadVertex(std::vector<Vertex>* _vertices, const aiMesh* _mesh)
 {
 	for (UINT i = 0; i < _mesh->mNumVertices; i++) {
 		Vertex v;
@@ -121,7 +148,7 @@ bool StaticMesh::LoadVertex(std::vector<Vertex>* _vertices, const aiMesh* _mesh)
 	return true;
 }
 
-bool StaticMesh::LoadIndex(std::vector<UINT>* _indices, const aiMesh* _mesh)
+bool SkeletalMesh::LoadIndex(std::vector<UINT>* _indices, const aiMesh* _mesh)
 {
 	for (UINT i = 0; i < _mesh->mNumFaces; i++) {
 		for (UINT j = 0; j < _mesh->mFaces[i].mNumIndices; j++)
@@ -131,7 +158,7 @@ bool StaticMesh::LoadIndex(std::vector<UINT>* _indices, const aiMesh* _mesh)
 	return true;
 }
 
-bool StaticMesh::LoadMaterials(std::vector<Materials>& _out, const StaticMesh* _model)
+bool SkeletalMesh::LoadMaterials(std::vector<Materials>& _out, const SkeletalMesh* _model)
 {
 	const aiScene* scene = _model->scene;
 
@@ -154,11 +181,11 @@ bool StaticMesh::LoadMaterials(std::vector<Materials>& _out, const StaticMesh* _
 				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].diffuse));
 			}
 		}
-
 		// 디퓨즈가 없으면?
 		if (_out[i].diffuse == nullptr) {
 			HR_T(CreateWICTextureFromFile(m_pDevice, defaultDiffuse.c_str(), nullptr, &_out[i].diffuse));
 		}
+
 
 		// 스페큘러
 		if (aiMat->GetTextureCount(aiTextureType_SPECULAR)) {
@@ -194,26 +221,80 @@ bool StaticMesh::LoadMaterials(std::vector<Materials>& _out, const StaticMesh* _
 	return true;
 }
 
-bool StaticMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11PixelShader* _shader, bool _useMat)
+bool SkeletalMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer* _cbBuff, ConstantBuffer* _cb, ID3D11PixelShader* _shader /*= nullptr*/, bool _useMat /*= true*/)
 {
-	if(_shader)
+	if (_shader)
 		_deviceContext->PSSetShader(_shader, nullptr, 0);
 
-	for (int i = 0; i < m_pVertexBuffer.size(); i++) {
+	// 노드에 따라 인덱스 불러와서 업데이트
+	std::stack<aiNode*> nodes;
+	nodes.push(scene->mRootNode);
+	int nodeIdx = 0;
+
+	while (!nodes.empty()) {
+		aiNode* temp = nodes.top();
+		nodes.pop();
+
+		// 메시 그리기
+		for (int i = 0; i < temp->mNumMeshes; i++) {
+			int meshIdx = temp->mMeshes[i];
+			_deviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer[meshIdx], &m_VertexBufferStride, &m_VertexBufferOffset);
+			_deviceContext->IASetIndexBuffer(m_pIndexBuffer[meshIdx], DXGI_FORMAT_R32_UINT, 0);
+
+			if (_useMat) {
+				UINT matIdx = scene->mMeshes[meshIdx]->mMaterialIndex;
+				modelRV[0] = m_nMaterials[matIdx].diffuse;
+				modelRV[1] = m_nMaterials[matIdx].normal;
+				modelRV[2] = m_nMaterials[matIdx].specular;
+				modelRV[3] = m_nMaterials[matIdx].emissive;
+
+				_deviceContext->PSSetShaderResources(0, 4, modelRV);
+			}
+
+			Matrix tempMat = ConvertMat(nodeWorld[nodeIdx]);
+
+			_cb->skinMat = tempMat;
+			_cb->skinNorm = XMMatrixInverse(nullptr, XMMatrixTranspose(tempMat));
+			_deviceContext->UpdateSubresource(_cbBuff, 0, nullptr, _cb, 0, 0);
+
+			_deviceContext->DrawIndexed(m_nIndices[meshIdx], 0, 0);
+		}
+
+		// 차일드 큐에 넣기
+		for (int i = 0; i < temp->mNumChildren; i++) {
+			nodes.push(temp->mChildren[i]);
+		}
+
+		nodeIdx++;
+	}
+	
+
+
+	/*for (int i = 0; i < m_pVertexBuffer.size(); i++) {
 		_deviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer[i], &m_VertexBufferStride, &m_VertexBufferOffset);
 		_deviceContext->IASetIndexBuffer(m_pIndexBuffer[i], DXGI_FORMAT_R32_UINT, 0);
 
 		if (_useMat) {
 			UINT matIdx = scene->mMeshes[i]->mMaterialIndex;
-			modelRV[0] = m_pMaterials[matIdx].diffuse;
-			modelRV[1] = m_pMaterials[matIdx].normal;
-			modelRV[2] = m_pMaterials[matIdx].specular;
-			modelRV[3] = m_pMaterials[matIdx].emissive;
+			modelRV[0] = m_nMaterials[matIdx].diffuse;
+			modelRV[1] = m_nMaterials[matIdx].normal;
+			modelRV[2] = m_nMaterials[matIdx].specular;
+			modelRV[3] = m_nMaterials[matIdx].emissive;
 
 			_deviceContext->PSSetShaderResources(0, 4, modelRV);
 		}
 
 		_deviceContext->DrawIndexed(m_nIndices[i], 0, 0);
-	}
+	}*/
 	return true;
+}
+
+DirectX::SimpleMath::Matrix SkeletalMesh::ConvertMat(const aiMatrix4x4& aiMat)
+{
+	return {
+		aiMat.a1, aiMat.a2, aiMat.a3, aiMat.a4,
+		aiMat.b1, aiMat.b2, aiMat.b3, aiMat.b4,
+		aiMat.c1, aiMat.c2, aiMat.c3, aiMat.c4,
+		aiMat.d1, aiMat.d2, aiMat.d3, aiMat.d4
+	};
 }

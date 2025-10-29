@@ -53,13 +53,20 @@ void RigApp::Update()
 			Matrix::CreateTranslation(mt->transform.Position);
 	}
 
+	for (auto& sm : skeletal_models) {
+		sm->transform.m_World =
+			Matrix::CreateScale(sm->transform.Scale) *
+			Matrix::CreateFromYawPitchRoll(sm->transform.Rotation.y, sm->transform.Rotation.x, sm->transform.Rotation.z) *
+			Matrix::CreateTranslation(sm->transform.Position);
+	}
+
 	// 알파소팅 업데이트
 	if (useAS) {
-		std::sort(models.begin(), models.end(), [&](std::unique_ptr<Object>& md1, std::unique_ptr<Object>& md2) {
+		std::sort(models.begin(), models.end(), [&](auto& md1, auto& md2) {
 			return (md1->transform.m_World * m_View)._43 > (md2->transform.m_World * m_View)._43; });
 	}
 	else {
-		auto it = std::find_if(models.begin(), models.end(), [](std::unique_ptr<Object>& md) {return md->name == "Tree"; });
+		auto it = std::find_if(models.begin(), models.end(), [](std::unique_ptr<Object<StaticMesh>>& md) {return md->name == "Tree"; });
 	
 		if(it != models.begin())
 			std::swap(*it, models[0]);
@@ -97,6 +104,9 @@ void RigApp::Render()
 	cb1.Matdiffuse = m_MatDiffuse;
 	cb1.Matspecular = m_MatSpecular;
 	cb1.shiness = m_Shiness;
+	cb1.skinMat = XMMatrixTranspose(Matrix::Identity);
+	cb1.skinNorm = XMMatrixInverse(nullptr, Matrix::Identity);
+
 	m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
 
 	// Clear 
@@ -162,6 +172,12 @@ void RigApp::Render()
 		cb1.mNormalMatrix = XMMatrixInverse(nullptr, models[i]->transform.m_World);
 		m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
 		models[i]->model.Draw(m_pDeviceContext, nullptr);
+	}
+
+	for (int i = 0; i < skeletal_models.size(); i++) {
+		cb1.mWorld = XMMatrixTranspose(skeletal_models[i]->transform.m_World);
+		cb1.mNormalMatrix = XMMatrixInverse(nullptr, skeletal_models[i]->transform.m_World);
+		skeletal_models[i]->model.Draw(m_pDeviceContext, m_pConstantBuffer, &cb1);
 	}
 
 	// GUI Render
@@ -294,7 +310,7 @@ bool RigApp::InitScene()
 {
 	// 버텍스 쉐이더 컴파일
 	ID3D10Blob* vertexShader = nullptr;
-	HR_T(CompileShaderFromFile(L"BasicVertexShader.hlsl", "main", "vs_4_0", &vertexShader));
+	HR_T(CompileShaderFromFile(L"SkeletalVertexShader.hlsl", "main", "vs_4_0", &vertexShader));
 	HR_T(m_pDevice->CreateVertexShader(vertexShader->GetBufferPointer(),
 		vertexShader->GetBufferSize(), NULL, &m_pVertexShader));
 
@@ -351,8 +367,11 @@ bool RigApp::InitScene()
 	
 	// 모델 로딩
 	for (int i = 0; i < 3; i++) {
-		models.push_back({ std::make_unique<Object>(m_pDevice)});
+		models.push_back(std::make_unique<Object<StaticMesh>>(m_pDevice));
 	}
+
+	// 스켈레탈 메시
+	skeletal_models.push_back(std::make_unique<Object<SkeletalMesh>>(m_pDevice));
 
 	//model = std::make_unique<Model>(m_pDevice);
 	cube = std::make_unique<StaticMesh>(m_pDevice);
@@ -363,6 +382,9 @@ bool RigApp::InitScene()
 	models[1]->name = "Zelda";
 	models[2]->model.LoadFile(L"../Resources/Models/Tree/Tree.fbx");
 	models[2]->name = "Tree";
+
+	skeletal_models[0]->model.LoadFile(L"../Resources/Models/BoxHuman/BoxHuman.fbx");
+	skeletal_models[0]->name = "BoxHuman";
 
 	cube->LoadFile(L"../Resources/Models/Cube/Cube.fbx");
 
@@ -403,6 +425,10 @@ bool RigApp::InitScene()
 
 	models[0]->transform.Position = { 5.0f, 0.0f, 0.0f };
 	models[1]->transform.Position = { -5.0f, 0.0f, 0.0f };
+
+	skeletal_models[0]->transform.Scale = { 0.01f, 0.01f, 0.01f };
+	skeletal_models[0]->transform.Position = { 0.0f, 0.0f, -5.0f };
+
 
 	return true;
 }

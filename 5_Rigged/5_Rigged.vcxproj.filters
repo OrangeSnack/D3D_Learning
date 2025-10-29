@@ -22,6 +22,12 @@
     <Filter Include="Shader\Basic">
       <UniqueIdentifier>{c8171d65-034e-4828-b4ce-d56ec3c7e9b5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader\Basic\VS">
+      <UniqueIdentifier>{07612c05-f7e1-4e56-97d5-74b956602e95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader\Basic\PS">
+      <UniqueIdentifier>{0ed9613a-d912-4416-bc67-17136658278b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RigApp.cpp">
@@ -33,6 +39,9 @@
     <ClCompile Include="StaticMesh.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="SkeletalMesh.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RigApp.h">
@@ -41,28 +50,37 @@
     <ClInclude Include="StaticMesh.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="SkeletalMesh.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="BasicPixelShader.hlsl">
-      <Filter>Shader\Basic</Filter>
-    </FxCompile>
-    <FxCompile Include="BasicVertexShader.hlsl">
-      <Filter>Shader\Basic</Filter>
-    </FxCompile>
-    <FxCompile Include="SolidPixelShader.hlsl">
-      <Filter>Shader\Basic</Filter>
-    </FxCompile>
     <FxCompile Include="SkyBoxVertexShader.hlsl">
       <Filter>Shader\Skybox</Filter>
     </FxCompile>
     <FxCompile Include="SkyBoxPixelShader.hlsl">
       <Filter>Shader\Skybox</Filter>
     </FxCompile>
-    <FxCompile Include="BlinnPhongPixelShader.hlsl">
-      <Filter>Shader\Basic</Filter>
+    <FxCompile Include="BasicVertexShader.hlsl">
+      <Filter>Shader\Basic\VS</Filter>
     </FxCompile>
     <FxCompile Include="AlphaClipPixelShader.hlsl">
-      <Filter>Shader\Basic</Filter>
+      <Filter>Shader\Basic\PS</Filter>
+    </FxCompile>
+    <FxCompile Include="BasicPixelShader.hlsl">
+      <Filter>Shader\Basic\PS</Filter>
+    </FxCompile>
+    <FxCompile Include="BlinnPhongPixelShader.hlsl">
+      <Filter>Shader\Basic\PS</Filter>
+    </FxCompile>
+    <FxCompile Include="SolidPixelShader.hlsl">
+      <Filter>Shader\Basic\PS</Filter>
+    </FxCompile>
+    <FxCompile Include="SkeletalVertexShader.hlsl">
+      <Filter>Shader\Basic\VS</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

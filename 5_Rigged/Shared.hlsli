@@ -26,6 +26,9 @@ cbuffer _cb0 : register(b0)
     
     int shiness;
     float3 padding;
+    
+    matrix skinWorldMat;
+    matrix skinNormMat;
 }
 
 struct PS_INPUT
