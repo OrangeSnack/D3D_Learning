@@ -27,6 +27,16 @@ private:
 	std::filesystem::path filePath;
 
 public:
+	bool isPlaying = false;
+	bool isLooping = true;
+	float currTime = 0.0f;
+	float animTime = 0.0f;
+	int animIdx = -1;
+	int currPosIdx = -1;
+	int currRotIdx = -1;
+	int currScaIdx = -1;
+
+public:
 	SkeletalMesh(ID3D11Device* _device) : m_pDevice(_device) {
 		importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, 0);
 	};
@@ -37,19 +47,39 @@ public:
 	std::vector<ID3D11Buffer*> m_pVertexBuffer;			// 모델 버텍스 버퍼
 	std::vector<ID3D11Buffer*> m_pIndexBuffer;			// 모델 인덱스 버퍼
 	std::vector<UINT> m_nIndices;						// 인덱스 개수
-	std::vector<aiMatrix4x4> nodeWorld;						// 노드별 월드매트릭스
-
+	std::unordered_map<std::string, aiMatrix4x4> nodeWorldMap;	// 노드별 월드맵
+	//std::vector<aiMatrix4x4> nodeWorld;					// 노드별 월드매트릭스
 	ID3D11ShaderResourceView* modelRV[5] = { nullptr, };	// 메테리얼
 	ID3D11PixelShader* m_pDiffuseShader = nullptr;			// 디퓨즈 전용 쉐이더
 
+	std::vector<aiAnimation*> animations;					// 애니메이션 모음집
+	std::unordered_map<std::string, aiNodeAnim*> nodeAnimMap;	// 이름기반 노드맵
+	DirectX::SimpleMath::Matrix modelMat[128];				// 매트릭스 모음집
+
 	UINT m_VertexBufferStride = 0;		// 버텍스 하나의 크기
 	UINT m_VertexBufferOffset = 0;		// 버텍스 버퍼의 오프셋
-public:
-	bool LoadFile(std::wstring _filePath);
+protected:
 	bool LoadVertex(std::vector<Vertex>* _vertices, const aiMesh* _mesh);
 	bool LoadIndex(std::vector<UINT>* _indices, const aiMesh* _mesh);
 	bool LoadMaterials(std::vector<Materials>& _out, const SkeletalMesh* _model);
+	bool LoadAnimations(std::vector<aiAnimation*>& _out, const aiScene* _scene);
+	bool LoadNodeAnim(std::unordered_map<std::string, aiNodeAnim*>* _out, const aiAnimation* _anim);
+	
+	bool UpdateBoneMat();
+	int FindKeyIndex(const aiVectorKey* keys, int size, float currTime);
+	int FindKeyIndex(const aiQuatKey* keys, int size, float currTime);
+
+	aiVectorKey Evaluate(const aiVectorKey& _k1, const aiVectorKey& _k2, float _currTime);
+	aiQuatKey Evaluate(const aiQuatKey& _k1, const aiQuatKey& _k2, float _currTime);
+public:
+	void Update();
+
+	bool LoadFile(std::wstring _filePath);
+	bool PlayAnim(int _animIdx);
+	bool SetLoop(bool _val);
+	bool StopAnim();
 	bool Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer* _cbBuff, ConstantBuffer* _cb, ID3D11PixelShader* _shader = nullptr, bool _useMat = true);
+
 	DirectX::SimpleMath::Matrix ConvertMat(const aiMatrix4x4& aiMat);
 };
 

@@ -4,6 +4,7 @@
 #include "../BaseEngine/Helper.h"
 #include <queue>
 #include <stack>
+#include "../BaseEngine/TimeSystem.h"
 
 using namespace DirectX::SimpleMath;
 using namespace DirectX;
@@ -12,6 +13,26 @@ SkeletalMesh::~SkeletalMesh()
 {
 	for (auto& buffer : m_pVertexBuffer) SAFE_RELEASE(buffer); m_pVertexBuffer.clear();
 	for (auto& buffer : m_pIndexBuffer) SAFE_RELEASE(buffer); m_pIndexBuffer.clear();
+}
+
+void SkeletalMesh::Update()
+{
+	if (animIdx >= 0 && scene->HasAnimations()) {
+		if (isPlaying) {
+			currTime += GameTimer::m_Instance->DeltaTime();
+			animTime = currTime * animations[animIdx]->mTicksPerSecond;
+
+			if (animTime > (float)animations[animIdx]->mDuration) {
+				if (isLooping) {
+					currTime -= (float)animations[animIdx]->mDuration / animations[animIdx]->mTicksPerSecond;
+				}
+				else
+					isPlaying = false;
+			}
+
+			UpdateBoneMat();
+		}
+	}
 }
 
 bool SkeletalMesh::LoadFile(std::wstring _filePath)
@@ -31,28 +52,6 @@ bool SkeletalMesh::LoadFile(std::wstring _filePath)
 		std::string error = importer.GetErrorString();
 		std::cerr << "Assimp Error: " << importer.GetErrorString() << std::endl;
 		return false;
-	}
-
-	// 노드탐색하며 월드매트릭스 만들기
-	std::stack<aiNode*> nodes;
-	nodes.push(scene->mRootNode);
-
-	while (!nodes.empty()) {
-		aiNode* temp = nodes.top();
-		nodes.pop();
-		
-		aiNode* currPar = temp->mParent;
-		aiMatrix4x4 tempMat = temp->mTransformation;
-		while (currPar != nullptr) {
-			tempMat = currPar->mTransformation * tempMat;
-			currPar = currPar->mParent;
-		}
-		nodeWorld.push_back(tempMat);
-
-		// 자식노드 추가
-		for (int i = 0; i < temp->mNumChildren; i++) {
-			nodes.push(temp->mChildren[i]);
-		}
 	}
 
 	// 버텍스, 인덱스 로딩
@@ -105,7 +104,7 @@ bool SkeletalMesh::LoadFile(std::wstring _filePath)
 		bd.ByteWidth = UINT(sizeof(UINT) * modelIndices[i].size());
 		ibData.pSysMem = modelIndices[i].data();
 
-		ID3D11Buffer* tempBuffer = nullptr;
+		ID3D11Buffer* tempBuffer = nullptr; 
 		HR_T(m_pDevice->CreateBuffer(&bd, &ibData, &tempBuffer));
 
 		if (tempBuffer)
@@ -119,6 +118,40 @@ bool SkeletalMesh::LoadFile(std::wstring _filePath)
 	for (const auto& indices : modelIndices)
 		m_nIndices.push_back(UINT(indices.size()));
 
+	// 노드탐색하며 월드매트릭스 만들기
+	UpdateBoneMat();
+
+	// 애니메이션 로딩
+	LoadAnimations(animations, scene);
+
+	return true;
+}
+
+bool SkeletalMesh::PlayAnim(int _animIdx)
+{
+	if (_animIdx >= 0 && _animIdx < animations.size()) {
+		isPlaying = true;
+		currTime = 0.0f;
+		if (!(_animIdx == animIdx)) {
+			animIdx = _animIdx;
+			LoadNodeAnim(&nodeAnimMap, animations[_animIdx]);
+		}
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+bool SkeletalMesh::SetLoop(bool _val)
+{
+	isLooping = _val;
+	return _val;
+}
+
+bool SkeletalMesh::StopAnim()
+{
+	isPlaying = false;
 	return true;
 }
 
@@ -221,6 +254,134 @@ bool SkeletalMesh::LoadMaterials(std::vector<Materials>& _out, const SkeletalMes
 	return true;
 }
 
+bool SkeletalMesh::LoadAnimations(std::vector<aiAnimation*>& _out, const aiScene* _scene)
+{
+	if (!_scene->HasAnimations())
+		return false;
+
+	for (int i = 0; i < _scene->mNumAnimations; i++) {
+		_out.push_back(_scene->mAnimations[i]);
+	}
+
+	return true;
+}
+
+bool SkeletalMesh::LoadNodeAnim(std::unordered_map<std::string, aiNodeAnim*>* _out, const aiAnimation* _anim)
+{
+	_out->clear();
+
+	for (int i = 0; i < _anim->mNumChannels; i++) {
+		std::string nodeName = _anim->mChannels[i]->mNodeName.C_Str();
+		nodeAnimMap[nodeName] = _anim->mChannels[i];
+	}
+
+	return true;
+}
+
+bool SkeletalMesh::UpdateBoneMat()
+{
+	// 노드탐색하며 월드매트릭스 만들기
+	std::stack<aiNode*> nodes;
+	nodes.push(scene->mRootNode);
+
+	while (!nodes.empty()) {
+		aiNode* temp = nodes.top();
+		nodes.pop();
+
+		aiNode* currPar = temp->mParent;
+		aiMatrix4x4 tempMat = temp->mTransformation;
+
+		auto it = nodeAnimMap.find(temp->mName.C_Str());
+		if (it != nodeAnimMap.end()) {
+
+			// 적용될 키인덱스 구하기
+			const auto animNode = it->second;
+			currPosIdx = FindKeyIndex(animNode->mPositionKeys, animNode->mNumPositionKeys, animTime);
+			currRotIdx = FindKeyIndex(animNode->mRotationKeys, animNode->mNumRotationKeys, animTime);
+			currScaIdx = FindKeyIndex(animNode->mScalingKeys, animNode->mNumScalingKeys, animTime);
+
+			// 보간값 구하기
+			int nextIdx[3] = {
+				currPosIdx == animNode->mNumPositionKeys ? currPosIdx : currPosIdx + 1,
+				currRotIdx == animNode->mNumRotationKeys ? currRotIdx : currRotIdx + 1,
+				currScaIdx == animNode->mNumScalingKeys ? currScaIdx : currScaIdx + 1
+				};
+
+			aiVectorKey pos = Evaluate(animNode->mPositionKeys[currPosIdx], animNode->mPositionKeys[nextIdx[0]], animTime);
+			aiQuatKey rot = Evaluate(animNode->mRotationKeys[currRotIdx], animNode->mRotationKeys[nextIdx[1]], animTime);
+			aiVectorKey sca = Evaluate(animNode->mScalingKeys[currScaIdx], animNode->mScalingKeys[nextIdx[2]], animTime);
+
+			// 매트릭스 만들기
+			aiMatrix4x4 matScale, matRot, matTrans;
+
+			aiMatrix4x4::Translation(pos.mValue, matTrans);
+			matRot = aiMatrix4x4(rot.mValue.GetMatrix());
+			aiMatrix4x4::Scaling(sca.mValue, matScale);
+
+			tempMat = matTrans * matRot * matScale;
+		}
+
+		// 부모 매트릭스 곱하기
+		if (currPar != nullptr) {
+			tempMat = nodeWorldMap[currPar->mName.C_Str()] * tempMat;
+		}
+
+		// 매트릭스 맵에 저장하기
+		nodeWorldMap[temp->mName.C_Str()] = tempMat;
+
+		// 자식노드 추가
+		for (int i = 0; i < temp->mNumChildren; i++) {
+			nodes.push(temp->mChildren[i]);
+		}
+	}
+
+	return true;
+}
+
+int SkeletalMesh::FindKeyIndex(const aiVectorKey* keys, int size, float currTime)
+{
+	for (int i = 0; i < size - 1; ++i) {
+		if (currTime < keys[i + 1].mTime)
+			return i;
+	}
+	return size - 2; // 마지막 구간
+}
+
+int SkeletalMesh::FindKeyIndex(const aiQuatKey* keys, int size, float currTime)
+{
+	for (int i = 0; i < size - 1; ++i) {
+		if (currTime < keys[i + 1].mTime)
+			return i;
+	}
+	return size - 2; // 마지막 구간
+}
+
+aiVectorKey SkeletalMesh::Evaluate(const aiVectorKey& _k1, const aiVectorKey& _k2, float _currTime) {
+	if (_k1 == _k2)
+		return _k1;
+
+	float lerpTime = (_currTime - _k1.mTime) / (_k2.mTime - _k1.mTime);
+
+	return {
+		_currTime,
+		_k1.mValue + (_k2.mValue - _k1.mValue) * lerpTime
+	};
+}
+
+aiQuatKey SkeletalMesh::Evaluate(const aiQuatKey& _k1, const aiQuatKey& _k2, float _currTime)
+{
+	if (_k1 == _k2)
+		return _k1;
+
+	float lerpTime = (_currTime - _k1.mTime) / (_k2.mTime - _k1.mTime);
+
+	aiQuaternion temp;
+	aiQuaternion::Interpolate(temp, _k1.mValue, _k2.mValue, lerpTime);
+	return {
+		_currTime,
+		temp };
+}
+
 bool SkeletalMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer* _cbBuff, ConstantBuffer* _cb, ID3D11PixelShader* _shader /*= nullptr*/, bool _useMat /*= true*/)
 {
 	if (_shader)
@@ -232,12 +393,12 @@ bool SkeletalMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer* _cbBu
 	int nodeIdx = 0;
 
 	while (!nodes.empty()) {
-		aiNode* temp = nodes.top();
+		aiNode* node = nodes.top();
 		nodes.pop();
 
 		// 메시 그리기
-		for (int i = 0; i < temp->mNumMeshes; i++) {
-			int meshIdx = temp->mMeshes[i];
+		for (int i = 0; i < node->mNumMeshes; i++) {
+			int meshIdx = node->mMeshes[i];
 			_deviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer[meshIdx], &m_VertexBufferStride, &m_VertexBufferOffset);
 			_deviceContext->IASetIndexBuffer(m_pIndexBuffer[meshIdx], DXGI_FORMAT_R32_UINT, 0);
 
@@ -251,41 +412,23 @@ bool SkeletalMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer* _cbBu
 				_deviceContext->PSSetShaderResources(0, 4, modelRV);
 			}
 
-			Matrix tempMat = ConvertMat(nodeWorld[nodeIdx]);
+			Matrix nodeMat = ConvertMat(nodeWorldMap[node->mName.C_Str()]);
 
-			_cb->skinMat = tempMat;
-			_cb->skinNorm = XMMatrixInverse(nullptr, XMMatrixTranspose(tempMat));
+			_cb->skinMat = nodeMat;
+			_cb->skinNorm = XMMatrixInverse(nullptr, XMMatrixTranspose(nodeMat));
 			_deviceContext->UpdateSubresource(_cbBuff, 0, nullptr, _cb, 0, 0);
 
 			_deviceContext->DrawIndexed(m_nIndices[meshIdx], 0, 0);
 		}
 
 		// 차일드 큐에 넣기
-		for (int i = 0; i < temp->mNumChildren; i++) {
-			nodes.push(temp->mChildren[i]);
+		for (int i = 0; i < node->mNumChildren; i++) {
+			nodes.push(node->mChildren[i]);
 		}
 
 		nodeIdx++;
 	}
 	
-
-
-	/*for (int i = 0; i < m_pVertexBuffer.size(); i++) {
-		_deviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer[i], &m_VertexBufferStride, &m_VertexBufferOffset);
-		_deviceContext->IASetIndexBuffer(m_pIndexBuffer[i], DXGI_FORMAT_R32_UINT, 0);
-
-		if (_useMat) {
-			UINT matIdx = scene->mMeshes[i]->mMaterialIndex;
-			modelRV[0] = m_nMaterials[matIdx].diffuse;
-			modelRV[1] = m_nMaterials[matIdx].normal;
-			modelRV[2] = m_nMaterials[matIdx].specular;
-			modelRV[3] = m_nMaterials[matIdx].emissive;
-
-			_deviceContext->PSSetShaderResources(0, 4, modelRV);
-		}
-
-		_deviceContext->DrawIndexed(m_nIndices[i], 0, 0);
-	}*/
 	return true;
 }
 

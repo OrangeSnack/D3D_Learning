@@ -5,6 +5,7 @@
 #include <directxtk/WICTextureLoader.h>
 #include <filesystem>
 #include <algorithm>
+#include "../BaseEngine/TimeSystem.h"
 
 #pragma comment(lib,"d3dcompiler.lib")
 
@@ -31,6 +32,9 @@ bool RigApp::Initialize(UINT Width, UINT Height)
 
 	if (!InitScene())
 		return false;
+
+	GameTimer::m_Instance->Reset();
+	GameTimer::m_Instance->Start();
 
 	return true;
 }
@@ -82,6 +86,10 @@ void RigApp::Update()
 	m_CurrLightDirs.z = lightDir[2];
 
 	m_LightDirsEvaluated = m_CurrLightDirs;
+
+	// ½ºÄÌ·¹Å»¸Þ½Ã ¾÷µ¥ÀÌÆ®
+	for (const auto& skMesh : skeletal_models)
+		skMesh->model.Update();
 }
 
 void RigApp::Render()
@@ -429,6 +437,7 @@ bool RigApp::InitScene()
 	skeletal_models[0]->transform.Scale = { 0.01f, 0.01f, 0.01f };
 	skeletal_models[0]->transform.Position = { 0.0f, 0.0f, -5.0f };
 
+	skeletal_models[0]->model.PlayAnim(0);
 
 	return true;
 }
@@ -565,7 +574,15 @@ void RigApp::RenderGUI()
 			m_Shiness = 32;
 		}
 
-		
+		ImGui::PopID();
+		ImGui::NewLine();
+
+		ImGui::PushID(4);
+		ImGui::SeparatorText("Animation");
+
+		ImGui::Text(std::to_string(skeletal_models[0]->model.currPosIdx).c_str());
+		ImGui::Text(std::to_string(skeletal_models[0]->model.currRotIdx).c_str());
+		ImGui::Text(std::to_string(skeletal_models[0]->model.currScaIdx).c_str());
 
 		ImGui::PopID();
 		ImGui::End();
