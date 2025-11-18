@@ -13,8 +13,7 @@ PS_INPUT main(VS_INPUT input)
     };
     float3 normal = normalize(input.Norm);
     
-    if (input.BoneIdx.x != -1)
-    {
+    #ifdef VERTEX_SKINNING
         Matrix tempMat[4] =
         {
             mul(boneOffsetMat[input.BoneIdx.x], boneMat[input.BoneIdx.x]),
@@ -30,11 +29,9 @@ PS_INPUT main(VS_INPUT input)
         
         skinMat = mul(skinMat, World);
         output.Pos = mul(input.Pos, skinMat);
-    }
-    else
-    {
+    #else
         output.Pos = mul(input.Pos, World);
-    }
+    #endif
     
     output.W_Pos = output.Pos;
     output.Pos = mul(output.Pos, View);
@@ -46,6 +43,10 @@ PS_INPUT main(VS_INPUT input)
     output.Tan = normalize(mul(input.Tan, (float3x3) normalMat));
     output.BiTan = normalize(mul(input.BiTan, (float3x3) normalMat));
     output.Tex = input.Tex;
+    
+    // 현재 위치를 ShadowMap 위치로 변환
+    output.S_Pos = mul(float4(output.Pos.xyz, 1.0f), ShadowView);
+    output.S_Pos = mul(output.S_Pos, ShadowProjection);
     
     return output;
 }

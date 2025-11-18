@@ -5,6 +5,7 @@
 #include <queue>
 #include <stack>
 #include "../BaseEngine/TimeSystem.h"
+#include <d3dcompiler.h>
 
 using namespace DirectX::SimpleMath;
 using namespace DirectX;
@@ -147,6 +148,40 @@ bool SkeletalMesh::LoadFile(std::wstring _filePath)
 
 	tempContext->UpdateSubresource(m_pOffsetBuffer, 0, nullptr, &offsetBuffer, 0, 0);
 	tempContext->VSSetConstantBuffers(3, 1, &m_pOffsetBuffer);
+
+	// 버텍스 쉐이더 생성
+	D3D_SHADER_MACRO macros[] = {
+		{"VERTEX_SKINNING", "1"},
+		{nullptr, nullptr}
+	};
+
+	ID3D10Blob* vertexShader = nullptr;
+	ID3D10Blob* errormsg = nullptr;
+
+	HR_T(D3DCompileFromFile(
+		L"SkeletalVertexShader.hlsl",
+		macros,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		"main",
+		"vs_5_0",
+		0, 0,
+		&vertexShader,
+		&errormsg));
+
+	if (errormsg) {
+		OutputDebugStringA((char*)errormsg->GetBufferPointer());
+		errormsg->Release();
+	}
+	else {
+		OutputDebugStringA("Shader compile failed with no error message.");
+	}
+
+
+	HR_T(m_pDevice->CreateVertexShader(
+		vertexShader->GetBufferPointer(), 
+		vertexShader->GetBufferSize(), 
+		nullptr, 
+		&m_pVertexShader));
 
 	return true;
 }
@@ -500,8 +535,13 @@ bool SkeletalMesh::SetResources(MaterialBuffer* _matBuffer, BoneBuffer* _boneBuf
 
 bool SkeletalMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer** _bufferList, UINT _boneBuffIdx, UINT _matBuffIdx, ID3D11PixelShader* _shader /*= nullptr*/, bool _useMat /*= true*/)
 {
+	// 쉐이더 업데이트
 	if (_shader)
 		_deviceContext->PSSetShader(_shader, nullptr, 0);
+
+	ID3D11VertexShader* defaultShader = nullptr;
+	_deviceContext->VSGetShader(&defaultShader, nullptr, nullptr);
+	_deviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
 
 	// 매트릭스 업데이트
 	for (int i = 0; i < BONE_MAXSIZE; i++) {
@@ -554,6 +594,9 @@ bool SkeletalMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer** _buf
 
 		nodeIdx++;
 	}
+
+	// 쉐이더 돌려놓기
+	_deviceContext->VSSetShader(defaultShader, nullptr, 0);
 
 	return true;
 }

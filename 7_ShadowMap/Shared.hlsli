@@ -41,14 +41,21 @@ cbuffer BoneOffSetBuffer : register(b3)
     matrix boneOffsetMat[256];
 }
 
+cbuffer ShadowVP : register(b4)
+{
+    Matrix ShadowView;
+    Matrix ShadowProjection;
+}
+
 struct PS_INPUT
 {
     float4 Pos : SV_POSITION;
-    float4 W_Pos : POSITION;
+    float4 W_Pos : POSITION;    // NDC 월드 포지션
     float3 Norm : NORMAL;
     float3 Tan : TANGENT;
     float3 BiTan : BITANGENT;
-    float2 Tex : TEXCOORD0;
+    float2 Tex : TEXCOORD0;     // 텍스쳐 UV
+    float4 S_Pos : TEXCOORD1;   // NDC 쉐도우 포지션
 };
 
 struct VS_INPUT

@@ -1,0 +1,18 @@
+// ¡§¡° ºŒ¿Ã¥ı.
+#include "Shared.hlsli"
+
+PS_INPUT main(VS_INPUT input)
+{
+    PS_INPUT output = (PS_INPUT) 0;
+    output.Pos = mul(input.Pos, World);
+    output.W_Pos = output.Pos;
+    output.Pos = mul(output.Pos, View);
+    output.Pos = mul(output.Pos, Projection);
+    
+    output.Norm = normalize(mul(input.Norm, (float3x3) NormalMatrix));
+    output.Tan = normalize(mul(input.Tan, (float3x3) NormalMatrix));
+    output.BiTan = normalize(mul(input.BiTan, (float3x3) NormalMatrix));
+    output.Tex = input.Tex;
+    
+    return output;
+}

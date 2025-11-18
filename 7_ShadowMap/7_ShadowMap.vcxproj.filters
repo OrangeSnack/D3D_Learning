@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="소스 파일">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="헤더 파일">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="리소스 파일">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Shader">
+      <UniqueIdentifier>{2e5b8ecd-78be-42ed-8884-ad34df68ef78}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader\Skybox">
+      <UniqueIdentifier>{cf18f459-2a42-405a-87f1-ceb23e5b88a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader\Basic">
+      <UniqueIdentifier>{c8171d65-034e-4828-b4ce-d56ec3c7e9b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader\Basic\VS">
+      <UniqueIdentifier>{07612c05-f7e1-4e56-97d5-74b956602e95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader\Basic\PS">
+      <UniqueIdentifier>{0ed9613a-d912-4416-bc67-17136658278b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ShadowApp.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="WinMain.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="StaticMesh.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SkeletalMesh.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ShadowApp.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="StaticMesh.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SkeletalMesh.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="SkyBoxVertexShader.hlsl">
+      <Filter>Shader\Skybox</Filter>
+    </FxCompile>
+    <FxCompile Include="SkyBoxPixelShader.hlsl">
+      <Filter>Shader\Skybox</Filter>
+    </FxCompile>
+    <FxCompile Include="BasicVertexShader.hlsl">
+      <Filter>Shader\Basic\VS</Filter>
+    </FxCompile>
+    <FxCompile Include="AlphaClipPixelShader.hlsl">
+      <Filter>Shader\Basic\PS</Filter>
+    </FxCompile>
+    <FxCompile Include="BasicPixelShader.hlsl">
+      <Filter>Shader\Basic\PS</Filter>
+    </FxCompile>
+    <FxCompile Include="BlinnPhongPixelShader.hlsl">
+      <Filter>Shader\Basic\PS</Filter>
+    </FxCompile>
+    <FxCompile Include="SolidPixelShader.hlsl">
+      <Filter>Shader\Basic\PS</Filter>
+    </FxCompile>
+    <FxCompile Include="SkeletalVertexShader.hlsl">
+      <Filter>Shader\Basic\VS</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowMapVS.hlsl">
+      <Filter>Shader\Basic\VS</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shared.hlsli">
+      <Filter>Shader\Basic</Filter>
+    </None>
+    <None Include="SkyBoxShared.hlsli">
+      <Filter>Shader\Skybox</Filter>
+    </None>
+  </ItemGroup>
+</Project>

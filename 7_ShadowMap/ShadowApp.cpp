@@ -1,4 +1,4 @@
-#include "RigApp.h"
+#include "ShadowApp.h"
 #include "../BaseEngine/Helper.h"
 #include <d3dcompiler.h>
 #include <Directxtk/DDSTextureLoader.h>
@@ -9,18 +9,18 @@
 
 #pragma comment(lib,"d3dcompiler.lib")
 
-RigApp::RigApp(HINSTANCE hInstance) : GameApp(hInstance)
+ShadowApp::ShadowApp(HINSTANCE hInstance) : GameApp(hInstance)
 {
 }
 
-RigApp::~RigApp()
+ShadowApp::~ShadowApp()
 {
 	UninitImGUI();
 	UninitScene();
 	UninitD3D();
 }
 
-bool RigApp::Initialize(UINT Width, UINT Height)
+bool ShadowApp::Initialize(UINT Width, UINT Height)
 {
 	__super::Initialize(Width, Height);
 
@@ -39,7 +39,7 @@ bool RigApp::Initialize(UINT Width, UINT Height)
 	return true;
 }
 
-void RigApp::Update()
+void ShadowApp::Update()
 {
 	__super::Update();
 
@@ -90,10 +90,20 @@ void RigApp::Update()
 	// 스켈레탈메시 업데이트
 	for (const auto& skMesh : skeletal_models)
 		skMesh->model.Update();
+
+	// 쉐도우 뷰 설정
+	m_ShadowProjection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_ShadowViewport.Width / m_ShadowViewport.Height, 0.01f, 1000.0f);
+	m_ShadowLookAt = m_Camera.m_Position + m_Camera.GetForward() * m_ShadowForwardDistFromCamera;
+	
+	SimpleMath::Vector3 directionalLightDir{ m_CurrLightDirs.x, m_CurrLightDirs.y, m_CurrLightDirs.z };
+	m_ShadowPos = m_ShadowLookAt + (-directionalLightDir * m_ShadowUpDistFromLookAt);
+	m_ShadowView = XMMatrixLookAtLH(m_ShadowPos, m_ShadowLookAt, Vector3(0.0f, 1.0f, 0.0f));
 }
 
-void RigApp::Render()
+void ShadowApp::Render()
 {
+	// 
+
 	float color[4] = { 0.0f, 0.5f, 0.5f, 1.0f };
 
 	// Update matrix variables and lighting variables
@@ -196,6 +206,10 @@ void RigApp::Render()
 		skeletal_models[i]->model.Draw(m_pDeviceContext, buffers, 2, 1);
 	}
 
+	// ShadowMap
+	//m_pDeviceContext->OMSetRenderTargets(0, NULL, m_pShadowDSV.Get());
+
+
 	// GUI Render
 	RenderGUI();
 
@@ -203,7 +217,7 @@ void RigApp::Render()
 	m_pSwapChain->Present(0, 0);
 }
 
-bool RigApp::InitD3D()
+bool ShadowApp::InitD3D()
 {
 	// 스왑체인 속성 설정 구조체 생성.
 	DXGI_SWAP_CHAIN_DESC swapDesc = {};
@@ -311,10 +325,50 @@ bool RigApp::InitD3D()
 	// 기본 블랜딩 가져오기
 	m_pDeviceContext->OMGetBlendState(&m_pDefaultBS, nullptr, nullptr);
 
+	// 그림자설정
+	m_ShadowViewport = {};
+	m_ShadowViewport.TopLeftX = 0.0f;
+	m_ShadowViewport.TopLeftY = 0.0f;
+	m_ShadowViewport.Width = 8192.0f;
+	m_ShadowViewport.Height = 8192.0f;
+	m_ShadowViewport.MinDepth = 0.0f;
+	m_ShadowViewport.MaxDepth = 1.0f;
+
+	//그림자용 ShadowMap Texture와 SRV, DSV 생성
+	{
+		// 텍스쳐 생성
+		D3D11_TEXTURE2D_DESC texDesc = {};
+		texDesc.Width = (UINT)m_ShadowViewport.Width;
+		texDesc.Height = (UINT)m_ShadowViewport.Height;
+		texDesc.MipLevels = 1;
+		texDesc.ArraySize = 1;
+		texDesc.Usage = D3D11_USAGE_DEFAULT;
+		texDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+		texDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+		texDesc.SampleDesc.Count = 1;
+		texDesc.SampleDesc.Quality = 0;
+		HR_T(m_pDevice->CreateTexture2D(&texDesc, NULL, m_pShadowMap.GetAddressOf()));
+
+		// 스텐실뷰 생성
+		D3D11_DEPTH_STENCIL_VIEW_DESC descDSV = {};
+		descDSV.Format = DXGI_FORMAT_D32_FLOAT;
+		descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+		HR_T(m_pDevice->CreateDepthStencilView(m_pShadowMap.Get(), &descDSV, m_pShadowDSV.GetAddressOf()));
+	
+		// 리소스뷰 생성
+		D3D11_SHADER_RESOURCE_VIEW_DESC descSRV = {};
+		descSRV.Format = DXGI_FORMAT_R32_FLOAT;
+		descSRV.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		descSRV.Texture2D.MipLevels = 1;
+		HR_T(m_pDevice->CreateShaderResourceView(m_pShadowMap.Get(), &descSRV, m_pShadowMapSRV.GetAddressOf()));
+	}
+	
+
+
 	return true;
 }
 
-void RigApp::UninitD3D()
+void ShadowApp::UninitD3D()
 {
 	SAFE_RELEASE(m_pDevice);
 	SAFE_RELEASE(m_pDeviceContext);
@@ -322,7 +376,7 @@ void RigApp::UninitD3D()
 	SAFE_RELEASE(m_pRenderTargetView);
 }
 
-bool RigApp::InitScene()
+bool ShadowApp::InitScene()
 {
 	// 버텍스 쉐이더 컴파일
 	ID3D10Blob* vertexShader = nullptr;
@@ -384,7 +438,7 @@ bool RigApp::InitScene()
 	SAFE_RELEASE(pixelShader);
 	
 	// 모델 로딩
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 4; i++) {
 		models.push_back(std::make_unique<Object<StaticMesh>>(m_pDevice));
 	}
 
@@ -400,12 +454,15 @@ bool RigApp::InitScene()
 	models[1]->name = "Zelda";
 	models[2]->model.LoadFile(L"../Resources/Models/Tree/Tree.fbx");
 	models[2]->name = "Tree";
+	models[3]->model.LoadFile(L"../Resources/Models/Ground/Ground.fbx");
+	models[3]->name = "Ground";
 
 	/*skeletal_models[0]->model.LoadFile(L"../Resources/Models/BoxHuman/BoxHuman.fbx");
 	skeletal_models[0]->name = "BoxHuman";*/
 
 	//skeletal_models[0]->model.LoadFile(L"../Resources/Models/Skin/SkinningTest.fbx");
-	skeletal_models[0]->model.LoadFile(L"../Resources/Models/Mass/Zombie_Run.fbx");
+	//skeletal_models[0]->model.LoadFile(L"../Resources/Models/Mass/Zombie_Run.fbx");
+	skeletal_models[0]->model.LoadFile(L"../Resources/Models/Anim/Thriller3.fbx");
 	skeletal_models[0]->name = "Manny";
 
 	cube->LoadFile(L"../Resources/Models/Cube/Cube.fbx");
@@ -449,10 +506,12 @@ bool RigApp::InitScene()
 	m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_ClientWidth / (FLOAT)m_ClientHeight, 0.01f, 100.0f);
 
 	models[0]->transform.Scale = { 0.01f, 0.01f, 0.01f };
-	models[1]->transform.Scale = { 0.01f, 0.01f, 0.01f };
-
 	models[0]->transform.Position = { 5.0f, 0.0f, 0.0f };
+
+	models[1]->transform.Scale = { 0.01f, 0.01f, 0.01f };
 	models[1]->transform.Position = { -5.0f, 0.0f, 0.0f };
+
+	models[3]->transform.Position = { 0.0f, -0.1f, 0.0f };
 
 	skeletal_models[0]->transform.Scale = { 0.01f, 0.01f, 0.01f };
 	skeletal_models[0]->transform.Position = { 0.0f, 0.0f, -5.0f };
@@ -462,7 +521,7 @@ bool RigApp::InitScene()
 	return true;
 }
 
-void RigApp::UninitScene()
+void ShadowApp::UninitScene()
 {
 	SAFE_RELEASE(m_pConstantBuffer);
 	SAFE_RELEASE(m_pVertexShader);
@@ -483,7 +542,7 @@ void RigApp::UninitScene()
 	SAFE_RELEASE(m_pSkyTextureRV);
 }
 
-bool RigApp::InitImGUI()
+bool ShadowApp::InitImGUI()
 {
 	/*
 		ImGui 초기화.
@@ -502,7 +561,7 @@ bool RigApp::InitImGUI()
 	return true;
 }
 
-void RigApp::UninitImGUI()
+void ShadowApp::UninitImGUI()
 {
 	// Cleanup
 	ImGui_ImplDX11_Shutdown();
@@ -510,7 +569,7 @@ void RigApp::UninitImGUI()
 	ImGui::DestroyContext();
 }
 
-void RigApp::RenderGUI()
+void ShadowApp::RenderGUI()
 {
 	//아래부터는 ImGUI
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -614,104 +673,10 @@ void RigApp::RenderGUI()
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-LRESULT CALLBACK RigApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK ShadowApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
 		return true;
 
 	return __super::WndProc(hWnd, message, wParam, lParam);
 }
-
-//bool MeshApp::LoadVertex(std::vector<Vertex>* _vertices, const aiMesh* _mesh)
-//{
-//	for (int i = 0; i < _mesh->mNumVertices; i++) {
-//		Vertex v;
-//
-//		v.Pos = Vector3(_mesh->mVertices[i].x, _mesh->mVertices[i].y, _mesh->mVertices[i].z);
-//
-//		if (_mesh->HasNormals()) {
-//			v.Normal = Vector3(_mesh->mNormals[i].x, _mesh->mNormals[i].y, _mesh->mNormals[i].z);
-//		}
-//
-//		if (_mesh->HasTangentsAndBitangents()) {
-//			v.Tangent = Vector3(_mesh->mTangents[i].x, _mesh->mTangents[i].y, _mesh->mTangents[i].z);
-//			v.BiTangent = Vector3(_mesh->mBitangents[i].x, _mesh->mBitangents[i].y, _mesh->mBitangents[i].z);
-//		}
-//
-//		if (_mesh->HasTextureCoords(0)) {
-//			v.Tex = Vector2(_mesh->mTextureCoords[0][i].x, _mesh->mTextureCoords[0][i].y);
-//		}
-//
-//		_vertices->push_back(v);
-//	}
-//
-//	return true;
-//}
-
-//bool MeshApp::LoadIndex(std::vector<UINT>* _indices, const aiMesh* _mesh)
-//{
-//	for (int i = 0; i < _mesh->mNumFaces; i++) {
-//		for(int j = 0; j < _mesh->mFaces[i].mNumIndices; j++)
-//			_indices->push_back(UINT(_mesh->mFaces[i].mIndices[j]));
-//	}
-//
-//	return true;
-//}
-//
-//bool MeshApp::LoadMaterials(std::vector<Materials>& _out, const Model* _model)
-//{
-//	const aiScene* scene = _model->scene;
-//
-//	if (!_model->scene->HasMaterials())
-//		return false;
-//
-//	_out.resize(_model->scene->mNumMaterials);
-//
-//	for (int i = 0; i < _model->scene->mNumMaterials; i++) {
-//		// TODO :: 메테리얼으로 ResourceView 만들기
-//		aiString aiStr;
-//		aiMaterial* aiMat = scene->mMaterials[i];
-//
-//		// 디퓨즈
-//		if (aiMat->GetTextureCount(aiTextureType_DIFFUSE)) {
-//			if (aiMat->GetTexture(aiTextureType_DIFFUSE, 0, &aiStr) == aiReturn_SUCCESS) {
-//				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
-//				std::filesystem::path relativePath = _model->filePath / p.filename();
-//
-//				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].diffuse));
-//			}
-//		}
-//
-//		// 스페큘러
-//		if (aiMat->GetTextureCount(aiTextureType_SPECULAR)) {
-//			if (aiMat->GetTexture(aiTextureType_SPECULAR, 0, &aiStr) == aiReturn_SUCCESS) {
-//				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
-//				std::filesystem::path relativePath = _model->filePath / p.filename();
-//
-//				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].specular));
-//			}
-//		}
-//
-//		// 노말
-//		if (aiMat->GetTextureCount(aiTextureType_NORMALS)) {
-//			if (aiMat->GetTexture(aiTextureType_NORMALS, 0, &aiStr) == aiReturn_SUCCESS) {
-//				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
-//				std::filesystem::path relativePath = _model->filePath / p.filename();
-//
-//				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
-//			}
-//		}
-//
-//		// 이미션
-//		if (aiMat->GetTextureCount(aiTextureType_EMISSIVE)) {
-//			if (aiMat->GetTexture(aiTextureType_EMISSIVE, 0, &aiStr) == aiReturn_SUCCESS) {
-//				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
-//				std::filesystem::path relativePath = _model->filePath / p.filename();
-//
-//				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].emissive));
-//			}
-//		}
-//	}
-//
-//	return true;
-//}

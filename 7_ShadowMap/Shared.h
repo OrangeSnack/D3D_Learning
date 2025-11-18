@@ -31,6 +31,12 @@ struct ConstantBuffer
 	DirectX::SimpleMath::Matrix mNormalMatrix;
 };
 
+struct ShadowBuffer
+{
+	DirectX::SimpleMath::Matrix ShadowView;
+	DirectX::SimpleMath::Matrix ShadowProjection;
+};
+
 struct MaterialBuffer
 {
 	DirectX::SimpleMath::Vector4 vLightDir;

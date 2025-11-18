@@ -33,17 +33,17 @@ struct Object
 	Transform transform;
 };
 
-class RigApp : public GameApp
+class ShadowApp : public GameApp
 {
 public:
-	RigApp(HINSTANCE hInstance);
-	~RigApp();
+	ShadowApp(HINSTANCE hInstance);
+	~ShadowApp();
 
 	Vector4 m_ClearColor = Vector4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	// Directional 라이트
 	XMFLOAT4 m_LightColors = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);				// 라이트 색상
-	XMFLOAT4 m_InitialLightDirs = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);	// 초기 라이트 방향
+	XMFLOAT4 m_InitialLightDirs = XMFLOAT4(0.0f, -1.0f, 1.0f, 1.0f);	// 초기 라이트 방향
 	XMFLOAT4 m_CurrLightDirs = m_InitialLightDirs;							// 현재 라이트 방향
 	XMFLOAT4 m_LightDirsEvaluated = {};										// 계산된 라이트 방향
 
@@ -124,6 +124,19 @@ public:
 	ID3D11InputLayout* m_pSkyInputLayout = nullptr;	// 스카이박스입력 레이아웃
 	ID3D11RasterizerState* m_SkyboxRS = nullptr;	// 스카이박스 전용 RS
 	ID3D11ShaderResourceView* m_pSkyTextureRV = nullptr;	// 스카이박스 텍스처 리소스 뷰.
+
+	// 그림자
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> m_pShadowMap;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_pShadowDSV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_pShadowMapSRV;
+	D3D11_VIEWPORT m_ShadowViewport;
+	Matrix m_ShadowProjection;
+	Matrix m_ShadowView;
+	Vector3 m_ShadowLookAt;
+	Vector3 m_ShadowPos;
+	float m_ShadowForwardDistFromCamera = 10.0f;
+	float m_ShadowUpDistFromLookAt = 100.0f;
+
 
 	bool Initialize(UINT Width, UINT Height) override;
 	void Update() override;
