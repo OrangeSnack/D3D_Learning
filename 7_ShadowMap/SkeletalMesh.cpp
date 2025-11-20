@@ -136,9 +136,6 @@ bool SkeletalMesh::LoadFile(std::wstring _filePath)
 		offsetBuffer.boneMat[i] = boneOffsetMat[i];
 	}
 
-	boneIndex;
-	boneMat;
-
 	bd = {};
 	bd.Usage = D3D11_USAGE_DEFAULT;
 	bd.ByteWidth = sizeof(BoneBuffer);
@@ -146,8 +143,10 @@ bool SkeletalMesh::LoadFile(std::wstring _filePath)
 	bd.CPUAccessFlags = 0;
 	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pOffsetBuffer));
 
-	tempContext->UpdateSubresource(m_pOffsetBuffer, 0, nullptr, &offsetBuffer, 0, 0);
-	tempContext->VSSetConstantBuffers(3, 1, &m_pOffsetBuffer);
+	if (m_pOffsetBuffer) {
+		tempContext->UpdateSubresource(m_pOffsetBuffer, 0, nullptr, &offsetBuffer, 0, 0);
+		tempContext->VSSetConstantBuffers(4, 1, &m_pOffsetBuffer);
+	}
 
 	// 버텍스 쉐이더 생성
 	D3D_SHADER_MACRO macros[] = {
@@ -172,9 +171,6 @@ bool SkeletalMesh::LoadFile(std::wstring _filePath)
 		OutputDebugStringA((char*)errormsg->GetBufferPointer());
 		errormsg->Release();
 	}
-	else {
-		OutputDebugStringA("Shader compile failed with no error message.");
-	}
 
 
 	HR_T(m_pDevice->CreateVertexShader(
@@ -182,6 +178,28 @@ bool SkeletalMesh::LoadFile(std::wstring _filePath)
 		vertexShader->GetBufferSize(), 
 		nullptr, 
 		&m_pVertexShader));
+
+	// 쉐도우맵 VS 생성
+	HR_T(D3DCompileFromFile(
+		L"ShadowMapVS.hlsl",
+		macros,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		"main",
+		"vs_5_0",
+		0, 0,
+		&vertexShader,
+		&errormsg));
+
+	if (errormsg) {
+		OutputDebugStringA((char*)errormsg->GetBufferPointer());
+		errormsg->Release();
+	}
+
+	HR_T(m_pDevice->CreateVertexShader(
+		vertexShader->GetBufferPointer(),
+		vertexShader->GetBufferSize(),
+		nullptr,
+		&m_pShadowVS));
 
 	return true;
 }
@@ -533,15 +551,68 @@ bool SkeletalMesh::SetResources(MaterialBuffer* _matBuffer, BoneBuffer* _boneBuf
 	return true;
 }
 
-bool SkeletalMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer** _bufferList, UINT _boneBuffIdx, UINT _matBuffIdx, ID3D11PixelShader* _shader /*= nullptr*/, bool _useMat /*= true*/)
+bool SkeletalMesh::ShadowDraw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer** _bufferList, UINT _boneBuffIdx, ID3D11ShaderResourceView* _rsv)
 {
 	// 쉐이더 업데이트
-	if (_shader)
-		_deviceContext->PSSetShader(_shader, nullptr, 0);
-
 	ID3D11VertexShader* defaultShader = nullptr;
 	_deviceContext->VSGetShader(&defaultShader, nullptr, nullptr);
-	_deviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
+	_deviceContext->VSSetShader(m_pShadowVS, nullptr, 0);
+
+	// RSV 등록
+	modelRV[5] = _rsv;
+
+	// 매트릭스 업데이트
+	for (int i = 0; i < BONE_MAXSIZE; i++) {
+		boneBuff->boneMat[i] = boneMat[i];
+	}
+
+	// 본버퍼 업데이트
+	_deviceContext->UpdateSubresource(_bufferList[_boneBuffIdx], 0, nullptr, boneBuff, 0, 0);
+
+	// 노드에 따라 인덱스 불러와서 업데이트
+	std::stack<aiNode*> nodes;
+	nodes.push(scene->mRootNode);
+	int nodeIdx = 0;
+
+	while (!nodes.empty()) {
+		aiNode* node = nodes.top();
+		nodes.pop();
+
+		// 메시 그리기
+		for (int i = 0; i < node->mNumMeshes; i++) {
+			int meshIdx = node->mMeshes[i];
+			_deviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer[meshIdx], &m_VertexBufferStride, &m_VertexBufferOffset);
+			_deviceContext->IASetIndexBuffer(m_pIndexBuffer[meshIdx], DXGI_FORMAT_R32_UINT, 0);
+
+			_deviceContext->DrawIndexed(m_nIndices[meshIdx], 0, 0);
+		}
+
+		// 차일드 큐에 넣기
+		for (int i = 0; i < node->mNumChildren; i++) {
+			nodes.push(node->mChildren[i]);
+		}
+
+		nodeIdx++;
+	}
+
+	// 쉐이더 돌려놓기
+	_deviceContext->VSSetShader(defaultShader, nullptr, 0);
+
+	return true;
+}
+
+bool SkeletalMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer** _bufferList, UINT _boneBuffIdx, UINT _matBuffIdx, ID3D11VertexShader* _vShader /*= nullptr*/, ID3D11PixelShader* _pShader /*= nullptr*/, bool _useMat /*= true*/)
+{
+	// 쉐이더 업데이트
+	ID3D11VertexShader* defaultShader = nullptr;
+	_deviceContext->VSGetShader(&defaultShader, nullptr, nullptr);
+	if (_vShader)
+		_deviceContext->VSSetShader(_vShader, nullptr, 0);
+	else
+		_deviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
+
+	if (_pShader)
+		_deviceContext->PSSetShader(_pShader, nullptr, 0);
 
 	// 매트릭스 업데이트
 	for (int i = 0; i < BONE_MAXSIZE; i++) {
@@ -572,9 +643,10 @@ bool SkeletalMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer** _buf
 				modelRV[1] = m_nMaterials[matIdx].normal;
 				modelRV[2] = m_nMaterials[matIdx].specular;
 				modelRV[3] = m_nMaterials[matIdx].emissive;
+				modelRV[4] = nullptr;
 				matBuff->Matdiffuse = m_nMaterials[matIdx].BaseColor;
 
-				_deviceContext->PSSetShaderResources(0, 4, modelRV);
+				_deviceContext->PSSetShaderResources(0, 6, modelRV);
 				_deviceContext->UpdateSubresource(_bufferList[_matBuffIdx], 0, nullptr, matBuff, 0, 0);
 			}
 

@@ -92,12 +92,12 @@ void ShadowApp::Update()
 		skMesh->model.Update();
 
 	// 쉐도우 뷰 설정
-	m_ShadowProjection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_ShadowViewport.Width / m_ShadowViewport.Height, 0.01f, 1000.0f);
+	m_ShadowProjection = XMMatrixTranspose(XMMatrixPerspectiveFovLH(XM_PIDIV4 * shadowFov, m_ShadowViewport.Width / m_ShadowViewport.Height, shadowNearZ, shadowFarZ));
 	m_ShadowLookAt = m_Camera.m_Position + m_Camera.GetForward() * m_ShadowForwardDistFromCamera;
-	
+
 	SimpleMath::Vector3 directionalLightDir{ m_CurrLightDirs.x, m_CurrLightDirs.y, m_CurrLightDirs.z };
 	m_ShadowPos = m_ShadowLookAt + (-directionalLightDir * m_ShadowUpDistFromLookAt);
-	m_ShadowView = XMMatrixLookAtLH(m_ShadowPos, m_ShadowLookAt, Vector3(0.0f, 1.0f, 0.0f));
+	m_ShadowView = XMMatrixTranspose(XMMatrixLookAtLH(m_ShadowPos, m_ShadowLookAt, Vector3(0.0f, 1.0f, 0.0f)));
 }
 
 void ShadowApp::Render()
@@ -127,9 +127,14 @@ void ShadowApp::Render()
 
 	BoneBuffer bb1;
 
+	ShadowBuffer sb1;
+	sb1.ShadowProjection = m_ShadowProjection;
+	sb1.ShadowView = m_ShadowView;
+
 	m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
 	m_pDeviceContext->UpdateSubresource(m_pMatBuffer, 0, nullptr, &mb1, 0, 0);
 	m_pDeviceContext->UpdateSubresource(m_pBoneBuffer, 0, nullptr, &bb1, 0, 0);
+	m_pDeviceContext->UpdateSubresource(m_pShadowBuffer, 0, nullptr, &sb1, 0, 0);
 
 	// Clear 
 	m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView, color);
@@ -138,14 +143,15 @@ void ShadowApp::Render()
 	// Render Setting
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	
-	ID3D11Buffer* buffers[] = { m_pConstantBuffer, m_pMatBuffer, m_pBoneBuffer };
-	m_pDeviceContext->VSSetConstantBuffers(0, 3, buffers);
+	ID3D11Buffer* buffers[] = { m_pConstantBuffer, m_pMatBuffer, m_pShadowBuffer, m_pBoneBuffer };
+	m_pDeviceContext->VSSetConstantBuffers(0, 4, buffers);
 	m_pDeviceContext->PSSetConstantBuffers(0, 2, buffers);
 
 	// ----- 스카이박스 렌더링 -----
 
 	// 스카이박스용 렌더타겟 설정
 	m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, NULL);
+	m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
 
 	// 스카이박스 렌더링
 	m_pDeviceContext->IASetInputLayout(m_pSkyInputLayout);
@@ -160,8 +166,35 @@ void ShadowApp::Render()
 
 	// ----- 모델 렌더링 -----
 
+	// 쉐도우맵 패스
+	// 렌더타겟 설정
+	m_pDeviceContext->OMSetRenderTargets(0, nullptr, m_pShadowDSV.Get());
+	m_pDeviceContext->ClearDepthStencilView(m_pShadowDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	m_pDeviceContext->RSSetViewports(1, &m_ShadowViewport);
+	m_pDeviceContext->PSSetShader(nullptr, nullptr, 0);
+	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
+	m_pDeviceContext->RSSetState(m_defaultRS);
+	m_pDeviceContext->OMSetBlendState(m_pAlphaBS, nullptr, 0xFFFFFFFF);
+
+	// 객체 그림자 렌더링
+	for (int i = 0; i < models.size(); i++) {
+		cb1.mWorld = XMMatrixTranspose(models[i]->transform.m_World);
+		cb1.mNormalMatrix = XMMatrixInverse(nullptr, models[i]->transform.m_World);
+		m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
+		models[i]->model.ShadowDraw(m_pDeviceContext, m_pShadowMapRSV.Get());
+	}
+	for (int i = 0; i < skeletal_models.size(); i++) {
+		cb1.mWorld = XMMatrixTranspose(skeletal_models[i]->transform.m_World);
+		cb1.mNormalMatrix = XMMatrixInverse(nullptr, skeletal_models[i]->transform.m_World);
+		m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
+		skeletal_models[i]->model.SetResources(&mb1, &bb1);
+		skeletal_models[i]->model.ShadowDraw(m_pDeviceContext, buffers, 3, m_pShadowMapRSV.Get());
+	}
+
+	// 메인 패스
 	// 렌더타겟 설정
 	m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
+	m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
 
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
 	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
@@ -169,28 +202,12 @@ void ShadowApp::Render()
 	m_pDeviceContext->RSSetState(m_defaultRS);
 	m_pDeviceContext->OMSetBlendState(m_pAlphaBS, nullptr, 0xFFFFFFFF);
 
-	if (useAB)
-		m_pDeviceContext->PSSetShader(m_pBlinnPixelShader, nullptr, 0);
-	else
+	if (useAC)
 		m_pDeviceContext->PSSetShader(m_pAlphaClipShader, nullptr, 0);
+	else
+		m_pDeviceContext->PSSetShader(m_pBlinnPixelShader, nullptr, 0);
 
-	/*for (int i = 0; i < m_pVertexBuffer.size(); i++) {
-		m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer[i], &m_VertexBufferStride, &m_VertexBufferOffset);
-		m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer[i], DXGI_FORMAT_R32_UINT, 0);
-
-		UINT matIdx = model.scene->mMeshes[i]->mMaterialIndex;
-		modelRV[0] = m_pMaterials[matIdx].diffuse;
-		modelRV[1] = m_pMaterials[matIdx].normal;
-		modelRV[2] = m_pMaterials[matIdx].specular;
-		modelRV[3] = m_pMaterials[matIdx].emissive;
-		modelRV[4] = m_pSkyTextureRV;
-
-		m_pDeviceContext->PSSetShaderResources(0, 5, modelRV);
-
-		m_pDeviceContext->DrawIndexed(m_nIndices[i], 0, 0);
-	}*/
-
-	// 이걸로 대체
+	// 객체 렌더링
 	for (int i = 0; i < models.size(); i++) {
 		cb1.mWorld = XMMatrixTranspose(models[i]->transform.m_World);
 		cb1.mNormalMatrix = XMMatrixInverse(nullptr, models[i]->transform.m_World);
@@ -203,12 +220,8 @@ void ShadowApp::Render()
 		cb1.mNormalMatrix = XMMatrixInverse(nullptr, skeletal_models[i]->transform.m_World);
 		m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
 		skeletal_models[i]->model.SetResources(&mb1, &bb1);
-		skeletal_models[i]->model.Draw(m_pDeviceContext, buffers, 2, 1);
+		skeletal_models[i]->model.Draw(m_pDeviceContext, buffers, 3, 1);
 	}
-
-	// ShadowMap
-	//m_pDeviceContext->OMSetRenderTargets(0, NULL, m_pShadowDSV.Get());
-
 
 	// GUI Render
 	RenderGUI();
@@ -249,14 +262,13 @@ bool ShadowApp::InitD3D()
 	SAFE_RELEASE(pBackBuffer);
 
 	// 뷰포트
-	D3D11_VIEWPORT viewport = {};
-	viewport.TopLeftX = 0.0f;
-	viewport.TopLeftY = 0.0f;
-	viewport.Width = static_cast<float>(m_ClientWidth);
-	viewport.Height = static_cast<float>(m_ClientHeight);
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-	m_pDeviceContext->RSSetViewports(1, &viewport);
+	m_defaultViewport = {};
+	m_defaultViewport.TopLeftX = 0.0f;
+	m_defaultViewport.TopLeftY = 0.0f;
+	m_defaultViewport.Width = static_cast<float>(m_ClientWidth);
+	m_defaultViewport.Height = static_cast<float>(m_ClientHeight);
+	m_defaultViewport.MinDepth = 0.0f;
+	m_defaultViewport.MaxDepth = 1.0f;
 
 	// 뎊스 생성
 	D3D11_TEXTURE2D_DESC descDepth = {};
@@ -347,7 +359,7 @@ bool ShadowApp::InitD3D()
 		texDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 		texDesc.SampleDesc.Count = 1;
 		texDesc.SampleDesc.Quality = 0;
-		HR_T(m_pDevice->CreateTexture2D(&texDesc, NULL, m_pShadowMap.GetAddressOf()));
+		HR_T(m_pDevice->CreateTexture2D(&texDesc, nullptr, m_pShadowMap.GetAddressOf()));
 
 		// 스텐실뷰 생성
 		D3D11_DEPTH_STENCIL_VIEW_DESC descDSV = {};
@@ -360,7 +372,7 @@ bool ShadowApp::InitD3D()
 		descSRV.Format = DXGI_FORMAT_R32_FLOAT;
 		descSRV.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 		descSRV.Texture2D.MipLevels = 1;
-		HR_T(m_pDevice->CreateShaderResourceView(m_pShadowMap.Get(), &descSRV, m_pShadowMapSRV.GetAddressOf()));
+		HR_T(m_pDevice->CreateShaderResourceView(m_pShadowMap.Get(), &descSRV, m_pShadowMapRSV.GetAddressOf()));
 	}
 	
 
@@ -470,9 +482,10 @@ bool ShadowApp::InitScene()
 	// Render() 에서 파이프라인에 바인딩할 상수 버퍼 생성
 	D3D11_BUFFER_DESC bd = {};
 	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(ConstantBuffer);
 	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	bd.CPUAccessFlags = 0;
+
+	bd.ByteWidth = sizeof(ConstantBuffer);
 	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pConstantBuffer));
 
 	bd.ByteWidth = sizeof(MaterialBuffer);
@@ -480,6 +493,9 @@ bool ShadowApp::InitScene()
 
 	bd.ByteWidth = sizeof(BoneBuffer);
 	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pBoneBuffer));
+
+	bd.ByteWidth = sizeof(ShadowBuffer);
+	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pShadowBuffer));
 
 	// 스카이박스 텍스쳐 로딩
 	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Church.dds", nullptr, &m_pSkyTextureRV));
@@ -511,7 +527,8 @@ bool ShadowApp::InitScene()
 	models[1]->transform.Scale = { 0.01f, 0.01f, 0.01f };
 	models[1]->transform.Position = { -5.0f, 0.0f, 0.0f };
 
-	models[3]->transform.Position = { 0.0f, -0.1f, 0.0f };
+	models[3]->transform.Scale = { 0.01f, 0.01f, 0.01f };
+	models[3]->transform.Position = { 0.0f, -0.01f, 0.0f };
 
 	skeletal_models[0]->transform.Scale = { 0.01f, 0.01f, 0.01f };
 	skeletal_models[0]->transform.Position = { 0.0f, 0.0f, -5.0f };
@@ -531,7 +548,6 @@ void ShadowApp::UninitScene()
 	SAFE_RELEASE(m_pSkyPixelShader);
 	SAFE_RELEASE(m_pInputLayout);
 	SAFE_RELEASE(m_pDepthStencilView);
-	SAFE_RELEASE(m_pTextureRV);
 	SAFE_RELEASE(m_pSamplerLinear);
 	SAFE_RELEASE(m_defaultRS);
 
@@ -617,7 +633,7 @@ void ShadowApp::RenderGUI()
 
 		ImGui::PushID(2);
 		ImGui::SeparatorText("Light");
-		ImGui::Checkbox("AlphaBlend", &useAB);
+		ImGui::Checkbox("AlphaCut", &useAC);
 		ImGui::Checkbox("AlphaSort", &useAS);
 		ImGui::SliderFloat3("LightDir", lightDir, -1.0f, 1.0f);
 		ImGui::ColorEdit4("Color(l_i)", (float*)&m_LightColors);
@@ -663,6 +679,25 @@ void ShadowApp::RenderGUI()
 		ImGui::Text(std::to_string(skeletal_models[0]->model.animIdx).c_str());
 
 		ImGui::PopID();
+		ImGui::End();
+	}
+
+	{
+		// 쉐도우맵 이미지
+		ImGui::Begin("ShadowMap");
+		ImGui::PushID(1);
+		ImGui::SeparatorText("Texture");
+		ImGui::Image((ImTextureID)m_pShadowMapRSV.Get(), ImVec2(256.0f, 256.0f));
+
+		ImGui::PopID();
+
+		ImGui::PushID(2);
+		ImGui::SeparatorText("ShadowMapInfo");
+		ImGui::SliderFloat("SFov", &shadowFov, 0.1f, 2.0f);
+		ImGui::SliderFloat("NearZ", &shadowNearZ, 0.01f, shadowFarZ-0.01f);
+		ImGui::SliderFloat("FarZ", &shadowFarZ, shadowNearZ + 0.01f, 1000.0f);
+		ImGui::PopID();
+
 		ImGui::End();
 	}
 

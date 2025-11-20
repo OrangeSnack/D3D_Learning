@@ -37,8 +37,9 @@ public:
 	std::vector<ID3D11Buffer*> m_pIndexBuffer;			// 모델 인덱스 버퍼
 	std::vector<UINT> m_nIndices;						// 인덱스 개수
 
-	ID3D11ShaderResourceView* modelRV[5] = { nullptr, };	// 메테리얼
-	ID3D11PixelShader* m_pAlphaClipShader = nullptr;			// 디퓨즈 전용 쉐이더
+	ID3D11ShaderResourceView* modelRV[6] = { nullptr, };	// 메테리얼
+	ID3D11PixelShader* m_pAlphaClipShader = nullptr;		// 디퓨즈 전용 쉐이더
+	ID3D11VertexShader* m_pShadowVS = nullptr;				// 쉐도우 버텍스 쉐이더
 
 	UINT m_VertexBufferStride = 0;		// 버텍스 하나의 크기
 	UINT m_VertexBufferOffset = 0;		// 버텍스 버퍼의 오프셋
@@ -48,6 +49,7 @@ public:
 	bool LoadIndex(std::vector<UINT>* _indices, const aiMesh* _mesh);
 	bool LoadMaterials(std::vector<Materials>& _out, const StaticMesh* _model);
 
+	bool ShadowDraw(ID3D11DeviceContext* _deviceContext, ID3D11ShaderResourceView* _rsv);
 	bool Draw(ID3D11DeviceContext* _deviceContext , ID3D11PixelShader* _shader, bool _useMat = true);
 };
 

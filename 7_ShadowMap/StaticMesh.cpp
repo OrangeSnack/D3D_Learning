@@ -2,6 +2,7 @@
 #include <iostream>
 #include <directxtk/WICTextureLoader.h>
 #include "../BaseEngine/Helper.h"
+#include <d3dcompiler.h>
 using namespace DirectX::SimpleMath;
 using namespace DirectX;
 
@@ -91,6 +92,18 @@ bool StaticMesh::LoadFile(std::wstring _filePath)
 
 	for (const auto& indices : modelIndices)
 		m_nIndices.push_back(UINT(indices.size()));
+
+	// 버텍스 쉐이더 생성
+
+	ID3D10Blob* vertexShader = nullptr;
+
+	HR_T(CompileShaderFromFile(L"ShadowMapVS.hlsl", "main", "vs_5_0", &vertexShader));
+
+	HR_T(m_pDevice->CreateVertexShader(
+		vertexShader->GetBufferPointer(),
+		vertexShader->GetBufferSize(),
+		nullptr,
+		&m_pShadowVS));
 
 	return true;
 }
@@ -194,6 +207,29 @@ bool StaticMesh::LoadMaterials(std::vector<Materials>& _out, const StaticMesh* _
 	return true;
 }
 
+bool StaticMesh::ShadowDraw(ID3D11DeviceContext* _deviceContext, ID3D11ShaderResourceView* _rsv)
+{
+	// 쉐이더 업데이트
+	ID3D11VertexShader* defaultShader = nullptr;
+	_deviceContext->VSGetShader(&defaultShader, nullptr, nullptr);
+	_deviceContext->VSSetShader(m_pShadowVS, nullptr, 0);
+
+	// ResourceView 설정
+	modelRV[5] = _rsv;
+
+	for (int i = 0; i < m_pVertexBuffer.size(); i++) {
+		_deviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer[i], &m_VertexBufferStride, &m_VertexBufferOffset);
+		_deviceContext->IASetIndexBuffer(m_pIndexBuffer[i], DXGI_FORMAT_R32_UINT, 0);
+
+		_deviceContext->DrawIndexed(m_nIndices[i], 0, 0);
+	}
+
+	// 쉐이더 복원
+	_deviceContext->VSSetShader(defaultShader, nullptr, 0);
+
+	return true;
+}
+
 bool StaticMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11PixelShader* _shader, bool _useMat)
 {
 	if(_shader)
@@ -209,8 +245,9 @@ bool StaticMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11PixelShader* _s
 			modelRV[1] = m_pMaterials[matIdx].normal;
 			modelRV[2] = m_pMaterials[matIdx].specular;
 			modelRV[3] = m_pMaterials[matIdx].emissive;
+			modelRV[4] = nullptr;
 
-			_deviceContext->PSSetShaderResources(0, 4, modelRV);
+			_deviceContext->PSSetShaderResources(0, 6, modelRV);
 		}
 
 		_deviceContext->DrawIndexed(m_nIndices[i], 0, 0);

@@ -3,6 +3,8 @@ Texture2D _norm : register(t1);
 Texture2D _spec : register(t2);
 Texture2D _emis : register(t3);
 TextureCube _cubemap : register(t4);
+Texture2D _shadowmap : register(t5);
+
 SamplerState _sp0 : register(s0);
 
 cbuffer TransBuffer : register(b0)
@@ -31,31 +33,31 @@ cbuffer MatBuffer : register(b1)
     float3 padding;
 }
 
-cbuffer BoneWorldBuffer : register(b2)
+cbuffer ShadowVP : register(b2)
+{
+    matrix ShadowView;
+    matrix ShadowProjection;
+}
+
+cbuffer BoneWorldBuffer : register(b3)
 {
     matrix boneMat[256];
 }
 
-cbuffer BoneOffSetBuffer : register(b3)
+cbuffer BoneOffSetBuffer : register(b4)
 {
     matrix boneOffsetMat[256];
-}
-
-cbuffer ShadowVP : register(b4)
-{
-    Matrix ShadowView;
-    Matrix ShadowProjection;
 }
 
 struct PS_INPUT
 {
     float4 Pos : SV_POSITION;
-    float4 W_Pos : POSITION;    // NDC 월드 포지션
+    float4 W_Pos : POSITION;    // 월드 포지션
     float3 Norm : NORMAL;
     float3 Tan : TANGENT;
     float3 BiTan : BITANGENT;
     float2 Tex : TEXCOORD0;     // 텍스쳐 UV
-    float4 S_Pos : TEXCOORD1;   // NDC 쉐도우 포지션
+    float4 S_Pos : TEXCOORD1;   // 쉐도우 포지션
 };
 
 struct VS_INPUT

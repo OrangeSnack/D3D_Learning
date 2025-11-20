@@ -45,7 +45,7 @@ PS_INPUT main(VS_INPUT input)
     output.Tex = input.Tex;
     
     // 현재 위치를 ShadowMap 위치로 변환
-    output.S_Pos = mul(float4(output.Pos.xyz, 1.0f), ShadowView);
+    output.S_Pos = mul(float4(output.W_Pos.xyz, 1.0f), ShadowView);
     output.S_Pos = mul(output.S_Pos, ShadowProjection);
     
     return output;

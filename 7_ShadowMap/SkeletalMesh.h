@@ -49,9 +49,10 @@ public:
 	std::vector<ID3D11Buffer*> m_pIndexBuffer;			// 모델 인덱스 버퍼
 	std::vector<UINT> m_nIndices;						// 모델 인덱스 개수
 	//std::vector<aiMatrix4x4> nodeWorld;					// 노드별 월드매트릭스
-	ID3D11ShaderResourceView* modelRV[5] = { nullptr, };	// 메테리얼
+	ID3D11ShaderResourceView* modelRV[6] = { nullptr, };	// 메테리얼
 	ID3D11PixelShader* m_pAlphaClipShader = nullptr;		// 디퓨즈 전용 쉐이더
 	ID3D11VertexShader* m_pVertexShader = nullptr;			// 스켈레탈용 버텍스 쉐이더
+	ID3D11VertexShader* m_pShadowVS = nullptr;				// 쉐도우맵 버텍스 쉐이더
 
 	std::vector<aiAnimation*> animations;						// 애니메이션 모음집
 	std::unordered_map<std::string, aiNodeAnim*> nodeAnimMap;	// 이름기반 노드맵
@@ -89,7 +90,8 @@ public:
 	bool SetLoop(bool _val);
 	bool StopAnim();
 	bool SetResources(MaterialBuffer* _matBuffer, BoneBuffer* _boneBuffer);
-	bool Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer** _bufferList, UINT _boneBuffIdx, UINT _matBuffIdx, ID3D11PixelShader* _shader = nullptr, bool _useMat = true);
+	bool ShadowDraw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer** _bufferList, UINT _boneBuffIdx, ID3D11ShaderResourceView* _rsv);
+	bool Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer** _bufferList, UINT _boneBuffIdx, UINT _matBuffIdx, ID3D11VertexShader* _vShader = nullptr, ID3D11PixelShader* _pShader = nullptr, bool _useMat = true);
 
 	DirectX::SimpleMath::Matrix ConvertMat(const aiMatrix4x4& aiMat);
 };

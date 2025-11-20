@@ -59,8 +59,6 @@ public:
 
 	// 오브젝트
 	std::vector<Transform> modelFactor;
-	//float cbRotation[3] = {};
-	//float scaleFactor = 1.0f;
 
 	// 라이트
 	float lightDir[3] = {
@@ -78,7 +76,7 @@ public:
 	Vector4 m_MatSpecular = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	int m_Shiness = 32;
-	bool useAB = true;		// 알파블랜드 사용
+	bool useAC = true;		// 알파컷 사용
 	bool useAS = true;		// 알파소팅 사용
 
 	// End ---------
@@ -95,16 +93,14 @@ public:
 	ID3D11Buffer* m_pConstantBuffer = nullptr;		// 상수 버퍼
 	ID3D11Buffer* m_pMatBuffer = nullptr;			// 메테리얼 버퍼
 	ID3D11Buffer* m_pBoneBuffer = nullptr;			// 본 버퍼
+	ID3D11Buffer* m_pShadowBuffer = nullptr;		// 쉐도우 버퍼
 
-	ID3D11ShaderResourceView* m_pTextureRV = nullptr;	// 텍스처 리소스 뷰.
-	ID3D11ShaderResourceView* m_pNormalRV = nullptr;	// 노멀맵 리소스 뷰.
-	ID3D11ShaderResourceView* m_pSpecularRV = nullptr;	// 스페큘러맵 리소스 뷰.
 	ID3D11SamplerState* m_pSamplerLinear = nullptr;		// 샘플러 상태.
 	ID3D11RasterizerState* m_defaultRS = nullptr;		// 기본 RS
-	ID3D11ShaderResourceView* m_pRenderImage = nullptr;	// 렌더링 이미지 복사본 (알파블랜딩용)
 	
 	ID3D11BlendState* m_pAlphaBS = nullptr;				// 알파블랜드 스테이트
 	ID3D11BlendState* m_pDefaultBS = nullptr;			// 기본블랜드 스테이트
+	D3D11_VIEWPORT m_defaultViewport;					// 기본 뷰포트
 
 	// FBX 모델
 	std::vector < std::unique_ptr<Object<StaticMesh>>> models;		// 모델 저장
@@ -128,14 +124,17 @@ public:
 	// 그림자
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> m_pShadowMap;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_pShadowDSV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_pShadowMapSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_pShadowMapRSV;
 	D3D11_VIEWPORT m_ShadowViewport;
 	Matrix m_ShadowProjection;
 	Matrix m_ShadowView;
 	Vector3 m_ShadowLookAt;
 	Vector3 m_ShadowPos;
-	float m_ShadowForwardDistFromCamera = 10.0f;
-	float m_ShadowUpDistFromLookAt = 100.0f;
+	float m_ShadowForwardDistFromCamera = 5.0f;
+	float m_ShadowUpDistFromLookAt = 50.0f;
+	float shadowNearZ = 30.0f;
+	float shadowFarZ = 150.0f;
+	float shadowFov = 1.0f;
 
 
 	bool Initialize(UINT Width, UINT Height) override;

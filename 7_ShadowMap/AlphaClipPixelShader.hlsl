@@ -39,9 +39,26 @@ float4 main(PS_INPUT input) : SV_TARGET
     float3 middleVector = normalize(-lightDir + -camDir);
     float4 specularImage = _spec.Sample(_sp0, input.Tex);
     float4 specularColor = pow(saturate(dot(middleVector, normal)), shiness) * intensity * specularImage * specular * matSpecular * vLightColor;
+   
+    // ½¦µµ¿ì¸Ê Ã³¸®
+    float currentShadowDepth = input.S_Pos.z / input.S_Pos.w;   // ½¦µµ¿ì¸Ê ±âÁØ NDC ZÁÂÇ¥
+    float2 shadowUV = input.S_Pos.xy / input.S_Pos.w;
+    
+    shadowUV.y *= -1.0f;
+    shadowUV = (shadowUV * 0.5f) + 0.5f;
+    
+    if (shadowUV.x >= 0.0f && shadowUV.x <= 1.0f && shadowUV.y >= 0.0f && shadowUV.y <= 1.0f)
+    {
+        float sampleShadowDepth = _shadowmap.Sample(_sp0, shadowUV).r;
+        
+        if (currentShadowDepth > sampleShadowDepth + 0.001f)
+        {
+            diffuseColor.rgb = 0.0f;
+        }
+    }
     
     finalColor.rgb = (ambientColor.rgb + diffuseColor.rgb) * texColor.rgb + specularColor.rgb + emitColor.rgb;
     finalColor.a = 1;
-   
+    
     return finalColor;
 }
