@@ -460,7 +460,7 @@ bool ShadowApp::InitScene()
 	//model = std::make_unique<Model>(m_pDevice);
 	cube = std::make_unique<StaticMesh>(m_pDevice);
 
-	models[0]->model.LoadFile(L"../Resources/Models/Mass/Character.fbx");
+	models[0]->model.LoadFile(L"../Resources/Models/PrimRose/char.fbx");
 	models[0]->name = "Jane Doe";
 	models[1]->model.LoadFile(L"../Resources/Models/Zelda/Zelda.fbx");
 	models[1]->name = "Zelda";

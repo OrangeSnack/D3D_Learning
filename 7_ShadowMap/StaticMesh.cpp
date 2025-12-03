@@ -3,6 +3,7 @@
 #include <directxtk/WICTextureLoader.h>
 #include "../BaseEngine/Helper.h"
 #include <d3dcompiler.h>
+#include <DirectXTex.h>
 using namespace DirectX::SimpleMath;
 using namespace DirectX;
 

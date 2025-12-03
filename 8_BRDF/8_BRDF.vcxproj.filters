@@ -13,85 +13,64 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Shader">
-      <UniqueIdentifier>{2e5b8ecd-78be-42ed-8884-ad34df68ef78}</UniqueIdentifier>
+    <Filter Include="소스 파일\Components">
+      <UniqueIdentifier>{d564cafe-ea31-4090-be95-6fa3e027b483}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shader\Skybox">
-      <UniqueIdentifier>{cf18f459-2a42-405a-87f1-ceb23e5b88a8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Basic">
-      <UniqueIdentifier>{c8171d65-034e-4828-b4ce-d56ec3c7e9b5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Basic\VS">
-      <UniqueIdentifier>{07612c05-f7e1-4e56-97d5-74b956602e95}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Basic\PS">
-      <UniqueIdentifier>{0ed9613a-d912-4416-bc67-17136658278b}</UniqueIdentifier>
+    <Filter Include="헤더 파일\Components">
+      <UniqueIdentifier>{180668c1-8177-4092-936c-2f2c69f53439}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ShadowApp.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
+    <ClInclude Include="framework.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="PBRApp.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="GameObject.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Component.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Transform.h">
+      <Filter>헤더 파일\Components</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="WinMain.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="StaticMesh.cpp">
+    <ClCompile Include="PBRApp.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="SkeletalMesh.cpp">
+    <ClCompile Include="GameObject.cpp">
       <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Component.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Transform.cpp">
+      <Filter>소스 파일\Components</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ShadowApp.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="StaticMesh.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="SkeletalMesh.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Shared.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
+    <ResourceCompile Include="8_BRDF.rc">
+      <Filter>리소스 파일</Filter>
+    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="SkyBoxVertexShader.hlsl">
-      <Filter>Shader\Skybox</Filter>
-    </FxCompile>
-    <FxCompile Include="SkyBoxPixelShader.hlsl">
-      <Filter>Shader\Skybox</Filter>
-    </FxCompile>
-    <FxCompile Include="BasicVertexShader.hlsl">
-      <Filter>Shader\Basic\VS</Filter>
-    </FxCompile>
-    <FxCompile Include="AlphaClipPixelShader.hlsl">
-      <Filter>Shader\Basic\PS</Filter>
-    </FxCompile>
-    <FxCompile Include="BasicPixelShader.hlsl">
-      <Filter>Shader\Basic\PS</Filter>
-    </FxCompile>
-    <FxCompile Include="BlinnPhongPixelShader.hlsl">
-      <Filter>Shader\Basic\PS</Filter>
-    </FxCompile>
-    <FxCompile Include="SolidPixelShader.hlsl">
-      <Filter>Shader\Basic\PS</Filter>
-    </FxCompile>
-    <FxCompile Include="SkeletalVertexShader.hlsl">
-      <Filter>Shader\Basic\VS</Filter>
-    </FxCompile>
-    <FxCompile Include="ShadowMapVS.hlsl">
-      <Filter>Shader\Basic\VS</Filter>
-    </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shared.hlsli">
-      <Filter>Shader\Basic</Filter>
-    </None>
-    <None Include="SkyBoxShared.hlsli">
-      <Filter>Shader\Skybox</Filter>
-    </None>
+    <Image Include="small.ico">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="8_BRDF.ico">
+      <Filter>리소스 파일</Filter>
+    </Image>
   </ItemGroup>
 </Project>
