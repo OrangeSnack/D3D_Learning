@@ -9,7 +9,8 @@
 #include "Transform.h"
 
 
-
+class Component;
+class Transform;
 class GameObject
 {
 public:
@@ -31,8 +32,9 @@ template<typename T, typename... Args>
 std::weak_ptr<T>
 GameObject::AddComponent(Args&&... args)
 {
-	components[typeid(T)] = std::make_shared<T>(std::forward<Args>(args));
-	return components[typeid(T)];
+	auto comp = std::make_shared<T>(std::forward<Args>(args)...);
+	components[typeid(T)] = comp;
+	return comp;
 }
 
 // 컴포넌트 찾기
@@ -42,7 +44,7 @@ GameObject::GetComponent()
 {
 	auto it = components.find(typeid(T));
 	if (it == components.end())
-		return nullptr;
+		return std::weak_ptr<T>();
 	return std::static_pointer_cast<T>(it->second);
 }
 

@@ -4,6 +4,10 @@
 
 class Transform : public Component
 {
+public:
+	void Start() {}
+	void Update() {}
+
 	DirectX::SimpleMath::Matrix m_World = DirectX::SimpleMath::Matrix::Identity;	// 월드좌표계 변환행렬
 	DirectX::SimpleMath::Vector3 Position = DirectX::SimpleMath::Vector3::Zero;		// x, y, z Position
 	DirectX::SimpleMath::Vector3 Rotation = DirectX::SimpleMath::Vector3::Zero;		// pitch, yaw, roll

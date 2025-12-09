@@ -5,7 +5,7 @@
 class PhongRenderer : public Renderer
 {
 	ID3D11VertexShader* m_pVertexShader = nullptr;		// Á¤Á¡ ½¦ÀÌ´õ
-	ID3D11PixelShader* m_pAlphaClipShader = nullptr;	// µðÇ»Áî Àü¿ë ½¦ÀÌ´õ\
+	ID3D11PixelShader* m_pAlphaClipShader = nullptr;	// µðÇ»Áî Àü¿ë ½¦ÀÌ´õ
 	ID3D11InputLayout* m_pInputLayout = nullptr;	// ÀÔ·Â ·¹ÀÌ¾Æ¿ô
 };
 
