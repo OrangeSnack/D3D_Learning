@@ -1,12 +1,10 @@
 #pragma once
-#include "GameObject.h"
+#include "framework.h"
 
 class GameObject;
 class Component
 {
 public:
-	Component() = default;
-
 	// 부모객체 표시
 	GameObject* gameObject = nullptr;
 

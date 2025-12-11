@@ -8,12 +8,12 @@
 class ResourceManager
 {
 private:
-	ResourceManager() = default;
 	std::unordered_map<std::wstring, std::shared_ptr<GameResource>> resources;
+	static std::unique_ptr<ResourceManager> instance;
 
 public:
-	static std::unique_ptr<ResourceManager> instance;
-	static void Initialize();
+	static ResourceManager* GetInstance();
+	void Initialize();
 	void Start();
 	void Update();
 
@@ -26,7 +26,6 @@ std::weak_ptr<T>
 ResourceManager::LoadFile(std::wstring _path, Args&&... args)
 {
 	auto it = resources.find(_path);
-
 	
 	if (it != resources.end()) {
 		// 기존 리소스 반환, 만료시간 초기화

@@ -4,19 +4,26 @@ using namespace std;
 
 #define OUTDATETIME 10.0f
 
-void ResourceManager::Initialize()
+std::unique_ptr<ResourceManager> ResourceManager::instance = nullptr;
+
+ResourceManager* ResourceManager::GetInstance()
 {
 	if (!instance) {
-		instance = make_unique<ResourceManager>();
+		instance = std::make_unique<ResourceManager>();
 	}
+	return instance.get();
+}
 
+void ResourceManager::Initialize()
+{
 	// 객체 초기화 함수
 	instance->Start();
+	resources.clear();
 }
 
 void ResourceManager::Start()
 {
-	resources.clear();
+	
 }
 
 void ResourceManager::Update()
