@@ -4,15 +4,17 @@
 
 #define BONE_MAXSIZE 256
 
-struct Materials {
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> diffuse = nullptr;		// 디퓨즈맵
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> specular = nullptr;		// 스펙큘러맵
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> normal = nullptr;			// 노멀맵
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> emissive = nullptr;		// 발광맵
-	DirectX::SimpleMath::Color BaseColor = { 1.0f, 1.0f, 1.0f, 1.0f };	// 베이스 컬러
+enum RenderType {
+	SKYBOX = 0,
+	PREDEPTH = 1,
+	PBR = 2,
+	PHONG = 3,
+	TRANSCULANT = 4,
+	POSTPROCESS = 5,
+	UI = 6
 };
 
-struct Vertex
+struct Mesh_SkinVertex
 {
 	DirectX::SimpleMath::Vector3 Pos;		// 정점 위치 정보
 	DirectX::SimpleMath::Vector3 Normal;	// 노멀
@@ -23,13 +25,18 @@ struct Vertex
 	float boneWeights[4] = { 0.0f, 0.0f, 0.0f, 0.0f };		// 각 본들의 가중치
 };
 
-struct CamBuffer {
+struct Mesh_BoneBuffer
+{
+	DirectX::SimpleMath::Matrix boneMat[BONE_MAXSIZE] = { DirectX::SimpleMath::Matrix::Identity, };
+};
+
+struct Render_CamBuffer {
 	DirectX::SimpleMath::Matrix m_View = DirectX::SimpleMath::Matrix::Identity;			// 카메라좌표계 변환행렬
 	DirectX::SimpleMath::Matrix m_Projection = DirectX::SimpleMath::Matrix::Identity;	// ndc좌표계 변환행렬
 	DirectX::SimpleMath::Vector4 camPos;
 };
 
-struct TransformBuffer
+struct Render_TransformBuffer
 {
 	DirectX::SimpleMath::Matrix mWorld;
 	DirectX::SimpleMath::Matrix mView;
@@ -37,13 +44,13 @@ struct TransformBuffer
 	DirectX::SimpleMath::Matrix mNormalMatrix;
 };
 
-struct ShadowBuffer
+struct Render_ShadowBuffer
 {
 	DirectX::SimpleMath::Matrix ShadowView;
 	DirectX::SimpleMath::Matrix ShadowProjection;
 };
 
-struct LightBuffer {
+struct Render_LightBuffer {
 	DirectX::SimpleMath::Vector4 vLightDir;
 	DirectX::SimpleMath::Vector4 vLightColor;
 
@@ -52,7 +59,7 @@ struct LightBuffer {
 	DirectX::SimpleMath::Vector4 specular;
 };
 
-struct MaterialBuffer
+struct Render_MaterialBuffer
 {
 	DirectX::SimpleMath::Vector4 Matambient;	// 메테리얼 정보
 	DirectX::SimpleMath::Vector4 Matdiffuse;
@@ -60,9 +67,4 @@ struct MaterialBuffer
 
 	int shiness;
 	DirectX::SimpleMath::Vector3 padding;
-};
-
-struct BoneBuffer
-{
-	DirectX::SimpleMath::Matrix boneMat[BONE_MAXSIZE] = { DirectX::SimpleMath::Matrix::Identity, };
 };

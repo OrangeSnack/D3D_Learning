@@ -22,6 +22,8 @@ public:
 	static Microsoft::WRL::ComPtr<ID3D11Device5> m_pDevice;
 	static Camera* mainCamera;
 
+	std::vector<GameObject> objects;
+
 public:
 	PBRApp(HINSTANCE hInstance) : GameApp(hInstance) {};
 	~PBRApp();

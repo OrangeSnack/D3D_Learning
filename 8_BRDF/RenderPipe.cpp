@@ -17,14 +17,14 @@ RenderPipe* RenderPipe::GetInstance()
 	return instance.get();
 }
 
-void RenderPipe::Initialize(ID3D11Device5* _device, HWND* _hwnd, UINT _ClientWidth, UINT _ClientHeight)
+void RenderPipe::Initialize(Microsoft::WRL::ComPtr<ID3D11Device5>& _device, HWND* _hwnd, UINT _ClientWidth, UINT _ClientHeight)
 {
 	// hWnd 등록
 	assert(_hwnd != nullptr && "RenderPipe::Initialize : hWnd must not be nullptr!!");
 	m_pHwnd = _hwnd;
 
 	// 디바이스 등록
-	assert(_device != nullptr && "RenderPipe::Initialize : Device must not be nullptr!!");
+	assert(_device && "RenderPipe::Initialize : Device must not be nullptr!!");
 	m_pDevice = _device;
 
 	// 클라이언트 사이즈 등록
@@ -70,7 +70,7 @@ void RenderPipe::InitD3D()
 
 	// 스왑체인 생성
 	Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain;
-	HR_T(dxgiFactory->CreateSwapChainForHwnd(m_pDevice, *m_pHwnd, &swapDesc,
+	HR_T(dxgiFactory->CreateSwapChainForHwnd(m_pDevice.Get(), *m_pHwnd, &swapDesc,
 		nullptr, nullptr, swapChain.GetAddressOf()));
 	HR_T(swapChain.As(&m_pSwapChain));
 
@@ -131,11 +131,30 @@ void RenderPipe::InitD3D()
 	defaultRsDesc.AntialiasedLineEnable = FALSE;
 	HR_T(m_pDevice->CreateRasterizerState2(&defaultRsDesc, m_pDefaultRS.GetAddressOf()));
 
-	// 블랜드 스테이트 로드
-	ComPtr<ID3D11BlendState> blendState;
-	m_pDeviceContext->OMGetBlendState(blendState.GetAddressOf(), nullptr, nullptr);
-	blendState.As(&m_pDefaultBS);
-		
+	// 블랜드 스테이트 생성
+	D3D11_BLEND_DESC1 blendDesc = {};
+	blendDesc.AlphaToCoverageEnable = FALSE;
+	blendDesc.IndependentBlendEnable = FALSE;
+	blendDesc.RenderTarget[0].BlendEnable = FALSE;
+	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	HR_T(m_pDevice->CreateBlendState1(&blendDesc, m_pDefaultBS.GetAddressOf()));
+	assert(m_pDefaultBS && "RenderPipe::InitD3D : defaultBS not initialized!!");
+
+	// 레스터라이저 스테이트 생성
+	D3D11_RASTERIZER_DESC2 rsDesc = {};
+	rsDesc.FillMode = D3D11_FILL_SOLID;
+	rsDesc.CullMode = D3D11_CULL_BACK;
+	rsDesc.FrontCounterClockwise = FALSE;
+	rsDesc.DepthBias = 0;
+	rsDesc.DepthBiasClamp = 0.0f;
+	rsDesc.SlopeScaledDepthBias = 0.0f;
+	rsDesc.DepthClipEnable = TRUE;
+	rsDesc.ScissorEnable = FALSE;
+	rsDesc.MultisampleEnable = FALSE;
+	rsDesc.AntialiasedLineEnable = FALSE;
+	HR_T(m_pDevice->CreateRasterizerState2(&rsDesc, m_pDefaultRS.GetAddressOf()));
+	assert(m_pDefaultRS && "RenderPipe::InitD3D : defaultRS not initialized!!");
+	
 
 	//// 알파블랜드 스테이트 생성
 	//D3D11_BLEND_DESC1 blendDesc = {};

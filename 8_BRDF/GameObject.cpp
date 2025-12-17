@@ -30,3 +30,15 @@ std::weak_ptr<T> GameObject::GetComponent()
 		return nullptr;
 	return std::static_pointer_cast<T>(it->second);
 }
+
+void GameObject::Start()
+{
+	for (const auto& comp : components)
+		comp.second->Start();
+}
+
+void GameObject::Update()
+{
+	for (const auto& comp : components)
+		comp.second->Update();
+}

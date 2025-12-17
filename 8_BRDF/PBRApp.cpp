@@ -2,6 +2,7 @@
 #include "ResourceManager.h"
 #include "RenderPipe.h"
 #include "../BaseEngine/Helper.h"
+#include "AssimpLoader.h"
 
 using namespace Microsoft;
 using namespace Microsoft::WRL;
@@ -30,10 +31,15 @@ bool PBRApp::Initialize(UINT Width, UINT Height)
 	HR_T(device.As(&m_pDevice));
 
 	// °´Ã¼ ÃÊ±âÈ­
-	ResourceManager::GetInstance()->Initialize();
-	RenderPipe::GetInstance()->Initialize(m_pDevice.Get(), &m_hWnd, m_ClientWidth, m_ClientHeight);
+	ResourceManager::GetInstance()->Initialize(m_pDevice);
+	RenderPipe::GetInstance()->Initialize(m_pDevice, &m_hWnd, m_ClientWidth, m_ClientHeight);
+	AssimpLoader::GetInstance()->Initialize();
 	GameTimer::m_Instance->Reset();
 	GameTimer::m_Instance->Start();
+
+	// ¾À ÃÊ±âÈ­
+	if (!InitScene())
+		return false;
 
 	return true;
 }
@@ -42,9 +48,23 @@ void PBRApp::Update()
 {
 	__super::Update();
 	ResourceManager::GetInstance()->Update();
+
+	//AssimpLoader::GetInstance()->LoadStaticMesh(L"../Resources/Models/Zelda/Zelda.fbx");
 }
 
 void PBRApp::Render()
+{
+	RenderPipe::GetInstance()->Render();
+}
+
+bool PBRApp::InitScene()
+{
+	AssimpLoader::GetInstance()->LoadStaticMesh(L"../Resources/Models/Zelda/Zelda.fbx");
+
+	return true;
+}
+
+void PBRApp::UninitScene()
 {
 
 }

@@ -14,8 +14,12 @@ ResourceManager* ResourceManager::GetInstance()
 	return instance.get();
 }
 
-void ResourceManager::Initialize()
+void ResourceManager::Initialize(Microsoft::WRL::ComPtr<ID3D11Device5>& _device)
 {
+	// 디바이스 등록
+	assert(_device && "ResourceManager::Initialize : device must not be nullptr!!");
+	m_pDevice = _device;
+
 	// 객체 초기화 함수
 	instance->Start();
 	resources.clear();
@@ -29,8 +33,17 @@ void ResourceManager::Start()
 void ResourceManager::Update()
 {
 	for (const auto& resource : resources) {
-		if(resource.second->elipsedTime >= OUTDATETIME)
+		if (resource.second.use_count() == 1) {
+			if (resource.second->elipsedTime >= OUTDATETIME)
+				erasePending.push_back(resource.first);
+			else
+				resource.second->elipsedTime += GameTimer::m_Instance->DeltaTime();
+		}
+	}
 
-		resource.second->elipsedTime += GameTimer::m_Instance->DeltaTime();
+	if (!erasePending.empty()) {
+		for (auto& key : erasePending)
+			resources.erase(key);
+		erasePending.clear();
 	}
 }

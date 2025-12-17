@@ -40,15 +40,24 @@
     <Filter Include="Components\Core">
       <UniqueIdentifier>{d0194ffc-832c-4e82-a882-ce4a50638ffb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Light\Core">
+      <UniqueIdentifier>{dd923fec-2981-436c-a9fa-7d8a19e2eca1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Materials">
+      <UniqueIdentifier>{b772469e-87be-4e8d-bf7a-19c57c184625}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Meshes">
+      <UniqueIdentifier>{ddaa032f-1b23-4926-9253-f51b6db0a80d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Materials\Core">
+      <UniqueIdentifier>{0a3d3ad2-d084-435e-be30-d0af5e62665c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="targetver.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="PBRApp.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="GameObject.h">
@@ -93,14 +102,29 @@
     <ClInclude Include="ResourceManager.h">
       <Filter>Resources\Core</Filter>
     </ClInclude>
-    <ClInclude Include="SkeletalMesh.h">
-      <Filter>Resources</Filter>
-    </ClInclude>
-    <ClInclude Include="StaticMesh.h">
-      <Filter>Resources</Filter>
-    </ClInclude>
     <ClInclude Include="MeshRenderer.h">
       <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="SkeletalMesh.h">
+      <Filter>Resources\Meshes</Filter>
+    </ClInclude>
+    <ClInclude Include="StaticMesh.h">
+      <Filter>Resources\Meshes</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture2D.h">
+      <Filter>Resources\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>Resources\Materials\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="PBRApp.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="PhongMaterial.h">
+      <Filter>Resources\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="PBRMaterial.h">
+      <Filter>Resources\Materials</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -146,14 +170,26 @@
     <ClCompile Include="ResourceManager.cpp">
       <Filter>Resources\Core</Filter>
     </ClCompile>
-    <ClCompile Include="SkeletalMesh.cpp">
-      <Filter>Resources</Filter>
-    </ClCompile>
-    <ClCompile Include="StaticMesh.cpp">
-      <Filter>Resources</Filter>
-    </ClCompile>
     <ClCompile Include="MeshRenderer.cpp">
       <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="SkeletalMesh.cpp">
+      <Filter>Resources\Meshes</Filter>
+    </ClCompile>
+    <ClCompile Include="StaticMesh.cpp">
+      <Filter>Resources\Meshes</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture2D.cpp">
+      <Filter>Resources\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="PhongMaterial.cpp">
+      <Filter>Resources\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="Material.cpp">
+      <Filter>Resources\Materials\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="PBRMaterial.cpp">
+      <Filter>Resources\Materials</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

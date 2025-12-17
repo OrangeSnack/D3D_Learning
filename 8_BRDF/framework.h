@@ -10,11 +10,12 @@
 #include <windows.h>
 // C 런타임 헤더 파일입니다.
 #include <stdlib.h>
-#include <malloc.h>
 #include <memory.h>
+#include <malloc.h>
 #include <tchar.h>
 #include <wrl/client.h>
 
+#include <memory>
 #include <d3d11_4.h>
 #include <dxgi1_4.h>
 #include <directxtk/SimpleMath.h>

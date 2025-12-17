@@ -21,4 +21,7 @@ public:
 	std::wstring tag = L"Default";
 	std::unordered_map<std::type_index, std::shared_ptr<Component>> components;
 	std::weak_ptr<Transform> transform;
+
+	virtual void Start();
+	virtual void Update();
 };

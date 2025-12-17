@@ -9,20 +9,24 @@ class ResourceManager
 {
 private:
 	std::unordered_map<std::wstring, std::shared_ptr<GameResource>> resources;
+	std::vector<std::wstring> erasePending;
 	static std::unique_ptr<ResourceManager> instance;
+	Microsoft::WRL::ComPtr<ID3D11Device5> m_pDevice;
 
 public:
 	static ResourceManager* GetInstance();
-	void Initialize();
+	void Initialize(Microsoft::WRL::ComPtr<ID3D11Device5>& _device);
 	void Start();
 	void Update();
+	
+	ID3D11Device5* GetDevice() { return m_pDevice.Get(); }
 
 	template <typename T, typename ... Args>
-	std::weak_ptr<T> LoadFile(std::wstring _path, Args&&... args);
+	std::shared_ptr<T> LoadFile(std::wstring _path, Args&&... args);
 };
 
 template <typename T, typename ... Args>
-std::weak_ptr<T>
+std::shared_ptr<T>
 ResourceManager::LoadFile(std::wstring _path, Args&&... args)
 {
 	auto it = resources.find(_path);
@@ -34,7 +38,8 @@ ResourceManager::LoadFile(std::wstring _path, Args&&... args)
 	}
 	else {
 		// 货肺款 府家胶 积己
-		auto resource = std::make_shared<T>(std::forward<Args>(args));
+		auto resource = std::make_shared<T>(std::forward<Args>(args)...);
+		resource->filePath = _path;
 		resources[_path] = resource;
 		return resource;
 	}
