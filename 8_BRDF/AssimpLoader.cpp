@@ -210,7 +210,7 @@ AssimpLoader::~AssimpLoader()
 	delete(instance);
 }
 
-void AssimpLoader::LoadStaticMesh(std::wstring _filePath)
+std::shared_ptr<StaticMesh> AssimpLoader::LoadStaticMesh(std::wstring _filePath)
 {
 	UINT importFlags =
 		aiProcess_CalcTangentSpace |
@@ -237,6 +237,14 @@ void AssimpLoader::LoadStaticMesh(std::wstring _filePath)
 	auto scene = m_importer.ReadFile(p.string().c_str(), importFlags);
 	auto meshResource = ResourceManager::GetInstance()->LoadFile<StaticMesh>(p.wstring());
 
+	// 임포트 성공여부 확인
+	if (!scene || !scene->HasMeshes()) {
+		std::string assErrStr = m_importer.GetErrorString();
+		std::string errorStr = "AssimpLoader::LoadStaticMesh : Scene load Error!! ("
+			+ assErrStr + ")";
+		throw std::exception(errorStr.c_str());
+	}
+
 	if (!meshResource->meshData) {
 		auto meshData = std::make_shared<MeshData>();
 		
@@ -256,16 +264,20 @@ void AssimpLoader::LoadStaticMesh(std::wstring _filePath)
 			meshGroupData[scene->mMeshes[i]->mMaterialIndex].push_back(i);
 		}
 
+		// 메시그룹 저장
+		meshResource->meshGroupData = meshGroupData;
+
 		// 메테리얼 로딩
 		LoadMaterials(meshData->materials, scene, p.parent_path().wstring());
-		meshResource->meshData = meshData;
 
 		// 메시데이터 리소스 등록
 		meshResource->meshData = meshData;
 
-		//TODO::MeshBuffer 생성
+		// MeshBuffer 생성
 		LoadMeshBuffers(meshResource->gpuBuffer, meshResource->meshData);
 	}
+
+	return meshResource;
 };
 
 void AssimpLoader::LoadSkeletalMesh(std::wstring _filePath)

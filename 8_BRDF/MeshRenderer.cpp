@@ -19,7 +19,8 @@ void MeshRenderer::Start()
 	// 유효성 확인
 	if (!mesh || mesh->meshData || mesh->gpuBuffer)
 		return;
-
+	
+	// TODO:: 렌더파이프에 렌더러 등록하기, 메테리얼 읽어서 렌더러에 메시 정보 보내기.
 	/*if (auto renderer = dynamic_pointer_cast<PBRRenderer>(mesh->modelMaterials[0]->renderer))
 		RenderPipe::GetInstance()->AddRenderer<PBRRenderer>(1, renderer);
 	else if (auto renderer = dynamic_pointer_cast<PhongRenderer>(mesh->modelMaterials[0]->renderer))
