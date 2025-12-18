@@ -2,7 +2,12 @@
 #include "../BaseEngine/TimeSystem.h"
 using namespace std;
 
-#define OUTDATETIME 10.0f
+#ifdef _DEBUG
+	#define OUTDATETIME 10.0f
+#else
+	#define OUTDATETIME 300.0f
+#endif // _DEBUG
+#define TICKRATE 5.0f
 
 std::unique_ptr<ResourceManager> ResourceManager::instance = nullptr;
 
@@ -32,18 +37,29 @@ void ResourceManager::Start()
 
 void ResourceManager::Update()
 {
-	for (const auto& resource : resources) {
-		if (resource.second.use_count() == 1) {
-			if (resource.second->elipsedTime >= OUTDATETIME)
-				erasePending.push_back(resource.first);
+	static float tickTime = 0.0f;
+	if (tickTime > TICKRATE) {
+		for (const auto& resource : resources) {
+			if (resource.second.use_count() == 1) {
+				if (resource.second->elipsedTime >= OUTDATETIME)
+					erasePending.push_back(resource.first);
+				else
+					resource.second->elipsedTime += tickTime;
+			}
 			else
-				resource.second->elipsedTime += GameTimer::m_Instance->DeltaTime();
+				resource.second->elipsedTime = 0.0f;
 		}
-	}
 
-	if (!erasePending.empty()) {
-		for (auto& key : erasePending)
-			resources.erase(key);
-		erasePending.clear();
+		if (!erasePending.empty()) {
+			for (auto& key : erasePending)
+				resources.erase(key);
+			erasePending.clear();
+		}
+
+		while(tickTime > TICKRATE)
+			tickTime -= TICKRATE;
+	}
+	else {
+		tickTime += GameTimer::m_Instance->DeltaTime();
 	}
 }

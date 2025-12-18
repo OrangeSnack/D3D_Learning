@@ -143,6 +143,7 @@
     <ClInclude Include="RenderStruct.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ResourceManager.h" />
+    <ClInclude Include="ResourceShared.h" />
     <ClInclude Include="SkeletalMesh.h" />
     <ClInclude Include="SkyBoxRenderer.h" />
     <ClInclude Include="StaticMesh.h" />

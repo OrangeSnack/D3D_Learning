@@ -59,10 +59,11 @@ bool AssimpLoader::LoadMaterials(std::vector<std::shared_ptr<Material>>& _out, c
 	_out.resize(_scene->mNumMaterials);
 
 	for (UINT i = 0; i < _scene->mNumMaterials; i++) {
-		// TODO :: 메테리얼으로 ResourceView 만들기
 		aiString aiStr;
 		aiMaterial* aiMat = _scene->mMaterials[i];
 		auto m_pDevice = ResourceManager::GetInstance()->GetDevice();
+
+		// 현재 기본값은 퐁 메테리얼이다.
 		auto currMat = std::make_shared<PhongMaterial>();
 		currMat->renderer = std::make_shared<PhongRenderer>();
 
@@ -142,6 +143,55 @@ bool AssimpLoader::LoadMaterials(std::vector<std::shared_ptr<Material>>& _out, c
 	return true;
 }
 
+bool AssimpLoader::LoadMeshBuffers(std::shared_ptr<MeshGPU>& _out, std::shared_ptr<MeshData>& _meshData)
+{
+	// shared 생성
+	_out = std::make_shared<MeshGPU>();
+
+	// 디바이스 가져오기
+	const auto device = ResourceManager::GetInstance()->GetDevice();
+
+	// 버텍스 버퍼 생성
+	D3D11_BUFFER_DESC bd = {};
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.CPUAccessFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA vbData = {};
+	for (int i = 0; i < _meshData->vertices.size(); i++) {
+		bd.ByteWidth = UINT(sizeof(Mesh_Vertex) * _meshData->vertices[i].size());
+		vbData.pSysMem = _meshData->vertices[i].data();
+
+		Microsoft::WRL::ComPtr<ID3D11Buffer> tempBuffer = nullptr;
+		HR_T(device->CreateBuffer(&bd, &vbData, &tempBuffer));
+
+		if (tempBuffer)
+			_out->vertexBuffers.push_back(tempBuffer);
+	}
+
+	// 인덱스 버퍼 생성
+	bd = {};
+	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.CPUAccessFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA ibData = {};
+
+
+	for (int i = 0; i < _meshData->indices.size(); i++) {
+		bd.ByteWidth = UINT(sizeof(UINT) * _meshData->indices[i].size());
+		ibData.pSysMem = _meshData->indices[i].data();
+
+		Microsoft::WRL::ComPtr<ID3D11Buffer> tempBuffer = nullptr;
+		HR_T(device->CreateBuffer(&bd, &ibData, &tempBuffer));
+
+		if (tempBuffer)
+			_out->indexBuffers.push_back(tempBuffer);
+	}
+
+	return true;
+}
+
 AssimpLoader* AssimpLoader::GetInstance()
 {
 	if (instance == nullptr) {
@@ -186,9 +236,13 @@ void AssimpLoader::LoadStaticMesh(std::wstring _filePath)
 	// 리소스 로드
 	auto scene = m_importer.ReadFile(p.string().c_str(), importFlags);
 	auto meshResource = ResourceManager::GetInstance()->LoadFile<StaticMesh>(p.wstring());
-	meshResource->scene = scene;
 
-	if (meshResource->modelVertices.empty()) {
+	if (!meshResource->meshData) {
+		auto meshData = std::make_shared<MeshData>();
+		
+		// 메시 그룹 <MatIdx, vec<MeshIdx>>
+		std::unordered_map<UINT, std::vector<UINT>> meshGroupData;
+
 		// 메시 로딩
 		for (UINT i = 0; i < scene->mNumMeshes; i++) {
 			std::vector<Mesh_Vertex> tempV;
@@ -196,12 +250,21 @@ void AssimpLoader::LoadStaticMesh(std::wstring _filePath)
 			LoadVertex(&tempV, scene->mMeshes[i]);
 			LoadIndex(&tempI, scene->mMeshes[i]);
 
-			meshResource->modelVertices.push_back(tempV);
-			meshResource->modelIndices.push_back(tempI);
+			meshData->vertices.push_back(tempV);
+			meshData->indices.push_back(tempI);
+
+			meshGroupData[scene->mMeshes[i]->mMaterialIndex].push_back(i);
 		}
 
 		// 메테리얼 로딩
-		LoadMaterials(meshResource->modelMaterials, scene, p.parent_path().wstring());
+		LoadMaterials(meshData->materials, scene, p.parent_path().wstring());
+		meshResource->meshData = meshData;
+
+		// 메시데이터 리소스 등록
+		meshResource->meshData = meshData;
+
+		//TODO::MeshBuffer 생성
+		LoadMeshBuffers(meshResource->gpuBuffer, meshResource->meshData);
 	}
 };
 

@@ -1,30 +1,16 @@
 #pragma once
 #include "framework.h"
-#include "GameResource.h"
-#include "RenderStruct.h"
-#include "Material.h"
 #include <assimp/scene.h>
+#include "GameResource.h"
+#include "ResourceShared.h"
 
-struct Mesh_Vertex
-{
-	DirectX::SimpleMath::Vector3 Pos;		// 정점 위치 정보
-	DirectX::SimpleMath::Vector3 Normal;	// 노멀
-	DirectX::SimpleMath::Vector3 Tangent;	// 탄젠트
-	DirectX::SimpleMath::Vector3 BiTangent;	// Bi탄젠트
-	DirectX::SimpleMath::Vector2 Tex;		// 텍스쳐 UV
-};
-
-class Material;
 class StaticMesh : public GameResource
 {
 public:
-	std::vector<std::vector<Mesh_Vertex>> modelVertices;
-	std::vector<std::vector<UINT>> modelIndices;
-	std::vector<std::shared_ptr<Material>> modelMaterials;
-
-	const aiScene* scene = nullptr;
-
-	std::vector<Microsoft::WRL::ComPtr<ID3D11Buffer>> vertexBuffers;
-	std::vector<Microsoft::WRL::ComPtr<ID3D11Buffer>> indexBuffer;
+	std::shared_ptr<MeshData> meshData;		// 메시 데이터
+	std::shared_ptr<MeshGPU> gpuBuffer;		// GPU 버퍼
+	std::unordered_map<UINT, std::vector<UINT>> meshGroupData;	// 메시 그룹 <MatIdx, MeshIdx>
+	bool castShadows = true;
+	bool receiveShadows = true;
 };
 

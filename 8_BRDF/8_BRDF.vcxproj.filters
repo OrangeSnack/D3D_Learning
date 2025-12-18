@@ -31,17 +31,11 @@
     <Filter Include="Render">
       <UniqueIdentifier>{85260be0-c613-4351-93ba-ea71e55278ad}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Light">
-      <UniqueIdentifier>{ceb39bf9-402a-4903-a40b-8a22702c2df7}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Render\Core">
       <UniqueIdentifier>{9f184082-eef4-4aa5-b9e6-d7526a900dd9}</UniqueIdentifier>
     </Filter>
     <Filter Include="Components\Core">
       <UniqueIdentifier>{d0194ffc-832c-4e82-a882-ce4a50638ffb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Light\Core">
-      <UniqueIdentifier>{dd923fec-2981-436c-a9fa-7d8a19e2eca1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Resources\Materials">
       <UniqueIdentifier>{b772469e-87be-4e8d-bf7a-19c57c184625}</UniqueIdentifier>
@@ -51,6 +45,9 @@
     </Filter>
     <Filter Include="Resources\Materials\Core">
       <UniqueIdentifier>{0a3d3ad2-d084-435e-be30-d0af5e62665c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Components\Light">
+      <UniqueIdentifier>{ceb39bf9-402a-4903-a40b-8a22702c2df7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -67,7 +64,7 @@
       <Filter>Components</Filter>
     </ClInclude>
     <ClInclude Include="DirectionalLight.h">
-      <Filter>Light</Filter>
+      <Filter>Components\Light</Filter>
     </ClInclude>
     <ClInclude Include="PBRRenderer.h">
       <Filter>Render</Filter>
@@ -126,6 +123,9 @@
     <ClInclude Include="PBRMaterial.h">
       <Filter>Resources\Materials</Filter>
     </ClInclude>
+    <ClInclude Include="ResourceShared.h">
+      <Filter>Shared</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WinMain.cpp">
@@ -141,7 +141,7 @@
       <Filter>Components</Filter>
     </ClCompile>
     <ClCompile Include="DirectionalLight.cpp">
-      <Filter>Light</Filter>
+      <Filter>Components\Light</Filter>
     </ClCompile>
     <ClCompile Include="PhongRenderer.cpp">
       <Filter>Render</Filter>
