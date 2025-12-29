@@ -1,5 +1,5 @@
 // ¡§¡° ºŒ¿Ã¥ı.
-#include "Shared.hlsli"
+#include "../Shared.hlsli"
 
 PS_INPUT main(VS_INPUT input)
 {

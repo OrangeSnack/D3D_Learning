@@ -1,5 +1,6 @@
 #include "RenderPipe.h"
 #include "../BaseEngine/Helper.h"
+#include "../BaseEngine/Camera.h"
 
 using namespace std;
 using namespace DirectX;
@@ -17,7 +18,7 @@ RenderPipe* RenderPipe::GetInstance()
 	return instance.get();
 }
 
-void RenderPipe::Initialize(Microsoft::WRL::ComPtr<ID3D11Device5>& _device, HWND* _hwnd, UINT _ClientWidth, UINT _ClientHeight)
+void RenderPipe::Initialize(Microsoft::WRL::ComPtr<ID3D11Device5>& _device, HWND* _hwnd, UINT _ClientWidth, UINT _ClientHeight, Camera* _renderCam)
 {
 	// hWnd 등록
 	assert(_hwnd != nullptr && "RenderPipe::Initialize : hWnd must not be nullptr!!");
@@ -34,14 +35,28 @@ void RenderPipe::Initialize(Microsoft::WRL::ComPtr<ID3D11Device5>& _device, HWND
 	// 인스턴스 초기화 뭉탱이
 	instance->InitD3D();
 	instance->Start();
-
-	// 버퍼 기본색상
-	m_ClearColor = Vector4(0.45f, 0.55f, 0.60f, 1.00f);
 }
 
 void RenderPipe::Start()
 {
+	// 버퍼 기본색상
+	m_ClearColor = Vector4(0.45f, 0.55f, 0.60f, 1.00f);
 
+	// 카메라 초기값설정
+	XMVECTOR Eye = XMVectorSet(0.0f, 4.0f, -10.0f, 0.0f);
+	XMVECTOR At = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	XMVECTOR Up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+	m_renderCam->m_View = XMMatrixLookAtLH(Eye, At, Up);
+	m_renderCam->m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_rClientWidth / (FLOAT)m_rClientHeight, 0.01f, 100.0f);
+
+}
+
+void RenderPipe::Update()
+{
+	// 카메라 매트릭스 설정
+	m_renderCam->GetViewMatrix(m_renderCam->m_View);
+	//m_renderCam->m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_rClientWidth / (FLOAT)m_rClientHeight, 0.01f, 100.0f);
 }
 
 void RenderPipe::InitD3D()
@@ -178,9 +193,24 @@ void RenderPipe::UnInitD3D()
 
 void RenderPipe::Render()
 {
+	// Clear
+	m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView.Get(), m_backColor);
+	m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	// 트랜스폼 버퍼 생성
+	Render_TransformBuffer rtb1;
+	rtb1.mWorld = XMMatrixTranspose(Matrix::Identity);
+	rtb1.mView = XMMatrixTranspose(m_renderCam->m_View);
+	rtb1.mProjection = XMMatrixTranspose(m_renderCam->m_Projection);
+	rtb1.mNormalMatrix = XMMatrixInverse(nullptr, Matrix::Identity);
+
+	// RenderPass
 	for (const auto& pass : passes) {
 		for (const auto& renderer : pass.second) {
 			renderer->Render();
 		}
 	}
+
+	// Present our back buffer to our front buffer
+	m_pSwapChain->Present(0, 0);
 }

@@ -30,6 +30,6 @@ public:
 	std::shared_ptr<StaticMesh> LoadStaticMesh(std::wstring _filePath);
 	void LoadSkeletalMesh(std::wstring _filePath);
 
-	void LoadMesh(std::wstring _filePath);
+	//void LoadMesh(std::wstring _filePath);
 };
 

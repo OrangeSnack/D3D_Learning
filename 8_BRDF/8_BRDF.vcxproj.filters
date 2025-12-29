@@ -49,15 +49,21 @@
     <Filter Include="Components\Light">
       <UniqueIdentifier>{ceb39bf9-402a-4903-a40b-8a22702c2df7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources\Shader">
+      <UniqueIdentifier>{93f55432-d698-472e-900e-782674832f8d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameObject">
+      <UniqueIdentifier>{9ad91bc0-514b-4888-a0fc-7ca709d027ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameObject\Core">
+      <UniqueIdentifier>{e69569ef-5b78-42a2-b4e3-cffd1f3b7dca}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="targetver.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="GameObject.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Transform.h">
@@ -126,15 +132,30 @@
     <ClInclude Include="ResourceShared.h">
       <Filter>Shared</Filter>
     </ClInclude>
+    <ClInclude Include="VSResource.h">
+      <Filter>Resources\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="PSResource.h">
+      <Filter>Resources\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="GameObject.h">
+      <Filter>GameObject</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectManager.h">
+      <Filter>GameObject\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Singleton.h">
+      <Filter>Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneInclude.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WinMain.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="PBRApp.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="GameObject.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Transform.cpp">
@@ -190,6 +211,18 @@
     </ClCompile>
     <ClCompile Include="PBRMaterial.cpp">
       <Filter>Resources\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="VSResource.cpp">
+      <Filter>Resources\Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="PSResource.cpp">
+      <Filter>Resources\Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="GameObject.cpp">
+      <Filter>GameObject</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectManager.cpp">
+      <Filter>GameObject\Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

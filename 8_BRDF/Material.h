@@ -3,10 +3,13 @@
 #include "GameResource.h"
 #include "Texture2D.h"
 #include "Renderer.h"
+#include "RenderStruct.h"
 
 class Material : public GameResource
 {
 public:
+	virtual ~Material() = default;
+	RenderType matType = RenderType::PHONG;
 	std::shared_ptr<Renderer> renderer = nullptr;
 
 	//std::shared_ptr<Texture2D> diffuse = nullptr;		// µðÇ»Áî¸Ê

@@ -2,9 +2,11 @@
 #include "StaticMesh.h"
 #include "ResourceManager.h"
 #include "../BaseEngine/Helper.h"
+#include "Renderer.h"
 #include "RenderPipe.h"
 #include "PBRRenderer.h"
 #include "PhongRenderer.h"
+#include "GameObject.h"
 
 using namespace Microsoft::WRL;
 
@@ -21,6 +23,24 @@ void MeshRenderer::Start()
 		return;
 	
 	// TODO:: 렌더파이프에 렌더러 등록하기, 메테리얼 읽어서 렌더러에 메시 정보 보내기.
+	for (int i = 0; i < mesh->meshGroupData.size(); i++) {
+		// 렌더러 추가 (임시)
+		// TODO :: 렌더러 타입별 추가하는 방식 다르게 하는방법 강구하기
+		renderer = RenderPipe::GetInstance()->AddRenderer<PhongRenderer>(RenderType::PHONG);
+		auto& material = mesh->meshData->materials[i];
+
+		for (const auto& idx : mesh->meshGroupData[i]) {
+			auto& meshBuffer = mesh->gpuBuffer->vertexBuffers[idx];
+			auto& indicesBuffer = mesh->gpuBuffer->vertexBuffers[idx];
+			UINT indicesSize = mesh->meshData->indices[idx].size();
+
+			if (auto locked = renderer.lock())
+				locked->SetRenderData(meshBuffer, indicesBuffer, indicesSize, material);
+			else
+				throw std::runtime_error("MeshRenderer : 렌더러가 존재하지 않습니다!!");
+		}
+	}
+
 	/*if (auto renderer = dynamic_pointer_cast<PBRRenderer>(mesh->modelMaterials[0]->renderer))
 		RenderPipe::GetInstance()->AddRenderer<PBRRenderer>(1, renderer);
 	else if (auto renderer = dynamic_pointer_cast<PhongRenderer>(mesh->modelMaterials[0]->renderer))
@@ -36,7 +56,8 @@ void MeshRenderer::Update()
 
 MeshRenderer::~MeshRenderer()
 {
-
 	// TODO::렌더러 제거 명령
-	
+	if (auto locked = renderer.lock()) {
+		RenderPipe::GetInstance()->RemoveRenderer(RenderType::PHONG, locked);
+	}
 }

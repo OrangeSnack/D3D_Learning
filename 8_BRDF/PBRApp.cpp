@@ -3,6 +3,9 @@
 #include "RenderPipe.h"
 #include "../BaseEngine/Helper.h"
 #include "AssimpLoader.h"
+#include "ObjectManager.h"
+#include "MeshRenderer.h"
+#include "GameObject.h"
 
 using namespace Microsoft;
 using namespace Microsoft::WRL;
@@ -32,7 +35,7 @@ bool PBRApp::Initialize(UINT Width, UINT Height)
 
 	// 객체 초기화
 	ResourceManager::GetInstance()->Initialize(m_pDevice);
-	RenderPipe::GetInstance()->Initialize(m_pDevice, &m_hWnd, m_ClientWidth, m_ClientHeight);
+	RenderPipe::GetInstance()->Initialize(m_pDevice, &m_hWnd, m_ClientWidth, m_ClientHeight, mainCamera);
 	AssimpLoader::GetInstance()->Initialize();
 	GameTimer::m_Instance->Reset();
 	GameTimer::m_Instance->Start();
@@ -48,8 +51,8 @@ void PBRApp::Update()
 {
 	__super::Update();
 	ResourceManager::GetInstance()->Update();
-
-	//AssimpLoader::GetInstance()->LoadStaticMesh(L"../Resources/Models/Zelda/Zelda.fbx");
+	RenderPipe::GetInstance()->Update();
+	ObjectManager::GetInstance()->Update();
 }
 
 void PBRApp::Render()
@@ -59,7 +62,11 @@ void PBRApp::Render()
 
 bool PBRApp::InitScene()
 {
-	AssimpLoader::GetInstance()->LoadStaticMesh(L"../Resources/Models/Zelda/Zelda.fbx");
+	// 젤다 오브젝트 생성
+	auto zelda = ObjectManager::GetInstance()->CreateObject();
+	auto zmesh = AssimpLoader::GetInstance()->LoadStaticMesh(L"../Resources/Models/Zelda/Zelda.fbx");
+	auto zmc = zelda.lock()->AddComponent<MeshRenderer>();
+	zmc.lock()->SetMesh(zmesh);
 
 	return true;
 }

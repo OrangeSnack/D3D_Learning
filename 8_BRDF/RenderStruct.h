@@ -31,8 +31,8 @@ struct Mesh_BoneBuffer
 };
 
 struct Render_CamBuffer {
-	DirectX::SimpleMath::Matrix m_View = DirectX::SimpleMath::Matrix::Identity;			// 카메라좌표계 변환행렬
-	DirectX::SimpleMath::Matrix m_Projection = DirectX::SimpleMath::Matrix::Identity;	// ndc좌표계 변환행렬
+	DirectX::SimpleMath::Matrix mView = DirectX::SimpleMath::Matrix::Identity;			// 카메라좌표계 변환행렬
+	DirectX::SimpleMath::Matrix mProjection = DirectX::SimpleMath::Matrix::Identity;	// ndc좌표계 변환행렬
 	DirectX::SimpleMath::Vector4 camPos;
 };
 

@@ -4,11 +4,12 @@
 #include <vector>
 #include <memory>
 #include <map>
-#include "../BaseEngine/Camera.h"
 #include "RenderStruct.h"
 
+class Camera;
 class RenderPipe
 {
+	friend class Renderer;
 private:
 	RenderPipe() = default;
 	//std::vector<std::shared_ptr<Renderer>> renderers;
@@ -21,6 +22,7 @@ protected:
 	HWND* m_pHwnd = nullptr;	// HWND 포인터
 	UINT m_rClientWidth = 0;
 	UINT m_rClientHeight = 0;
+	float m_backColor[4] = { 0.0f, 0.5f, 0.5f, 1.0f };	// 백그라운드 컬러
 
 	// 기본 렌더 인터페이스
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext4> m_pDeviceContext;		// 디바이스 컨텍스트
@@ -39,45 +41,47 @@ protected:
 	// 버퍼 기본색상
 	DirectX::SimpleMath::Vector4 m_ClearColor;
 
-	// VS 전달용 버퍼 (메인카메라)
+	// 카메라 관련
+	Camera* m_renderCam = nullptr;
 	Render_CamBuffer m_camMat;
 public:
-	
-	static RenderPipe* GetInstance();
-	void Initialize(Microsoft::WRL::ComPtr<ID3D11Device5>& _device, HWND* _hwnd, UINT _ClientWidth, UINT _ClientHeight);
-	void Start();
+	MW::ComPtr<ID3D11Buffer> m_pTransformBuffer = nullptr;		// 트랜스폼 버퍼
 
-public:
+	static RenderPipe* GetInstance();
+	void Initialize(Microsoft::WRL::ComPtr<ID3D11Device5>& _device, HWND* _hwnd, UINT _ClientWidth, UINT _ClientHeight, Camera* _renderCam);
 	void InitD3D();
 	void UnInitD3D();
+	void Start();
+	void Update();
 	void Render();
+	void SetRenderCam(Camera* _renderCam) { m_renderCam = _renderCam; }
 
 public:
 	template <typename T, typename... Args>
-	std::weak_ptr<Renderer> AddRenderer(int _passNum, Args&&... args);
+	std::weak_ptr<Renderer> AddRenderer(RenderType _passType, Args&&... args);
 
 	template <typename T>
-	bool RemoveRenderer(int _passNum, std::shared_ptr<T>& _renderer);
+	bool RemoveRenderer(RenderType _passType, std::shared_ptr<T>& _renderer);
 };
 
 template <typename T, typename... Args>
 std::weak_ptr<Renderer>
-RenderPipe::AddRenderer(int _passNum, Args&&... args)
+RenderPipe::AddRenderer(RenderType _passType, Args&&... args)
 {
-	std::shared_ptr<T> temp = std::make_shared<T>(std::forward<Args>(args));
-	passes[_passNum].push_back(temp);
+	std::shared_ptr<T> temp = std::make_shared<T>(std::forward<Args>(args)...);
+	passes[_passType].push_back(temp);
 
 	return temp;
 }
 
 template <typename T>
-bool RenderPipe::RemoveRenderer(int _passNum, std::shared_ptr<T>& _renderer)
+bool RenderPipe::RemoveRenderer(RenderType _passType, std::shared_ptr<T>& _renderer)
 {
-	if (_renderer && (passes.find(_passNum) != passes.end())) {
-		auto it = std::find(passes[_passNum].begin(), passes[_passNum].end(), _renderer);
+	if (_renderer && (passes.find(_passType) != passes.end())) {
+		auto it = std::find(passes[_passType].begin(), passes[_passType].end(), _renderer);
 
-		if (it != passes.end()) {
-			passes[_passNum].erase(it);
+		if (it != passes[_passType].end()) {
+			passes[_passType].erase(it);
 			return true;
 		}
 	}

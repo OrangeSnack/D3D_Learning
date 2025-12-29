@@ -9,6 +9,7 @@
 #include "Texture2D.h"
 #include "PhongMaterial.h"
 #include "PhongRenderer.h"
+#include "RenderStruct.h"
 
 using namespace DirectX::SimpleMath;
 using namespace DirectX;
@@ -65,6 +66,7 @@ bool AssimpLoader::LoadMaterials(std::vector<std::shared_ptr<Material>>& _out, c
 
 		// 현재 기본값은 퐁 메테리얼이다.
 		auto currMat = std::make_shared<PhongMaterial>();
+		currMat->matType = RenderType::PHONG;
 		currMat->renderer = std::make_shared<PhongRenderer>();
 
 		_out[i] = currMat;
@@ -285,7 +287,7 @@ void AssimpLoader::LoadSkeletalMesh(std::wstring _filePath)
 
 }
 
-void AssimpLoader::LoadMesh(std::wstring _filePath)
-{
-
-}
+//void AssimpLoader::LoadMesh(std::wstring _filePath)
+//{
+//
+//}

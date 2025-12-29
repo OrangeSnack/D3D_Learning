@@ -2,10 +2,19 @@
 #include "framework.h"
 #include "Renderer.h"
 
+class VSResource;
+class PSResource;
 class PhongRenderer : public Renderer
 {
-	ID3D11VertexShader* m_pVertexShader = nullptr;		// 정점 쉐이더
-	ID3D11PixelShader* m_pAlphaClipShader = nullptr;	// 디퓨즈 전용 쉐이더
-	ID3D11InputLayout* m_pInputLayout = nullptr;	// 입력 레이아웃
+private:
+	//MW::ComPtr<ID3D11VertexShader> m_pVertexShader;		// 정점 쉐이더
+	//MW::ComPtr<ID3D11PixelShader> m_pAlphaClipShader;	// 디퓨즈 전용 쉐이더
+	std::shared_ptr<VSResource> m_pVSShader;			// VS 리소스
+	std::shared_ptr<PSResource> m_pPSShader;			// PS 리소스
+	MW::ComPtr<ID3D11InputLayout> m_pInputLayout;		// 입력 레이아웃
+
+public:
+	PhongRenderer();
+	void Render();
 };
 

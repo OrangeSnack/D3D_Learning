@@ -4,11 +4,13 @@
 #include "framework.h"
 
 class StaticMesh;
+class Renderer;
 class MeshRenderer : public Component
 {
 public:
 	// GPU ¹öÆÛ
 	std::shared_ptr<StaticMesh> mesh = nullptr;
+	std::weak_ptr<Renderer> renderer;
 
 	void SetMesh(std::shared_ptr<StaticMesh>& _mesh);
 	void Start() override;
