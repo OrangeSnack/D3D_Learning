@@ -44,15 +44,14 @@ protected:
 	// 카메라 관련
 	Camera* m_renderCam = nullptr;
 	Render_CamBuffer m_camMat;
-public:
-	MW::ComPtr<ID3D11Buffer> m_pTransformBuffer = nullptr;		// 트랜스폼 버퍼
+	MW::ComPtr<ID3D11Buffer> m_pCambuffer = nullptr;		// 트랜스폼 버퍼
 
+public:
 	static RenderPipe* GetInstance();
 	void Initialize(Microsoft::WRL::ComPtr<ID3D11Device5>& _device, HWND* _hwnd, UINT _ClientWidth, UINT _ClientHeight, Camera* _renderCam);
 	void InitD3D();
 	void UnInitD3D();
 	void Start();
-	void Update();
 	void Render();
 	void SetRenderCam(Camera* _renderCam) { m_renderCam = _renderCam; }
 

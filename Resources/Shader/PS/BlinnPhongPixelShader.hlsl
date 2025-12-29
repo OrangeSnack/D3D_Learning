@@ -1,9 +1,9 @@
-// «»ºø ºŒ¿Ã¥ı(Ω¶¿Ã¥ı/ºŒ¿Ã¥ı).
+// ??? ?????(?????/?????).
 #include "Shared.hlsli"
 
 float4 main(PS_INPUT input) : SV_TARGET
 {
-    //Blinnphong ∏µ®
+    //Blinnphong ??
     float4 finalColor = 0;
     float4 texColor = _tex0.Sample(_sp0, input.Tex);
     float4 emitColor = _emis.Sample(_sp0, input.Tex);

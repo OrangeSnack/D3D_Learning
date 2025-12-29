@@ -39,24 +39,12 @@ struct Render_CamBuffer {
 struct Render_TransformBuffer
 {
 	DirectX::SimpleMath::Matrix mWorld;
-	DirectX::SimpleMath::Matrix mView;
-	DirectX::SimpleMath::Matrix mProjection;
 	DirectX::SimpleMath::Matrix mNormalMatrix;
-};
-
-struct Render_ShadowBuffer
-{
-	DirectX::SimpleMath::Matrix ShadowView;
-	DirectX::SimpleMath::Matrix ShadowProjection;
 };
 
 struct Render_LightBuffer {
 	DirectX::SimpleMath::Vector4 vLightDir;
 	DirectX::SimpleMath::Vector4 vLightColor;
-
-	DirectX::SimpleMath::Vector4 ambient;		// 라이트 정보
-	DirectX::SimpleMath::Vector4 diffuse;
-	DirectX::SimpleMath::Vector4 specular;
 };
 
 struct Render_MaterialBuffer
@@ -67,4 +55,10 @@ struct Render_MaterialBuffer
 
 	int shiness;
 	DirectX::SimpleMath::Vector3 padding;
+};
+
+struct Render_ShadowBuffer
+{
+	DirectX::SimpleMath::Matrix ShadowView;
+	DirectX::SimpleMath::Matrix ShadowProjection;
 };

@@ -47,16 +47,17 @@ void RenderPipe::Start()
 	XMVECTOR At = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	XMVECTOR Up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
-	m_renderCam->m_View = XMMatrixLookAtLH(Eye, At, Up);
-	m_renderCam->m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_rClientWidth / (FLOAT)m_rClientHeight, 0.01f, 100.0f);
+	m_camMat.mView = XMMatrixLookAtLH(Eye, At, Up);
+	m_camMat.mProjection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_rClientWidth / (FLOAT)m_rClientHeight, 0.01f, 100.0f);
 
-}
+	// 캠 버퍼 생성
+	D3D11_BUFFER_DESC bd = {};
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bd.CPUAccessFlags = 0;
 
-void RenderPipe::Update()
-{
-	// 카메라 매트릭스 설정
-	m_renderCam->GetViewMatrix(m_renderCam->m_View);
-	//m_renderCam->m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_rClientWidth / (FLOAT)m_rClientHeight, 0.01f, 100.0f);
+	bd.ByteWidth = sizeof(Render_CamBuffer);
+	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, m_pCambuffer.GetAddressOf()));
 }
 
 void RenderPipe::InitD3D()
@@ -197,12 +198,23 @@ void RenderPipe::Render()
 	m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView.Get(), m_backColor);
 	m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
-	// 트랜스폼 버퍼 생성
-	Render_TransformBuffer rtb1;
-	rtb1.mWorld = XMMatrixTranspose(Matrix::Identity);
-	rtb1.mView = XMMatrixTranspose(m_renderCam->m_View);
-	rtb1.mProjection = XMMatrixTranspose(m_renderCam->m_Projection);
-	rtb1.mNormalMatrix = XMMatrixInverse(nullptr, Matrix::Identity);
+	// 캠 버퍼 업데이트
+	m_camMat.camPos = (Vector4)m_renderCam->m_Position;
+	m_renderCam->GetViewMatrix(m_camMat.mView);
+	m_camMat.mView = XMMatrixTranspose(m_camMat.mView);
+	//m_camMat.mProjection = XMMatrixTranspose(XMMatrixPerspectiveFovLH(XM_PIDIV4, m_rClientWidth / (FLOAT)m_rClientHeight, 0.01f, 100.0f));
+
+	// 리소스 업데이트
+	m_pDeviceContext->UpdateSubresource1(m_pCambuffer.Get(), 0, nullptr, &m_camMat, 0, 0, D3D11_COPY_DISCARD);
+
+	// 기본 렌더셋팅
+	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_pDeviceContext->VSSetConstantBuffers(0, 1, m_pCambuffer.GetAddressOf());
+	m_pDeviceContext->PSSetConstantBuffers(0, 1, m_pCambuffer.GetAddressOf());
+
+	m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
+	m_pDeviceContext->RSSetState(m_pDefaultRS.Get());
+	m_pDeviceContext->OMSetRenderTargets(1, reinterpret_cast<ID3D11RenderTargetView* const*>(m_pRenderTargetView.GetAddressOf()) , m_pDepthStencilView.Get());
 
 	// RenderPass
 	for (const auto& pass : passes) {

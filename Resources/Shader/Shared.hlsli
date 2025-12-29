@@ -7,24 +7,27 @@ Texture2D _shadowmap : register(t5);
 
 SamplerState _sp0 : register(s0);
 
-cbuffer TransBuffer : register(b0)
+cbuffer Cambuffer : register(b0)
 {
-    matrix World;
     matrix View;
     matrix Projection;
+    float4 camPos;
+}
+
+cbuffer Transbuffer : register(b1)
+{
+    matrix World;
     matrix NormalMatrix;
 }
 
-cbuffer MatBuffer : register(b1)
+cbuffer LightBuffer : register(b2)
 {
     float4 vLightDir;
     float4 vLightColor;
-    float4 camPos;
-    
-    float4 ambient;
-    float4 diffuse;
-    float4 specular;
-    
+}
+
+cbuffer MatBuffer : register(b3)
+{
     float4 matAmbient;
     float4 matDiffuse;
     float4 matSpecular;
@@ -33,18 +36,18 @@ cbuffer MatBuffer : register(b1)
     float3 padding;
 }
 
-cbuffer ShadowVP : register(b2)
+cbuffer ShadowVP : register(b4)
 {
     matrix ShadowView;
     matrix ShadowProjection;
 }
 
-cbuffer BoneWorldBuffer : register(b3)
+cbuffer BoneWorldBuffer : register(b5)
 {
     matrix boneMat[256];
 }
 
-cbuffer BoneOffSetBuffer : register(b4)
+cbuffer BoneOffSetBuffer : register(b6)
 {
     matrix boneOffsetMat[256];
 }
@@ -52,12 +55,12 @@ cbuffer BoneOffSetBuffer : register(b4)
 struct PS_INPUT
 {
     float4 Pos : SV_POSITION;
-    float4 W_Pos : POSITION;    // ¿ùµå Æ÷Áö¼Ç
+    float4 W_Pos : POSITION;    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     float3 Norm : NORMAL;
     float3 Tan : TANGENT;
     float3 BiTan : BITANGENT;
-    float2 Tex : TEXCOORD0;     // ÅØ½ºÃÄ UV
-    float4 S_Pos : TEXCOORD1;   // ½¦µµ¿ì Æ÷Áö¼Ç
+    float2 Tex : TEXCOORD0;     // ï¿½Ø½ï¿½ï¿½ï¿½ UV
+    float4 S_Pos : TEXCOORD1;   // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 };
 
 struct VS_INPUT

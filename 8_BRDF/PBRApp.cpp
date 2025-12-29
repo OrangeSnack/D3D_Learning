@@ -51,7 +51,6 @@ void PBRApp::Update()
 {
 	__super::Update();
 	ResourceManager::GetInstance()->Update();
-	RenderPipe::GetInstance()->Update();
 	ObjectManager::GetInstance()->Update();
 }
 

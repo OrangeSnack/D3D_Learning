@@ -13,8 +13,6 @@ public:
 	Vector3 m_PositionInitial = { 0,0,-30 };
 	Vector3 m_Position;
 	Matrix m_World;		// 임시카메라는 부모가 없으니 월드행렬로 바로 설정 
-	Matrix m_View;			// 뷰 행렬
-	Matrix m_Projection;	// 프로젝션 행렬
 
 	Vector3 m_InputVector;
 	float m_MoveSpeed = 20.0f;
