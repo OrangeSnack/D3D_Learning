@@ -28,17 +28,17 @@ float4 main(PS_INPUT input) : SV_TARGET
     }
     
     //ambient
-    float4 ambientColor = ambient * matDiffuse;
+    float4 ambientColor = matDiffuse; // * ambient;
     
     //diffuse
     float4 intensity = saturate(dot(normal, -lightDir));
-    float4 diff = intensity * diffuse * vLightColor;
+    float4 diff = intensity * vLightColor; // * diffuse;
     float4 diffuseColor = diff * matDiffuse;
     
     //specular
     float3 middleVector = normalize(-lightDir + -camDir);
     float4 specularImage = _spec.Sample(_sp0, input.Tex);
-    float4 specularColor = pow(saturate(dot(middleVector, normal)), shiness) * intensity * specularImage * specular * matSpecular * vLightColor;
+    float4 specularColor = pow(saturate(dot(middleVector, normal)), shiness) * intensity * specularImage * matSpecular * vLightColor; // * specular;
    
     // ½¦µµ¿ì¸Ê Ã³¸®
     float currentShadowDepth = input.S_Pos.z / input.S_Pos.w;   // ½¦µµ¿ì¸Ê ±âÁØ NDC ZÁÂÇ¥

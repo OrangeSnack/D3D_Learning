@@ -7,6 +7,7 @@
 #include "PBRRenderer.h"
 #include "PhongRenderer.h"
 #include "GameObject.h"
+#include "Transform.h"
 
 using namespace Microsoft::WRL;
 
@@ -19,7 +20,7 @@ void MeshRenderer::SetMesh(std::shared_ptr<StaticMesh>& _mesh)
 void MeshRenderer::Start()
 {
 	// 유효성 확인
-	if (!mesh || mesh->meshData || mesh->gpuBuffer)
+	if (!mesh || !mesh->meshData || !mesh->gpuBuffer)
 		return;
 	
 	// TODO:: 렌더파이프에 렌더러 등록하기, 메테리얼 읽어서 렌더러에 메시 정보 보내기.
@@ -32,7 +33,7 @@ void MeshRenderer::Start()
 		for (const auto& idx : mesh->meshGroupData[i]) {
 			auto& meshBuffer = mesh->gpuBuffer->vertexBuffers[idx];
 			auto& indicesBuffer = mesh->gpuBuffer->vertexBuffers[idx];
-			UINT indicesSize = mesh->meshData->indices[idx].size();
+			UINT indicesSize = static_cast<UINT>(mesh->meshData->indices[idx].size());
 
 			if (auto locked = renderer.lock())
 				locked->SetRenderData(meshBuffer, indicesBuffer, indicesSize, material);
@@ -51,12 +52,16 @@ void MeshRenderer::Start()
 
 void MeshRenderer::Update()
 {
-
+	// 월드 매트릭스 전달
+	if (auto locked = renderer.lock()) {
+		if (auto transform = gameObject->transform.lock())
+			locked->SetWorldMat(transform->GetMatrix());
+	}
 }
 
 MeshRenderer::~MeshRenderer()
 {
-	// TODO::렌더러 제거 명령
+	// 렌더러 제거 명령
 	if (auto locked = renderer.lock()) {
 		RenderPipe::GetInstance()->RemoveRenderer(RenderType::PHONG, locked);
 	}

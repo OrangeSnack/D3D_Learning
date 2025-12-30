@@ -71,6 +71,15 @@ bool AssimpLoader::LoadMaterials(std::vector<std::shared_ptr<Material>>& _out, c
 
 		_out[i] = currMat;
 
+		// 베이스 컬러
+		aiColor4D baseColor;
+		if (aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor) == AI_SUCCESS) {
+			_out[i]->baseColor = { baseColor.r, baseColor.g, baseColor.b, baseColor.a };
+		}
+		else if (aiMat->Get(AI_MATKEY_BASE_COLOR, baseColor) == AI_SUCCESS) {
+			_out[i]->baseColor = { baseColor.r, baseColor.g, baseColor.b, baseColor.a };
+		}
+
 		// 디퓨즈
 		if (aiMat->GetTextureCount(aiTextureType_DIFFUSE)) {
 			if (aiMat->GetTexture(aiTextureType_DIFFUSE, 0, &aiStr) == aiReturn_SUCCESS) {
@@ -135,7 +144,7 @@ bool AssimpLoader::LoadMaterials(std::vector<std::shared_ptr<Material>>& _out, c
 				if (!emissMat->srv)
 					HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, emissMat->srv.GetAddressOf()));
 
-				currMat->normal = emissMat;
+				currMat->emissive = emissMat;
 
 				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].emissive));
 			}

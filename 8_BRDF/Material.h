@@ -12,10 +12,10 @@ public:
 	RenderType matType = RenderType::PHONG;
 	std::shared_ptr<Renderer> renderer = nullptr;
 
+	DirectX::SimpleMath::Color baseColor = { 1.0f, 1.0f, 1.0f, 1.0f };	// ∫£¿ÃΩ∫ ƒ√∑Ø
 	//std::shared_ptr<Texture2D> diffuse = nullptr;		// µ«ª¡Ó∏ 
 	//std::shared_ptr<Texture2D> specular = nullptr;		// Ω∫∆Â≈ß∑Ø∏ 
 	//std::shared_ptr<Texture2D> normal = nullptr;		// ≥Î∏÷∏ 
 	//std::shared_ptr<Texture2D> emissive = nullptr;		// πﬂ±§∏ 
-	//DirectX::SimpleMath::Color BaseColor = { 1.0f, 1.0f, 1.0f, 1.0f };		// ∫£¿ÃΩ∫ ƒ√∑Ø
 };
 

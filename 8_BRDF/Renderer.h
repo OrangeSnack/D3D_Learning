@@ -13,9 +13,12 @@ protected:
 
 protected:
 	MW::ComPtr<ID3D11DeviceContext4> m_pDeviceContext;
+	DirectX::SimpleMath::Matrix m_worldMat;
 
 public:
 	Renderer();
+
+	void SetWorldMat(const DirectX::SimpleMath::Matrix& _mat);
 
 	void SetRenderData(
 		Microsoft::WRL::ComPtr<ID3D11Buffer>& _vertex,

@@ -35,6 +35,9 @@ void RenderPipe::Initialize(Microsoft::WRL::ComPtr<ID3D11Device5>& _device, HWND
 	// 인스턴스 초기화 뭉탱이
 	instance->InitD3D();
 	instance->Start();
+
+	// 카메라 등록
+	m_renderCam = _renderCam;
 }
 
 void RenderPipe::Start()

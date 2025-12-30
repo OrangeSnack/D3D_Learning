@@ -9,6 +9,13 @@ struct Mesh_Vertex
 	DirectX::SimpleMath::Vector3 Tangent;	// 탄젠트
 	DirectX::SimpleMath::Vector3 BiTangent;	// Bi탄젠트
 	DirectX::SimpleMath::Vector2 Tex;		// 텍스쳐 UV
+	int boneIndices[4] = { -1, -1, -1, -1 };				// 버텍스와 연결된 본들의 인덱스
+	float boneWeights[4] = { 0.0f, 0.0f, 0.0f, 0.0f };		// 각 본들의 가중치
+};
+
+struct Mesh_BoneBuffer
+{
+	DirectX::SimpleMath::Matrix boneMat[BONE_MAXSIZE] = { DirectX::SimpleMath::Matrix::Identity, };
 };
 
 struct MeshData {
