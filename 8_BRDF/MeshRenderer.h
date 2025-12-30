@@ -10,7 +10,7 @@ class MeshRenderer : public Component
 public:
 	// GPU ¹öÆÛ
 	std::shared_ptr<StaticMesh> mesh = nullptr;
-	std::weak_ptr<Renderer> renderer;
+	std::vector<std::weak_ptr<Renderer>> renderers;
 
 	void SetMesh(std::shared_ptr<StaticMesh>& _mesh);
 	void Start() override;

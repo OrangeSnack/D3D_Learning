@@ -6,6 +6,7 @@
 #include <stack>
 #include "../BaseEngine/TimeSystem.h"
 #include <d3dcompiler.h>
+#include <DirectXTex.h>
 
 using namespace DirectX::SimpleMath;
 using namespace DirectX;
@@ -355,12 +356,15 @@ bool SkeletalMesh::LoadMaterials(std::vector<Materials>& _out, const SkeletalMes
 				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
 				std::filesystem::path relativePath = _model->filePath / p.filename();
 
-				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].diffuse));
+				CreateResourceView(relativePath, &_out[i].diffuse);
+				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].diffuse));
 			}
 		}
 		// 디퓨즈가 없으면?
 		if (_out[i].diffuse == nullptr) {
-			HR_T(CreateWICTextureFromFile(m_pDevice, defaultDiffuse.c_str(), nullptr, &_out[i].diffuse));
+			std::filesystem::path path = defaultDiffuse;
+			CreateResourceView(path, &_out[i].diffuse);
+			//HR_T(CreateWICTextureFromFile(m_pDevice, defaultDiffuse.c_str(), nullptr, &_out[i].diffuse));
 		}
 
 
@@ -370,7 +374,8 @@ bool SkeletalMesh::LoadMaterials(std::vector<Materials>& _out, const SkeletalMes
 				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
 				std::filesystem::path relativePath = _model->filePath / p.filename();
 
-				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].specular));
+				CreateResourceView(relativePath, &_out[i].specular);
+				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].specular));
 			}
 		}
 
@@ -380,7 +385,8 @@ bool SkeletalMesh::LoadMaterials(std::vector<Materials>& _out, const SkeletalMes
 				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
 				std::filesystem::path relativePath = _model->filePath / p.filename();
 
-				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
+				CreateResourceView(relativePath, &_out[i].normal);
+				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
 			}
 		}
 
@@ -390,7 +396,8 @@ bool SkeletalMesh::LoadMaterials(std::vector<Materials>& _out, const SkeletalMes
 				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
 				std::filesystem::path relativePath = _model->filePath / p.filename();
 
-				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].emissive));
+				CreateResourceView(relativePath, &_out[i].emissive);
+				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].emissive));
 			}
 		}
 	}
@@ -420,6 +427,20 @@ bool SkeletalMesh::LoadNodeAnim(std::unordered_map<std::string, aiNodeAnim*>* _o
 	}
 
 	return true;
+}
+
+void SkeletalMesh::CreateResourceView(std::filesystem::path& _path, ID3D11ShaderResourceView** _out)
+{
+	// TGA파일 확인
+	if (_path.extension() == L".tga") {
+		DirectX::ScratchImage image;
+		DirectX::TexMetadata meta;
+		HR_T(DirectX::LoadFromTGAFile(_path.wstring().c_str(), &meta, image));
+		CreateShaderResourceView(m_pDevice, image.GetImages(), image.GetImageCount(), meta, _out);
+	}
+	else {
+		HR_T(CreateWICTextureFromFile(m_pDevice, _path.wstring().c_str(), nullptr, _out));
+	}
 }
 
 bool SkeletalMesh::UpdateBoneMat()

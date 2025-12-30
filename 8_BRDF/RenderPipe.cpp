@@ -205,7 +205,7 @@ void RenderPipe::Render()
 	m_camMat.camPos = (Vector4)m_renderCam->m_Position;
 	m_renderCam->GetViewMatrix(m_camMat.mView);
 	m_camMat.mView = XMMatrixTranspose(m_camMat.mView);
-	//m_camMat.mProjection = XMMatrixTranspose(XMMatrixPerspectiveFovLH(XM_PIDIV4, m_rClientWidth / (FLOAT)m_rClientHeight, 0.01f, 100.0f));
+	m_camMat.mProjection = XMMatrixTranspose(XMMatrixPerspectiveFovLH(XM_PIDIV4, m_rClientWidth / (FLOAT)m_rClientHeight, 0.01f, 100.0f));
 
 	// 리소스 업데이트
 	m_pDeviceContext->UpdateSubresource1(m_pCambuffer.Get(), 0, nullptr, &m_camMat, 0, 0, D3D11_COPY_DISCARD);

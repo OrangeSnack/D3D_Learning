@@ -9,18 +9,18 @@
 
 #pragma comment(lib,"d3dcompiler.lib")
 
-ShadowApp::ShadowApp(HINSTANCE hInstance) : GameApp(hInstance)
+PBRApp::PBRApp(HINSTANCE hInstance) : GameApp(hInstance)
 {
 }
 
-ShadowApp::~ShadowApp()
+PBRApp::~PBRApp()
 {
 	UninitImGUI();
 	UninitScene();
 	UninitD3D();
 }
 
-bool ShadowApp::Initialize(UINT Width, UINT Height)
+bool PBRApp::Initialize(UINT Width, UINT Height)
 {
 	__super::Initialize(Width, Height);
 
@@ -39,7 +39,7 @@ bool ShadowApp::Initialize(UINT Width, UINT Height)
 	return true;
 }
 
-void ShadowApp::Update()
+void PBRApp::Update()
 {
 	__super::Update();
 
@@ -100,7 +100,7 @@ void ShadowApp::Update()
 	m_ShadowView = XMMatrixTranspose(XMMatrixLookAtLH(m_ShadowPos, m_ShadowLookAt, Vector3(0.0f, 1.0f, 0.0f)));
 }
 
-void ShadowApp::Render()
+void PBRApp::Render()
 {
 	// 
 
@@ -230,7 +230,7 @@ void ShadowApp::Render()
 	m_pSwapChain->Present(0, 0);
 }
 
-bool ShadowApp::InitD3D()
+bool PBRApp::InitD3D()
 {
 	// 스왑체인 속성 설정 구조체 생성.
 	DXGI_SWAP_CHAIN_DESC swapDesc = {};
@@ -380,7 +380,7 @@ bool ShadowApp::InitD3D()
 	return true;
 }
 
-void ShadowApp::UninitD3D()
+void PBRApp::UninitD3D()
 {
 	SAFE_RELEASE(m_pDevice);
 	SAFE_RELEASE(m_pDeviceContext);
@@ -388,7 +388,7 @@ void ShadowApp::UninitD3D()
 	SAFE_RELEASE(m_pRenderTargetView);
 }
 
-bool ShadowApp::InitScene()
+bool PBRApp::InitScene()
 {
 	// 버텍스 쉐이더 컴파일
 	ID3D10Blob* vertexShader = nullptr;
@@ -460,6 +460,7 @@ bool ShadowApp::InitScene()
 	//model = std::make_unique<Model>(m_pDevice);
 	cube = std::make_unique<StaticMesh>(m_pDevice);
 
+	//models[0]->model.LoadFile(L"../Resources/Models/Mass/Character.fbx");
 	models[0]->model.LoadFile(L"../Resources/Models/PrimRose/char.fbx");
 	models[0]->name = "Jane Doe";
 	models[1]->model.LoadFile(L"../Resources/Models/Zelda/Zelda.fbx");
@@ -538,7 +539,7 @@ bool ShadowApp::InitScene()
 	return true;
 }
 
-void ShadowApp::UninitScene()
+void PBRApp::UninitScene()
 {
 	SAFE_RELEASE(m_pConstantBuffer);
 	SAFE_RELEASE(m_pVertexShader);
@@ -558,7 +559,7 @@ void ShadowApp::UninitScene()
 	SAFE_RELEASE(m_pSkyTextureRV);
 }
 
-bool ShadowApp::InitImGUI()
+bool PBRApp::InitImGUI()
 {
 	/*
 		ImGui 초기화.
@@ -577,7 +578,7 @@ bool ShadowApp::InitImGUI()
 	return true;
 }
 
-void ShadowApp::UninitImGUI()
+void PBRApp::UninitImGUI()
 {
 	// Cleanup
 	ImGui_ImplDX11_Shutdown();
@@ -585,7 +586,7 @@ void ShadowApp::UninitImGUI()
 	ImGui::DestroyContext();
 }
 
-void ShadowApp::RenderGUI()
+void PBRApp::RenderGUI()
 {
 	//아래부터는 ImGUI
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -708,7 +709,7 @@ void ShadowApp::RenderGUI()
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-LRESULT CALLBACK ShadowApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK PBRApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
 		return true;

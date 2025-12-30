@@ -165,7 +165,8 @@ bool StaticMesh::LoadMaterials(std::vector<Materials>& _out, const StaticMesh* _
 				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
 				std::filesystem::path relativePath = _model->filePath / p.filename();
 
-				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].diffuse));
+				CreateResourceView(relativePath, &_out[i].diffuse);
+				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].diffuse));
 			}
 		}
 
@@ -180,7 +181,8 @@ bool StaticMesh::LoadMaterials(std::vector<Materials>& _out, const StaticMesh* _
 				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
 				std::filesystem::path relativePath = _model->filePath / p.filename();
 
-				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].specular));
+				CreateResourceView(relativePath, &_out[i].specular);
+				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].specular));
 			}
 		}
 
@@ -190,7 +192,8 @@ bool StaticMesh::LoadMaterials(std::vector<Materials>& _out, const StaticMesh* _
 				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
 				std::filesystem::path relativePath = _model->filePath / p.filename();
 
-				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
+				CreateResourceView(relativePath, &_out[i].normal);
+				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
 			}
 		}
 
@@ -200,12 +203,28 @@ bool StaticMesh::LoadMaterials(std::vector<Materials>& _out, const StaticMesh* _
 				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
 				std::filesystem::path relativePath = _model->filePath / p.filename();
 
-				HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].emissive));
+				CreateResourceView(relativePath, &_out[i].emissive);
+				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].emissive));
 			}
 		}
 	}
 
 	return true;
+}
+
+void StaticMesh::CreateResourceView(std::filesystem::path& _path, ID3D11ShaderResourceView** _out)
+{
+	// TGA파일 확인
+	if (_path.extension() == L".tga") {
+		DirectX::ScratchImage image;
+		DirectX::TexMetadata meta;
+		HR_T(DirectX::LoadFromTGAFile(_path.wstring().c_str(), &meta, image));
+		CreateShaderResourceView(m_pDevice, image.GetImages(), image.GetImageCount(), meta, _out);
+	}
+	else {
+		HR_T(CreateWICTextureFromFile(m_pDevice, _path.wstring().c_str(), nullptr, _out));
+		//HR_T(CreateWICTextureFromFile(m_pDevice, _path.wstring().c_str(), nullptr, _out));
+	}
 }
 
 bool StaticMesh::ShadowDraw(ID3D11DeviceContext* _deviceContext, ID3D11ShaderResourceView* _rsv)

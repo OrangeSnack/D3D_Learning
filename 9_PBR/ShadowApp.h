@@ -33,11 +33,11 @@ struct Object
 	Transform transform;
 };
 
-class ShadowApp : public GameApp
+class PBRApp : public GameApp
 {
 public:
-	ShadowApp(HINSTANCE hInstance);
-	~ShadowApp();
+	PBRApp(HINSTANCE hInstance);
+	~PBRApp();
 
 	Vector4 m_ClearColor = Vector4(0.45f, 0.55f, 0.60f, 1.00f);
 

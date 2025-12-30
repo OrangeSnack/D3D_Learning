@@ -19,7 +19,7 @@ AssimpLoader* AssimpLoader::instance = nullptr;
 bool AssimpLoader::LoadVertex(std::vector<Mesh_Vertex>* _vertices, const aiMesh* _mesh)
 {
 	for (UINT i = 0; i < _mesh->mNumVertices; i++) {
-		Mesh_Vertex v;
+		Mesh_Vertex v{};
 
 		v.Pos = Vector3(_mesh->mVertices[i].x, _mesh->mVertices[i].y, _mesh->mVertices[i].z);
 
@@ -218,7 +218,7 @@ void AssimpLoader::Initialize()
 
 AssimpLoader::~AssimpLoader()
 {
-	delete(instance);
+	
 }
 
 std::shared_ptr<StaticMesh> AssimpLoader::LoadStaticMesh(std::wstring _filePath)

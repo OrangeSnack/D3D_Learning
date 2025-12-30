@@ -6,6 +6,7 @@
 #include "ObjectManager.h"
 #include "MeshRenderer.h"
 #include "GameObject.h"
+#include "Transform.h"
 
 using namespace Microsoft;
 using namespace Microsoft::WRL;
@@ -66,13 +67,14 @@ bool PBRApp::InitScene()
 	auto zmesh = AssimpLoader::GetInstance()->LoadStaticMesh(L"../Resources/Models/Zelda/Zelda.fbx");
 	auto zmc = zelda.lock()->AddComponent<MeshRenderer>();
 	zmc.lock()->SetMesh(zmesh);
+	zelda.lock()->transform.lock()->Scale = Vector3(0.1f, 0.1f, 0.1f);
 
 	return true;
 }
 
 void PBRApp::UninitScene()
 {
-
+	
 }
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);

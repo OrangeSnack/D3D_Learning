@@ -3,6 +3,7 @@
 
 #include <DbgHelp.h>
 #include <minidumpapiset.h>
+#include "Helper.h"
 
 #pragma comment(lib, "Dbghelp.lib")
 
@@ -81,7 +82,7 @@ GameApp::GameApp(HINSTANCE hInstance)
 
 GameApp::~GameApp()
 {
-
+	CoUninitialize();
 }
 
 
@@ -113,6 +114,9 @@ bool GameApp::Initialize(UINT Width, UINT Height)
 	// 윈도우 보이기
 	ShowWindow(m_hWnd, SW_SHOW);
 	UpdateWindow(m_hWnd);
+
+	// COM객체 초기화
+	HR_T(CoInitializeEx(nullptr, COINIT_MULTITHREADED));
 
 	m_currentTime = m_previousTime = (float)GetTickCount64() / 1000.0f;
 	m_Input.Initialize(m_hWnd, this);

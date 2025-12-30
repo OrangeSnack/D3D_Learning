@@ -48,6 +48,7 @@ public:
 	bool LoadVertex(std::vector<Vertex>* _vertices, const aiMesh* _mesh);
 	bool LoadIndex(std::vector<UINT>* _indices, const aiMesh* _mesh);
 	bool LoadMaterials(std::vector<Materials>& _out, const StaticMesh* _model);
+	void CreateResourceView(std::filesystem::path& _path, ID3D11ShaderResourceView** _out);
 
 	bool ShadowDraw(ID3D11DeviceContext* _deviceContext, ID3D11ShaderResourceView* _rsv);
 	bool Draw(ID3D11DeviceContext* _deviceContext , ID3D11PixelShader* _shader, bool _useMat = true);

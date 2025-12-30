@@ -56,6 +56,7 @@ PhongRenderer::PhongRenderer()
 
 void PhongRenderer::Render()
 {
+	
 	// 버텍스 등록
 	UINT stride = sizeof(Mesh_Vertex);
 	UINT offset = 0;
@@ -72,7 +73,7 @@ void PhongRenderer::Render()
 	transformBuffer.mNormalMatrix = XMMatrixInverse(nullptr, m_worldMat);
 	m_pDeviceContext->UpdateSubresource1(m_pTransBuffer.Get(), 0, nullptr, &transformBuffer, 0, 0, D3D11_COPY_DISCARD);
 	m_pDeviceContext->VSSetConstantBuffers(1, 1, m_pTransBuffer.GetAddressOf());
-	m_pDeviceContext->PSSetConstantBuffers(1, 1, m_pTransBuffer.GetAddressOf());
+	//m_pDeviceContext->PSSetConstantBuffers(1, 1, m_pTransBuffer.GetAddressOf());
 
 	// 메테리얼 등록
 	auto material = dynamic_cast<PhongMaterial*>(m_pMaterial.get());
@@ -83,7 +84,7 @@ void PhongRenderer::Render()
 		matBuffer.Matspecular = material->matSpecular;
 		matBuffer.shiness = material->shiness;
 		m_pDeviceContext->UpdateSubresource1(m_pMatBuffer.Get(), 0, nullptr, &matBuffer, 0, 0, D3D11_COPY_DISCARD);
-		m_pDeviceContext->VSSetConstantBuffers(3, 1, m_pMatBuffer.GetAddressOf());
+		//m_pDeviceContext->VSSetConstantBuffers(3, 1, m_pMatBuffer.GetAddressOf());
 		m_pDeviceContext->PSSetConstantBuffers(3, 1, m_pMatBuffer.GetAddressOf());
 
 		ID3D11ShaderResourceView* rsv[4] = {
@@ -94,6 +95,8 @@ void PhongRenderer::Render()
 		};
 		m_pDeviceContext->PSSetShaderResources(0, ARRAYSIZE(rsv), rsv);
 	}
+
+
 
 	// 드로우콜
 	m_pDeviceContext->DrawIndexed(m_IndicesSize, 0, 0);

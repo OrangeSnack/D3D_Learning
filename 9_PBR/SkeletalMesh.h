@@ -75,7 +75,8 @@ protected:
 	bool LoadMaterials(std::vector<Materials>& _out, const SkeletalMesh* _model);
 	bool LoadAnimations(std::vector<aiAnimation*>& _out, const aiScene* _scene);
 	bool LoadNodeAnim(std::unordered_map<std::string, aiNodeAnim*>* _out, const aiAnimation* _anim);
-	
+	void CreateResourceView(std::filesystem::path& _path, ID3D11ShaderResourceView** _out);
+
 	bool UpdateBoneMat();
 	int FindKeyIndex(const aiVectorKey* _keys, int _size, float _animTime);
 	int FindKeyIndex(const aiQuatKey* _keys, int _size, float _animTime);
