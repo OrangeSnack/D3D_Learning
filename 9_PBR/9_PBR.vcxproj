@@ -131,13 +131,13 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="PBRApp.cpp" />
+    <ClCompile Include="BSDFApp.cpp" />
     <ClCompile Include="SkeletalMesh.cpp" />
     <ClCompile Include="StaticMesh.cpp" />
     <ClCompile Include="WinMain.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ShadowApp.h" />
+    <ClInclude Include="BSDFApp.h" />
     <ClInclude Include="Shared.h" />
     <ClInclude Include="SkeletalMesh.h" />
     <ClInclude Include="StaticMesh.h" />
@@ -160,6 +160,12 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="BlinnPhongPixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="BRDFShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
@@ -201,7 +207,7 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shared.hlsli" />
+    <None Include="PBRShared.hlsli" />
     <None Include="SkyBoxShared.hlsli" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

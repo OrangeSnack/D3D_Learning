@@ -16,7 +16,7 @@ float4 main(PS_INPUT input) : SV_TARGET
     // normalMap
     float3 normalMap = _norm.Sample(_sp0, input.Tex).xyz;
     float3 normal;
-    if (normalMap.r < 0.01f && normalMap.g < 0.01f && normalMap.b < 0.01f)
+    if (all(normalMap < 0.01f))
     {
         normal = normalize(input.Norm);
     }
@@ -24,7 +24,7 @@ float4 main(PS_INPUT input) : SV_TARGET
     {
         normalMap = normalMap * 2.0f - 1.0f;
         float3x3 tbn = float3x3(normalize(input.Tan), normalize(input.BiTan), normalize(input.Norm));
-        normal = normalize(mul(normalMap, tbn));
+        normal = normalize(mul(tbn, normalMap));
     }
     
     //ambient
@@ -70,11 +70,18 @@ float4 main(PS_INPUT input) : SV_TARGET
         //        float2(-1, 1), float2(0, 1), float2(1, 1)
         //    };
         //    float texelSize = 1.0f / 8192.0f;
-        //    shadowFactor += _shadowmap.SampleCmpLevelZero(_sp0, shadowUV, currentShadowDepth - 0.001f);
+        //    float sum = 0.0f;
+            
+        //    // 9¹ø »ùÇÃ¸µ
+        //    for (int i = 0; i < 9; i++)
+        //    {
+        //        float2 uv = shadowUV + offset[i] * texelSize;
+        //        sum += _shadowmap.SampleCmpLevelZero(_spc1, uv, currentShadowDepth - 0.001f);
+        //    }
+            
+        //    // Æò±Õ°ª
+        //    shadowFactor = sum / 9.0f;
         //}
-        
-        //// Æò±Õ°ª
-        //shadowUV /= 9.0f;
     }
     
     finalColor.rgb = (ambientColor.rgb + (diffuseColor.rgb * shadowFactor)) * texColor.rgb + specularColor.rgb + emitColor.rgb;

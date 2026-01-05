@@ -1,4 +1,4 @@
-#include "ShadowApp.h"
+#include "BSDFApp.h"
 #include "../BaseEngine/Helper.h"
 #include <d3dcompiler.h>
 #include <Directxtk/DDSTextureLoader.h>
@@ -9,18 +9,18 @@
 
 #pragma comment(lib,"d3dcompiler.lib")
 
-PBRApp::PBRApp(HINSTANCE hInstance) : GameApp(hInstance)
+BSDFApp::BSDFApp(HINSTANCE hInstance) : GameApp(hInstance)
 {
 }
 
-PBRApp::~PBRApp()
+BSDFApp::~BSDFApp()
 {
 	UninitImGUI();
 	UninitScene();
 	UninitD3D();
 }
 
-bool PBRApp::Initialize(UINT Width, UINT Height)
+bool BSDFApp::Initialize(UINT Width, UINT Height)
 {
 	__super::Initialize(Width, Height);
 
@@ -39,7 +39,7 @@ bool PBRApp::Initialize(UINT Width, UINT Height)
 	return true;
 }
 
-void PBRApp::Update()
+void BSDFApp::Update()
 {
 	__super::Update();
 
@@ -100,10 +100,9 @@ void PBRApp::Update()
 	m_ShadowView = XMMatrixTranspose(XMMatrixLookAtLH(m_ShadowPos, m_ShadowLookAt, Vector3(0.0f, 1.0f, 0.0f)));
 }
 
-void PBRApp::Render()
+void BSDFApp::Render()
 {
-	// 
-
+	// 배경컬러 설정
 	float color[4] = { 0.0f, 0.5f, 0.5f, 1.0f };
 
 	// Update matrix variables and lighting variables
@@ -198,7 +197,8 @@ void PBRApp::Render()
 
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
 	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
-	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
+	ID3D11SamplerState* samplers[2] = {m_pSamplerLinear, m_pComparisonSampler};
+	m_pDeviceContext->PSSetSamplers(0, 2, samplers);
 	m_pDeviceContext->RSSetState(m_defaultRS);
 	m_pDeviceContext->OMSetBlendState(m_pAlphaBS, nullptr, 0xFFFFFFFF);
 
@@ -230,7 +230,7 @@ void PBRApp::Render()
 	m_pSwapChain->Present(0, 0);
 }
 
-bool PBRApp::InitD3D()
+bool BSDFApp::InitD3D()
 {
 	// 스왑체인 속성 설정 구조체 생성.
 	DXGI_SWAP_CHAIN_DESC swapDesc = {};
@@ -380,15 +380,16 @@ bool PBRApp::InitD3D()
 	return true;
 }
 
-void PBRApp::UninitD3D()
+void BSDFApp::UninitD3D()
 {
 	SAFE_RELEASE(m_pDevice);
 	SAFE_RELEASE(m_pDeviceContext);
 	SAFE_RELEASE(m_pSwapChain); 
 	SAFE_RELEASE(m_pRenderTargetView);
+	SAFE_RELEASE(m_pComparisonSampler);
 }
 
-bool PBRApp::InitScene()
+bool BSDFApp::InitScene()
 {
 	// 버텍스 쉐이더 컴파일
 	ID3D10Blob* vertexShader = nullptr;
@@ -424,7 +425,7 @@ bool PBRApp::InitScene()
 
 	// 픽셀 쉐이더 컴파일
 	ID3D10Blob* pixelShader = nullptr;
-	HR_T(CompileShaderFromFile(L"BasicPixelShader.hlsl", "main", "ps_4_0", &pixelShader));
+	/*HR_T(CompileShaderFromFile(L"BasicPixelShader.hlsl", "main", "ps_4_0", &pixelShader));
 	HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
 		pixelShader->GetBufferSize(), NULL, &m_pPixelShader));
 	SAFE_RELEASE(pixelShader);
@@ -437,7 +438,7 @@ bool PBRApp::InitScene()
 	HR_T(CompileShaderFromFile(L"SolidPixelShader.hlsl", "main", "ps_4_0", &pixelShader));
 	HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
 		pixelShader->GetBufferSize(), NULL, &m_pPLightShader));
-	SAFE_RELEASE(pixelShader);
+	SAFE_RELEASE(pixelShader);*/
 
 	HR_T(CompileShaderFromFile(L"SkyBoxPixelShader.hlsl", "main", "ps_4_0", &pixelShader));
 	HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
@@ -504,16 +505,27 @@ bool PBRApp::InitScene()
 	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Hanako.dds", nullptr, &m_pSkyTextureRV));
 	
 
-	// 샘플러 생성
+	// 일반 텍스처 샘플러
 	D3D11_SAMPLER_DESC sampDesc = {};
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	HR_T(m_pDevice->CreateSamplerState(&sampDesc, &m_pSamplerLinear));
+
+	// 비교 샘플러 (ShadowMap 전용)
+	ZeroMemory(&sampDesc, sizeof(sampDesc));
+	sampDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+	sampDesc.MinLOD = 0;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	HR_T(m_pDevice->CreateSamplerState(&sampDesc, &m_pComparisonSampler));
+
 
 	// 초기값설정
 	XMVECTOR Eye = XMVectorSet(0.0f, 4.0f, -10.0f, 0.0f);
@@ -539,7 +551,7 @@ bool PBRApp::InitScene()
 	return true;
 }
 
-void PBRApp::UninitScene()
+void BSDFApp::UninitScene()
 {
 	SAFE_RELEASE(m_pConstantBuffer);
 	SAFE_RELEASE(m_pVertexShader);
@@ -559,7 +571,7 @@ void PBRApp::UninitScene()
 	SAFE_RELEASE(m_pSkyTextureRV);
 }
 
-bool PBRApp::InitImGUI()
+bool BSDFApp::InitImGUI()
 {
 	/*
 		ImGui 초기화.
@@ -578,7 +590,7 @@ bool PBRApp::InitImGUI()
 	return true;
 }
 
-void PBRApp::UninitImGUI()
+void BSDFApp::UninitImGUI()
 {
 	// Cleanup
 	ImGui_ImplDX11_Shutdown();
@@ -586,7 +598,7 @@ void PBRApp::UninitImGUI()
 	ImGui::DestroyContext();
 }
 
-void PBRApp::RenderGUI()
+void BSDFApp::RenderGUI()
 {
 	//아래부터는 ImGUI
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -709,7 +721,7 @@ void PBRApp::RenderGUI()
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-LRESULT CALLBACK PBRApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK BSDFApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
 		return true;

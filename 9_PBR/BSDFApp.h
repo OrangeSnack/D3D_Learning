@@ -33,11 +33,11 @@ struct Object
 	Transform transform;
 };
 
-class PBRApp : public GameApp
+class BSDFApp : public GameApp
 {
 public:
-	PBRApp(HINSTANCE hInstance);
-	~PBRApp();
+	BSDFApp(HINSTANCE hInstance);
+	~BSDFApp();
 
 	Vector4 m_ClearColor = Vector4(0.45f, 0.55f, 0.60f, 1.00f);
 
@@ -96,6 +96,7 @@ public:
 	ID3D11Buffer* m_pShadowBuffer = nullptr;		// 쉐도우 버퍼
 
 	ID3D11SamplerState* m_pSamplerLinear = nullptr;		// 샘플러 상태.
+	ID3D11SamplerState* m_pComparisonSampler = nullptr;	// 비교샘플러
 	ID3D11RasterizerState* m_defaultRS = nullptr;		// 기본 RS
 	
 	ID3D11BlendState* m_pAlphaBS = nullptr;				// 알파블랜드 스테이트
@@ -106,12 +107,9 @@ public:
 	std::vector < std::unique_ptr<Object<StaticMesh>>> models;		// 모델 저장
 	std::vector < std::unique_ptr<Object<SkeletalMesh>>> skeletal_models;
 	//std::unique_ptr<Model> model;
-	ID3D11PixelShader* m_pAlphaClipShader = nullptr;		// 디퓨즈 전용 쉐이더
-	ID3D11VertexShader* m_pVertexShader = nullptr;	// 정점 쉐이더
-	ID3D11PixelShader* m_pPixelShader = nullptr;	// 퐁 픽셀 쉐이더
-	ID3D11PixelShader* m_pBlinnPixelShader = nullptr;	// 블린 퐁 픽셀 쉐이더
-	ID3D11PixelShader* m_pPLightShader = nullptr;	// 라이트 쉐이더
-	ID3D11InputLayout* m_pInputLayout = nullptr;	// 입력 레이아웃
+	ID3D11PixelShader* m_pAlphaClipShader = nullptr;	// BRDF 쉐이더
+	ID3D11VertexShader* m_pVertexShader = nullptr;		// 정점 쉐이더
+	ID3D11InputLayout* m_pInputLayout = nullptr;		// 입력 레이아웃
 	
 	// 스카이박스
 	std::unique_ptr<StaticMesh> cube;
