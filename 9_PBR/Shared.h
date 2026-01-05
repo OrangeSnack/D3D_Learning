@@ -5,28 +5,36 @@
 
 #define BONE_MAXSIZE 256
 
-//struct Materials {
-//	ID3D11ShaderResourceView* diffuse = nullptr;		// µðÇ»Áî¸Ê
-//	ID3D11ShaderResourceView* specular = nullptr;		// ½ºÆåÅ§·¯¸Ê
-//	ID3D11ShaderResourceView* normal = nullptr;			// ³ë¸Ö¸Ê
-//	ID3D11ShaderResourceView* emissive = nullptr;		// ¹ß±¤¸Ê
-//	DirectX::SimpleMath::Color BaseColor = { 1.0f, 1.0f, 1.0f, 1.0f };	// º£ÀÌ½º ÄÃ·¯
-//};
-struct PBR_Materials {
-	ID3D11ShaderResourceView* diffuse = nullptr;		// µðÇ»Áî¸Ê
-	ID3D11ShaderResourceView* normal = nullptr;			// ³ë¸Ö¸Ê
-	ID3D11ShaderResourceView* metalic = nullptr;		// ¸ÞÅ»¸¯¸Ê
-	ID3D11ShaderResourceView* roughness = nullptr;		// °ÅÄ¥±â¸Ê
-	ID3D11ShaderResourceView* ao = nullptr;				// AO¸Ê
-	ID3D11ShaderResourceView* emissive = nullptr;		// ¹ß±¤¸Ê
-};
-
 struct PBR_MatBuffer {
 	DirectX::SimpleMath::Color baseColor = { 1.0f, 1.0f, 1.0f, 1.0f };	// º£ÀÌ½º ÄÃ·¯
-	float metalic = 0.0f;
-	float roughness = 0.0f;
-	float aoStrength = 0.0f;
-	float emissive = 0.0f;
+	float metalic = 1.0f;
+	float roughness = 1.0f;
+	float aoStrength = 1.0f;
+	float emissive = 1.0f;
+};
+
+struct TransBuffer {
+	DirectX::SimpleMath::Matrix mWorld;
+	DirectX::SimpleMath::Matrix mView;
+	DirectX::SimpleMath::Matrix mProjection;
+	DirectX::SimpleMath::Matrix mNormalMatrix;
+	DirectX::SimpleMath::Vector4 mCamPos;
+};
+
+struct LightBuffer {
+	DirectX::SimpleMath::Vector4 vLightDir;
+	DirectX::SimpleMath::Vector4 vLightColor;
+};
+
+struct ShadowBuffer
+{
+	DirectX::SimpleMath::Matrix ShadowView;
+	DirectX::SimpleMath::Matrix ShadowProjection;
+};
+
+struct BoneBuffer
+{
+	DirectX::SimpleMath::Matrix boneMat[BONE_MAXSIZE] = { DirectX::SimpleMath::Matrix::Identity, };
 };
 
 struct Vertex
@@ -40,20 +48,33 @@ struct Vertex
 	float boneWeights[4] = { 0.0f, 0.0f, 0.0f, 0.0f };		// °¢ º»µéÀÇ °¡ÁßÄ¡
 };
 
-struct ConstantBuffer
-{
-	DirectX::SimpleMath::Matrix mWorld;
-	DirectX::SimpleMath::Matrix mView;
-	DirectX::SimpleMath::Matrix mProjection;
-	DirectX::SimpleMath::Matrix mNormalMatrix;
-	DirectX::SimpleMath::Vector4 mCamPos;
+struct PBR_Materials {
+	ID3D11ShaderResourceView* diffuse = nullptr;		// µðÇ»Áî¸Ê
+	ID3D11ShaderResourceView* normal = nullptr;			// ³ë¸Ö¸Ê
+	ID3D11ShaderResourceView* metalic = nullptr;		// ¸ÞÅ»¸¯¸Ê
+	ID3D11ShaderResourceView* roughness = nullptr;		// °ÅÄ¥±â¸Ê
+	ID3D11ShaderResourceView* ao = nullptr;				// AO¸Ê
+	ID3D11ShaderResourceView* emissive = nullptr;		// ¹ß±¤¸Ê
 };
 
-struct ShadowBuffer
-{
-	DirectX::SimpleMath::Matrix ShadowView;
-	DirectX::SimpleMath::Matrix ShadowProjection;
-};
+// --OUTDATED--
+
+//struct Materials {
+//	ID3D11ShaderResourceView* diffuse = nullptr;		// µðÇ»Áî¸Ê
+//	ID3D11ShaderResourceView* specular = nullptr;		// ½ºÆåÅ§·¯¸Ê
+//	ID3D11ShaderResourceView* normal = nullptr;			// ³ë¸Ö¸Ê
+//	ID3D11ShaderResourceView* emissive = nullptr;		// ¹ß±¤¸Ê
+//	DirectX::SimpleMath::Color BaseColor = { 1.0f, 1.0f, 1.0f, 1.0f };	// º£ÀÌ½º ÄÃ·¯
+//};
+
+//struct ConstantBuffer
+//{
+//	DirectX::SimpleMath::Matrix mWorld;
+//	DirectX::SimpleMath::Matrix mView;
+//	DirectX::SimpleMath::Matrix mProjection;
+//	DirectX::SimpleMath::Matrix mNormalMatrix;
+//	DirectX::SimpleMath::Vector4 mCamPos;
+//};
 
 //struct MaterialBuffer
 //{
@@ -73,8 +94,3 @@ struct ShadowBuffer
 //	int shiness;
 //	DirectX::SimpleMath::Vector3 padding;
 //};
-
-struct BoneBuffer
-{
-	DirectX::SimpleMath::Matrix boneMat[BONE_MAXSIZE] = { DirectX::SimpleMath::Matrix::Identity, };
-};

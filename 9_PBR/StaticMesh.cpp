@@ -145,7 +145,7 @@ bool StaticMesh::LoadIndex(std::vector<UINT>* _indices, const aiMesh* _mesh)
 	return true;
 }
 
-bool StaticMesh::LoadMaterials(std::vector<Materials>& _out, const StaticMesh* _model)
+bool StaticMesh::LoadMaterials(std::vector<PBR_Materials>& _out, const StaticMesh* _model)
 {
 	const aiScene* scene = _model->scene;
 
@@ -159,6 +159,15 @@ bool StaticMesh::LoadMaterials(std::vector<Materials>& _out, const StaticMesh* _
 		aiString aiStr;
 		aiMaterial* aiMat = scene->mMaterials[i];
 
+		// 베이스 컬러
+		/*aiColor4D baseColor;
+		if (aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor) == AI_SUCCESS) {
+			_out[i].BaseColor = { baseColor.r, baseColor.g, baseColor.b, baseColor.a };
+		}
+		else if (aiMat->Get(AI_MATKEY_BASE_COLOR, baseColor) == AI_SUCCESS) {
+			_out[i].BaseColor = { baseColor.r, baseColor.g, baseColor.b, baseColor.a };
+		}*/
+
 		// 디퓨즈
 		if (aiMat->GetTextureCount(aiTextureType_DIFFUSE)) {
 			if (aiMat->GetTexture(aiTextureType_DIFFUSE, 0, &aiStr) == aiReturn_SUCCESS) {
@@ -169,21 +178,39 @@ bool StaticMesh::LoadMaterials(std::vector<Materials>& _out, const StaticMesh* _
 				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].diffuse));
 			}
 		}
-
-		// 디퓨즈가 없으면?
+		// 디퓨즈 없을시
 		if (_out[i].diffuse == nullptr) {
-			HR_T(CreateWICTextureFromFile(m_pDevice, defaultDiffuse.c_str(), nullptr, &_out[i].diffuse));
+			HR_T(CreateWICTextureFromFile(m_pDevice, defaultWhite.c_str(), nullptr, &_out[i].diffuse));
 		}
 
-		// 스페큘러
-		if (aiMat->GetTextureCount(aiTextureType_SPECULAR)) {
-			if (aiMat->GetTexture(aiTextureType_SPECULAR, 0, &aiStr) == aiReturn_SUCCESS) {
+		// 메탈릭
+		if (aiMat->GetTextureCount(aiTextureType_METALNESS)) {
+			if (aiMat->GetTexture(aiTextureType_METALNESS, 0, &aiStr) == aiReturn_SUCCESS) {
 				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
 				std::filesystem::path relativePath = _model->filePath / p.filename();
 
-				CreateResourceView(relativePath, &_out[i].specular);
-				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].specular));
+				CreateResourceView(relativePath, &_out[i].metalic);
+				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
 			}
+		}
+		// 메탈릭 없을시
+		if (_out[i].metalic == nullptr) {
+			HR_T(CreateWICTextureFromFile(m_pDevice, defaultWhite.c_str(), nullptr, &_out[i].metalic));
+		}
+
+		// 러프니스
+		if (aiMat->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS)) {
+			if (aiMat->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &aiStr) == aiReturn_SUCCESS) {
+				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+				std::filesystem::path relativePath = _model->filePath / p.filename();
+
+				CreateResourceView(relativePath, &_out[i].roughness);
+				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
+			}
+		}
+		// 러프니스 없을시
+		if (_out[i].roughness == nullptr) {
+			HR_T(CreateWICTextureFromFile(m_pDevice, defaultWhite.c_str(), nullptr, &_out[i].roughness));
 		}
 
 		// 노말
@@ -196,6 +223,25 @@ bool StaticMesh::LoadMaterials(std::vector<Materials>& _out, const StaticMesh* _
 				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
 			}
 		}
+		// 노말맵 없을시
+		if (_out[i].normal == nullptr) {
+			HR_T(CreateWICTextureFromFile(m_pDevice, defaultNormal.c_str(), nullptr, &_out[i].normal));
+		}
+
+		// AO
+		if (aiMat->GetTextureCount(aiTextureType_AMBIENT_OCCLUSION)) {
+			if (aiMat->GetTexture(aiTextureType_AMBIENT_OCCLUSION, 0, &aiStr) == aiReturn_SUCCESS) {
+				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+				std::filesystem::path relativePath = _model->filePath / p.filename();
+
+				CreateResourceView(relativePath, &_out[i].ao);
+				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
+			}
+		}
+		// AO 없을시
+		if (_out[i].ao == nullptr) {
+			HR_T(CreateWICTextureFromFile(m_pDevice, defaultWhite.c_str(), nullptr, &_out[i].ao));
+		}
 
 		// 이미션
 		if (aiMat->GetTextureCount(aiTextureType_EMISSIVE)) {
@@ -206,6 +252,10 @@ bool StaticMesh::LoadMaterials(std::vector<Materials>& _out, const StaticMesh* _
 				CreateResourceView(relativePath, &_out[i].emissive);
 				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].emissive));
 			}
+		}
+		// 이미션 없을시
+		if (_out[i].emissive == nullptr) {
+			HR_T(CreateWICTextureFromFile(m_pDevice, defaultBlack.c_str(), nullptr, &_out[i].emissive));
 		}
 	}
 
@@ -235,7 +285,7 @@ bool StaticMesh::ShadowDraw(ID3D11DeviceContext* _deviceContext, ID3D11ShaderRes
 	_deviceContext->VSSetShader(m_pShadowVS, nullptr, 0);
 
 	// ResourceView 설정
-	modelRV[5] = _rsv;
+	modelRV[6] = _rsv;
 
 	for (int i = 0; i < m_pVertexBuffer.size(); i++) {
 		_deviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer[i], &m_VertexBufferStride, &m_VertexBufferOffset);
@@ -250,10 +300,8 @@ bool StaticMesh::ShadowDraw(ID3D11DeviceContext* _deviceContext, ID3D11ShaderRes
 	return true;
 }
 
-bool StaticMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11PixelShader* _shader, bool _useMat)
+bool StaticMesh::Draw(ID3D11DeviceContext* _deviceContext, bool _useMat)
 {
-	if(_shader)
-		_deviceContext->PSSetShader(_shader, nullptr, 0);
 
 	for (int i = 0; i < m_pVertexBuffer.size(); i++) {
 		_deviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer[i], &m_VertexBufferStride, &m_VertexBufferOffset);
@@ -263,14 +311,19 @@ bool StaticMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11PixelShader* _s
 			UINT matIdx = scene->mMeshes[i]->mMaterialIndex;
 			modelRV[0] = m_pMaterials[matIdx].diffuse;
 			modelRV[1] = m_pMaterials[matIdx].normal;
-			modelRV[2] = m_pMaterials[matIdx].specular;
-			modelRV[3] = m_pMaterials[matIdx].emissive;
-			modelRV[4] = nullptr;
+			modelRV[2] = m_pMaterials[matIdx].metalic;
+			modelRV[3] = m_pMaterials[matIdx].roughness;
+			modelRV[4] = m_pMaterials[matIdx].ao;
+			modelRV[5] = m_pMaterials[matIdx].emissive;
 
-			_deviceContext->PSSetShaderResources(0, 6, modelRV);
+			_deviceContext->PSSetShaderResources(0, 7, modelRV);
+		}
+		else {
+			_deviceContext->PSSetShaderResources(6, 1, &modelRV[6]);
 		}
 
 		_deviceContext->DrawIndexed(m_nIndices[i], 0, 0);
 	}
+
 	return true;
 }

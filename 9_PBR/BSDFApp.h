@@ -90,7 +90,8 @@ public:
 
 	// 렌더링 정보
 	
-	ID3D11Buffer* m_pConstantBuffer = nullptr;		// 상수 버퍼
+	ID3D11Buffer* m_pTransBuffer = nullptr;		// 상수 버퍼
+	ID3D11Buffer* m_pLightBuffer = nullptr;			// 라이트 버퍼
 	ID3D11Buffer* m_pMatBuffer = nullptr;			// 메테리얼 버퍼
 	ID3D11Buffer* m_pBoneBuffer = nullptr;			// 본 버퍼
 	ID3D11Buffer* m_pShadowBuffer = nullptr;		// 쉐도우 버퍼
@@ -105,9 +106,9 @@ public:
 
 	// FBX 모델
 	std::vector < std::unique_ptr<Object<StaticMesh>>> models;		// 모델 저장
-	std::vector < std::unique_ptr<Object<SkeletalMesh>>> skeletal_models;
+	/*std::vector < std::unique_ptr<Object<SkeletalMesh>>> skeletal_models;*/
 	//std::unique_ptr<Model> model;
-	ID3D11PixelShader* m_pAlphaClipShader = nullptr;	// BRDF 쉐이더
+	ID3D11PixelShader* m_pBRDFShader = nullptr;			// BRDF 쉐이더
 	ID3D11VertexShader* m_pVertexShader = nullptr;		// 정점 쉐이더
 	ID3D11InputLayout* m_pInputLayout = nullptr;		// 입력 레이아웃
 	

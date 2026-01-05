@@ -327,7 +327,7 @@ bool SkeletalMesh::LoadIndex(std::vector<UINT>* _indices, const aiMesh* _mesh)
 	return true;
 }
 
-bool SkeletalMesh::LoadMaterials(std::vector<Materials>& _out, const SkeletalMesh* _model)
+bool SkeletalMesh::LoadMaterials(std::vector<PBR_Materials>& _out, const SkeletalMesh* _model)
 {
 	const aiScene* scene = _model->scene;
 
@@ -341,14 +341,14 @@ bool SkeletalMesh::LoadMaterials(std::vector<Materials>& _out, const SkeletalMes
 		aiString aiStr;
 		aiMaterial* aiMat = scene->mMaterials[i];
 		
-		// 베이스 컬러
-		aiColor4D baseColor;
-		if (aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor) == AI_SUCCESS) {
-			_out[i].BaseColor = { baseColor.r, baseColor.g, baseColor.b, baseColor.a };
-		}
-		else if (aiMat->Get(AI_MATKEY_BASE_COLOR, baseColor) == AI_SUCCESS) {
-			_out[i].BaseColor = { baseColor.r, baseColor.g, baseColor.b, baseColor.a };
-		}
+		//// 베이스 컬러
+		//aiColor4D baseColor;
+		//if (aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor) == AI_SUCCESS) {
+		//	_out[i].BaseColor = { baseColor.r, baseColor.g, baseColor.b, baseColor.a };
+		//}
+		//else if (aiMat->Get(AI_MATKEY_BASE_COLOR, baseColor) == AI_SUCCESS) {
+		//	_out[i].BaseColor = { baseColor.r, baseColor.g, baseColor.b, baseColor.a };
+		//}
 
 		// 디퓨즈
 		if (aiMat->GetTextureCount(aiTextureType_DIFFUSE)) {
@@ -362,22 +362,22 @@ bool SkeletalMesh::LoadMaterials(std::vector<Materials>& _out, const SkeletalMes
 		}
 		// 디퓨즈가 없으면?
 		if (_out[i].diffuse == nullptr) {
-			std::filesystem::path path = defaultDiffuse;
+			std::filesystem::path path = defaultWhite;
 			CreateResourceView(path, &_out[i].diffuse);
 			//HR_T(CreateWICTextureFromFile(m_pDevice, defaultDiffuse.c_str(), nullptr, &_out[i].diffuse));
 		}
 
 
 		// 스페큘러
-		if (aiMat->GetTextureCount(aiTextureType_SPECULAR)) {
-			if (aiMat->GetTexture(aiTextureType_SPECULAR, 0, &aiStr) == aiReturn_SUCCESS) {
-				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
-				std::filesystem::path relativePath = _model->filePath / p.filename();
+		//if (aiMat->GetTextureCount(aiTextureType_SPECULAR)) {
+		//	if (aiMat->GetTexture(aiTextureType_SPECULAR, 0, &aiStr) == aiReturn_SUCCESS) {
+		//		std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+		//		std::filesystem::path relativePath = _model->filePath / p.filename();
 
-				CreateResourceView(relativePath, &_out[i].specular);
-				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].specular));
-			}
-		}
+		//		CreateResourceView(relativePath, &_out[i].specular);
+		//		//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].specular));
+		//	}
+		//}
 
 		// 노말
 		if (aiMat->GetTextureCount(aiTextureType_NORMALS)) {
@@ -561,7 +561,7 @@ aiQuatKey SkeletalMesh::Evaluate(const aiQuatKey& _k1, const aiQuatKey& _k2, flo
 }
 
 
-bool SkeletalMesh::SetResources(MaterialBuffer* _matBuffer, BoneBuffer* _boneBuffer)
+bool SkeletalMesh::SetResources(PBR_MatBuffer* _matBuffer, BoneBuffer* _boneBuffer)
 {
 	if (_matBuffer == nullptr || _boneBuffer == nullptr)
 		return false;
@@ -658,7 +658,7 @@ bool SkeletalMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer** _buf
 			_deviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer[meshIdx], &m_VertexBufferStride, &m_VertexBufferOffset);
 			_deviceContext->IASetIndexBuffer(m_pIndexBuffer[meshIdx], DXGI_FORMAT_R32_UINT, 0);
 
-			if (_useMat) {
+			/*if (_useMat) {
 				UINT matIdx = scene->mMeshes[meshIdx]->mMaterialIndex;
 				modelRV[0] = m_nMaterials[matIdx].diffuse;
 				modelRV[1] = m_nMaterials[matIdx].normal;
@@ -669,7 +669,7 @@ bool SkeletalMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer** _buf
 
 				_deviceContext->PSSetShaderResources(0, 6, modelRV);
 				_deviceContext->UpdateSubresource(_bufferList[_matBuffIdx], 0, nullptr, matBuff, 0, 0);
-			}
+			}*/
 
 			//Matrix nodeMat = ConvertMat(nodeWorldMap[node->mName.C_Str()]);
 

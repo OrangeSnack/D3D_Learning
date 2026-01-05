@@ -21,7 +21,7 @@ private:
 		aiProcess_CalcTangentSpace |		// ÅºÁ¨Æ® º¤ÅÍ »ý¼º
 		aiProcess_ConvertToLeftHanded;		// DX¿ë ¿Þ¼ÕÁÂÇ¥°è º¯È¯
 
-	std::wstring defaultDiffuse = L"../Resources/Texture/Default/Solid_White.png";
+	std::wstring defaultWhite = L"../Resources/Texture/Default/Solid_White.png";
 
 	const aiScene* scene = nullptr;
 	std::filesystem::path filePath;
@@ -44,7 +44,7 @@ public:
 	~SkeletalMesh();
 
 public:
-	std::vector<Materials> m_nMaterials;				// ¸ðµ¨ ¸ÞÅ×¸®¾ó
+	std::vector<PBR_Materials> m_nMaterials;				// ¸ðµ¨ ¸ÞÅ×¸®¾ó
 	std::vector<ID3D11Buffer*> m_pVertexBuffer;			// ¸ðµ¨ ¹öÅØ½º ¹öÆÛ
 	std::vector<ID3D11Buffer*> m_pIndexBuffer;			// ¸ðµ¨ ÀÎµ¦½º ¹öÆÛ
 	std::vector<UINT> m_nIndices;						// ¸ðµ¨ ÀÎµ¦½º °³¼ö
@@ -62,7 +62,7 @@ public:
 	std::unordered_map<std::string, aiMatrix4x4> nodeWorldMap;	// ³ëµåº° ¿ùµå¸Ê
 
 	ID3D11Buffer* m_pOffsetBuffer = nullptr;
-	MaterialBuffer* matBuff = nullptr;
+	PBR_MatBuffer* matBuff = nullptr;
 	BoneBuffer* boneBuff = nullptr;
 
 	UINT m_VertexBufferStride = 0;		// ¹öÅØ½º ÇÏ³ªÀÇ Å©±â
@@ -72,7 +72,7 @@ protected:
 	bool LoadSkinInfo(std::vector<Vertex>& _vertices, const aiMesh* _mesh);
 	bool NormalizeWeights(std::vector<Vertex>& _vertices);
 	bool LoadIndex(std::vector<UINT>* _indices, const aiMesh* _mesh);
-	bool LoadMaterials(std::vector<Materials>& _out, const SkeletalMesh* _model);
+	bool LoadMaterials(std::vector<PBR_Materials>& _out, const SkeletalMesh* _model);
 	bool LoadAnimations(std::vector<aiAnimation*>& _out, const aiScene* _scene);
 	bool LoadNodeAnim(std::unordered_map<std::string, aiNodeAnim*>* _out, const aiAnimation* _anim);
 	void CreateResourceView(std::filesystem::path& _path, ID3D11ShaderResourceView** _out);
@@ -90,7 +90,7 @@ public:
 	bool PlayAnim(int _animIdx);
 	bool SetLoop(bool _val);
 	bool StopAnim();
-	bool SetResources(MaterialBuffer* _matBuffer, BoneBuffer* _boneBuffer);
+	bool SetResources(PBR_MatBuffer* _matBuffer, BoneBuffer* _boneBuffer);
 	bool ShadowDraw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer** _bufferList, UINT _boneBuffIdx, ID3D11ShaderResourceView* _rsv);
 	bool Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer** _bufferList, UINT _boneBuffIdx, UINT _matBuffIdx, ID3D11VertexShader* _vShader = nullptr, ID3D11PixelShader* _pShader = nullptr, bool _useMat = true);
 

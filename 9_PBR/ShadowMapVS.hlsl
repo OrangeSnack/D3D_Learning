@@ -1,4 +1,4 @@
-#include "Shared.hlsli"
+#include "PBRShared.hlsli"
 
 PS_INPUT main(VS_INPUT input)
 {
@@ -25,9 +25,9 @@ PS_INPUT main(VS_INPUT input)
     skinMat += mul(input.BoneWeight.z, tempMat[2]);
     skinMat += mul(input.BoneWeight.w, tempMat[3]);
     
-    skinMat = mul(skinMat, World);
+    skinMat = mul(skinMat, mWorld);
 #else
-    skinMat = mul(skinMat, World);
+    skinMat = mul(skinMat, mWorld);
 #endif
     
     output.Pos = mul(input.Pos, skinMat);

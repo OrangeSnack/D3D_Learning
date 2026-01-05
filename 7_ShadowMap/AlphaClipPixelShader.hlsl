@@ -80,5 +80,6 @@ float4 main(PS_INPUT input) : SV_TARGET
     finalColor.rgb = (ambientColor.rgb + (diffuseColor.rgb * shadowFactor)) * texColor.rgb + specularColor.rgb + emitColor.rgb;
     finalColor.a = 1;
     
-    return finalColor;
+    //return finalColor;
+    return float4(texColor.rgb * shadowFactor, 1.0f);
 }

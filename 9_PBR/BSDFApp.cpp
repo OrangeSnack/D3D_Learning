@@ -57,12 +57,12 @@ void BSDFApp::Update()
 			Matrix::CreateTranslation(mt->transform.Position);
 	}
 
-	for (auto& sm : skeletal_models) {
+	/*for (auto& sm : skeletal_models) {
 		sm->transform.m_World =
 			Matrix::CreateScale(sm->transform.Scale) *
 			Matrix::CreateFromYawPitchRoll(sm->transform.Rotation.y, sm->transform.Rotation.x, sm->transform.Rotation.z) *
 			Matrix::CreateTranslation(sm->transform.Position);
-	}
+	}*/
 
 	// ¾ËÆÄ¼ÒÆÃ ¾÷µ¥ÀÌÆ®
 	if (useAS) {
@@ -87,9 +87,9 @@ void BSDFApp::Update()
 
 	m_LightDirsEvaluated = m_CurrLightDirs;
 
-	// ½ºÄÌ·¹Å»¸Þ½Ã ¾÷µ¥ÀÌÆ®
-	for (const auto& skMesh : skeletal_models)
-		skMesh->model.Update();
+	//// ½ºÄÌ·¹Å»¸Þ½Ã ¾÷µ¥ÀÌÆ®
+	//for (const auto& skMesh : skeletal_models)
+	//	skMesh->model.Update();
 
 	// ½¦µµ¿ì ºä ¼³Á¤
 	m_ShadowProjection = XMMatrixTranspose(XMMatrixPerspectiveFovLH(XM_PIDIV4 * shadowFov, m_ShadowViewport.Width / m_ShadowViewport.Height, shadowNearZ, shadowFarZ));
@@ -106,34 +106,30 @@ void BSDFApp::Render()
 	float color[4] = { 0.0f, 0.5f, 0.5f, 1.0f };
 
 	// Update matrix variables and lighting variables
-	ConstantBuffer cb1;
-	cb1.mWorld = XMMatrixTranspose(Matrix::Identity);
-	cb1.mView = XMMatrixTranspose(m_View);
-	cb1.mProjection = XMMatrixTranspose(m_Projection);
-	cb1.mNormalMatrix = XMMatrixInverse(nullptr, Matrix::Identity);
+	TransBuffer tb;
+	tb.mWorld = XMMatrixTranspose(Matrix::Identity);
+	tb.mView = XMMatrixTranspose(m_View);
+	tb.mProjection = XMMatrixTranspose(m_Projection);
+	tb.mNormalMatrix = XMMatrixInverse(nullptr, Matrix::Identity);
+	tb.mCamPos = (Vector4)m_Camera.m_Position;
 
-	MaterialBuffer mb1;
-	mb1.vLightDir = m_LightDirsEvaluated;
-	mb1.vLightColor = m_LightColors;
-	mb1.camPos = (Vector4) m_Camera.m_Position;
-	mb1.ambient = m_Ambients;
-	mb1.diffuse = m_Diffuse;
-	mb1.specular = m_Specular;
-	mb1.Matambient = m_MatAmbients;
-	mb1.Matdiffuse = m_MatDiffuse;
-	mb1.Matspecular = m_MatSpecular;
-	mb1.shiness = m_Shiness;
+	LightBuffer lb;
+	lb.vLightDir = m_LightDirsEvaluated;
+	lb.vLightColor = m_LightColors;
 
-	BoneBuffer bb1;
+	PBR_MatBuffer mb;
 
-	ShadowBuffer sb1;
-	sb1.ShadowProjection = m_ShadowProjection;
-	sb1.ShadowView = m_ShadowView;
+	BoneBuffer bb;
 
-	m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
-	m_pDeviceContext->UpdateSubresource(m_pMatBuffer, 0, nullptr, &mb1, 0, 0);
-	m_pDeviceContext->UpdateSubresource(m_pBoneBuffer, 0, nullptr, &bb1, 0, 0);
-	m_pDeviceContext->UpdateSubresource(m_pShadowBuffer, 0, nullptr, &sb1, 0, 0);
+	ShadowBuffer sb;
+	sb.ShadowProjection = m_ShadowProjection;
+	sb.ShadowView = m_ShadowView;
+
+	m_pDeviceContext->UpdateSubresource(m_pTransBuffer, 0, nullptr, &tb, 0, 0);
+	m_pDeviceContext->UpdateSubresource(m_pLightBuffer, 0, nullptr, &lb, 0, 0);
+	m_pDeviceContext->UpdateSubresource(m_pMatBuffer, 0, nullptr, &mb, 0, 0);
+	m_pDeviceContext->UpdateSubresource(m_pBoneBuffer, 0, nullptr, &bb, 0, 0);
+	m_pDeviceContext->UpdateSubresource(m_pShadowBuffer, 0, nullptr, &sb, 0, 0);
 
 	// Clear 
 	m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView, color);
@@ -142,9 +138,9 @@ void BSDFApp::Render()
 	// Render Setting
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	
-	ID3D11Buffer* buffers[] = { m_pConstantBuffer, m_pMatBuffer, m_pShadowBuffer, m_pBoneBuffer };
-	m_pDeviceContext->VSSetConstantBuffers(0, 4, buffers);
-	m_pDeviceContext->PSSetConstantBuffers(0, 2, buffers);
+	ID3D11Buffer* buffers[] = { m_pTransBuffer,  m_pLightBuffer, m_pMatBuffer, m_pShadowBuffer, m_pBoneBuffer };
+	m_pDeviceContext->VSSetConstantBuffers(0, 5, buffers);
+	m_pDeviceContext->PSSetConstantBuffers(0, 5, buffers);
 
 	// ----- ½ºÄ«ÀÌ¹Ú½º ·»´õ¸µ -----
 
@@ -160,7 +156,7 @@ void BSDFApp::Render()
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
 	m_pDeviceContext->RSSetState(m_SkyboxRS);
 
-	cube->Draw(m_pDeviceContext, nullptr, false);
+	cube->Draw(m_pDeviceContext, false);
 	//m_pDeviceContext->DrawIndexed(m_nCubeIndices, 0, 0);
 
 	// ----- ¸ðµ¨ ·»´õ¸µ -----
@@ -177,50 +173,61 @@ void BSDFApp::Render()
 
 	// °´Ã¼ ±×¸²ÀÚ ·»´õ¸µ
 	for (int i = 0; i < models.size(); i++) {
-		cb1.mWorld = XMMatrixTranspose(models[i]->transform.m_World);
-		cb1.mNormalMatrix = XMMatrixInverse(nullptr, models[i]->transform.m_World);
-		m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
+		tb.mWorld = XMMatrixTranspose(models[i]->transform.m_World);
+		tb.mNormalMatrix = XMMatrixInverse(nullptr, models[i]->transform.m_World);
+		m_pDeviceContext->UpdateSubresource(m_pTransBuffer, 0, nullptr, &tb, 0, 0);
 		models[i]->model.ShadowDraw(m_pDeviceContext, m_pShadowMapRSV.Get());
 	}
-	for (int i = 0; i < skeletal_models.size(); i++) {
-		cb1.mWorld = XMMatrixTranspose(skeletal_models[i]->transform.m_World);
-		cb1.mNormalMatrix = XMMatrixInverse(nullptr, skeletal_models[i]->transform.m_World);
-		m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
-		skeletal_models[i]->model.SetResources(&mb1, &bb1);
+	/*for (int i = 0; i < skeletal_models.size(); i++) {
+		tb.mWorld = XMMatrixTranspose(skeletal_models[i]->transform.m_World);
+		tb.mNormalMatrix = XMMatrixInverse(nullptr, skeletal_models[i]->transform.m_World);
+		m_pDeviceContext->UpdateSubresource(m_pTransBuffer, 0, nullptr, &tb, 0, 0);
+		skeletal_models[i]->model.SetResources(&mb, &bb);
 		skeletal_models[i]->model.ShadowDraw(m_pDeviceContext, buffers, 3, m_pShadowMapRSV.Get());
-	}
+	}*/
 
-	// ¸ÞÀÎ ÆÐ½º
-	// ·»´õÅ¸°Ù ¼³Á¤
+	//// ¸ÞÀÎ ÆÐ½º
+	//
+	//// ·»´õÅ¸°Ù ¼³Á¤
+	//m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
+	//m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
+
+	//m_pDeviceContext->IASetInputLayout(m_pInputLayout);
+	//m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
+	//ID3D11SamplerState* samplers[2] = {m_pSamplerLinear, m_pComparisonSampler};
+	//m_pDeviceContext->PSSetSamplers(0, 2, samplers);
+	//m_pDeviceContext->RSSetState(m_defaultRS);
+	//m_pDeviceContext->OMSetBlendState(m_pAlphaBS, nullptr, 0xFFFFFFFF);
+
+	//m_pDeviceContext->PSSetShader(m_pAlphaClipShader, nullptr, 0);
+
+	//// °´Ã¼ ·»´õ¸µ
+	//for (int i = 0; i < skeletal_models.size(); i++) {
+	//	cb1.mWorld = XMMatrixTranspose(skeletal_models[i]->transform.m_World);
+	//	cb1.mNormalMatrix = XMMatrixInverse(nullptr, skeletal_models[i]->transform.m_World);
+	//	m_pDeviceContext->UpdateSubresource(m_pTransBuffer, 0, nullptr, &cb1, 0, 0);
+	//	skeletal_models[i]->model.SetResources(&mb1, &bb1);
+	//	skeletal_models[i]->model.Draw(m_pDeviceContext, buffers, 3, 1);
+	//}
+
+	// PBR ·»´õ¸µ
 	m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
 	m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
 
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
 	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
-	ID3D11SamplerState* samplers[2] = {m_pSamplerLinear, m_pComparisonSampler};
-	m_pDeviceContext->PSSetSamplers(0, 2, samplers);
+	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
 	m_pDeviceContext->RSSetState(m_defaultRS);
 	m_pDeviceContext->OMSetBlendState(m_pAlphaBS, nullptr, 0xFFFFFFFF);
 
-	if (useAC)
-		m_pDeviceContext->PSSetShader(m_pAlphaClipShader, nullptr, 0);
-	else
-		m_pDeviceContext->PSSetShader(m_pBlinnPixelShader, nullptr, 0);
+	m_pDeviceContext->PSSetShader(m_pBRDFShader, nullptr, 0);
 
 	// °´Ã¼ ·»´õ¸µ
 	for (int i = 0; i < models.size(); i++) {
-		cb1.mWorld = XMMatrixTranspose(models[i]->transform.m_World);
-		cb1.mNormalMatrix = XMMatrixInverse(nullptr, models[i]->transform.m_World);
-		m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
-		models[i]->model.Draw(m_pDeviceContext, nullptr);
-	}
-
-	for (int i = 0; i < skeletal_models.size(); i++) {
-		cb1.mWorld = XMMatrixTranspose(skeletal_models[i]->transform.m_World);
-		cb1.mNormalMatrix = XMMatrixInverse(nullptr, skeletal_models[i]->transform.m_World);
-		m_pDeviceContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb1, 0, 0);
-		skeletal_models[i]->model.SetResources(&mb1, &bb1);
-		skeletal_models[i]->model.Draw(m_pDeviceContext, buffers, 3, 1);
+		tb.mWorld = XMMatrixTranspose(models[i]->transform.m_World);
+		tb.mNormalMatrix = XMMatrixInverse(nullptr, models[i]->transform.m_World);
+		m_pDeviceContext->UpdateSubresource(m_pTransBuffer, 0, nullptr, &tb, 0, 0);
+		models[i]->model.Draw(m_pDeviceContext);
 	}
 
 	// GUI Render
@@ -425,61 +432,16 @@ bool BSDFApp::InitScene()
 
 	// ÇÈ¼¿ ½¦ÀÌ´õ ÄÄÆÄÀÏ
 	ID3D10Blob* pixelShader = nullptr;
-	/*HR_T(CompileShaderFromFile(L"BasicPixelShader.hlsl", "main", "ps_4_0", &pixelShader));
-	HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
-		pixelShader->GetBufferSize(), NULL, &m_pPixelShader));
-	SAFE_RELEASE(pixelShader);
-
-	HR_T(CompileShaderFromFile(L"BlinnPhongPixelShader.hlsl", "main", "ps_4_0", &pixelShader));
-	HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
-		pixelShader->GetBufferSize(), NULL, &m_pBlinnPixelShader));
-	SAFE_RELEASE(pixelShader);
-
-	HR_T(CompileShaderFromFile(L"SolidPixelShader.hlsl", "main", "ps_4_0", &pixelShader));
-	HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
-		pixelShader->GetBufferSize(), NULL, &m_pPLightShader));
-	SAFE_RELEASE(pixelShader);*/
 
 	HR_T(CompileShaderFromFile(L"SkyBoxPixelShader.hlsl", "main", "ps_4_0", &pixelShader));
 	HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
 		pixelShader->GetBufferSize(), NULL, &m_pSkyPixelShader));
 	SAFE_RELEASE(pixelShader);
 
-	HR_T(CompileShaderFromFile(L"AlphaClipPixelShader.hlsl", "main", "ps_4_0", &pixelShader));
+	HR_T(CompileShaderFromFile(L"BRDFShader.hlsl", "main", "ps_4_0", &pixelShader));
 	HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
-		pixelShader->GetBufferSize(), NULL, &m_pAlphaClipShader));
+		pixelShader->GetBufferSize(), NULL, &m_pBRDFShader));
 	SAFE_RELEASE(pixelShader);
-	
-	// ¸ðµ¨ ·Îµù
-	for (int i = 0; i < 4; i++) {
-		models.push_back(std::make_unique<Object<StaticMesh>>(m_pDevice));
-	}
-
-	// ½ºÄÌ·¹Å» ¸Þ½Ã
-	skeletal_models.push_back(std::make_unique<Object<SkeletalMesh>>(m_pDevice));
-
-	//model = std::make_unique<Model>(m_pDevice);
-	cube = std::make_unique<StaticMesh>(m_pDevice);
-
-	//models[0]->model.LoadFile(L"../Resources/Models/Mass/Character.fbx");
-	models[0]->model.LoadFile(L"../Resources/Models/PrimRose/char.fbx");
-	models[0]->name = "Jane Doe";
-	models[1]->model.LoadFile(L"../Resources/Models/Zelda/Zelda.fbx");
-	models[1]->name = "Zelda";
-	models[2]->model.LoadFile(L"../Resources/Models/Tree/Tree.fbx");
-	models[2]->name = "Tree";
-	models[3]->model.LoadFile(L"../Resources/Models/Ground/Ground.fbx");
-	models[3]->name = "Ground";
-
-	/*skeletal_models[0]->model.LoadFile(L"../Resources/Models/BoxHuman/BoxHuman.fbx");
-	skeletal_models[0]->name = "BoxHuman";*/
-
-	//skeletal_models[0]->model.LoadFile(L"../Resources/Models/Skin/SkinningTest.fbx");
-	//skeletal_models[0]->model.LoadFile(L"../Resources/Models/Mass/Zombie_Run.fbx");
-	skeletal_models[0]->model.LoadFile(L"../Resources/Models/Anim/Thriller3.fbx");
-	skeletal_models[0]->name = "Manny";
-
-	cube->LoadFile(L"../Resources/Models/Cube/Cube.fbx");
 
 	// Render() ¿¡¼­ ÆÄÀÌÇÁ¶óÀÎ¿¡ ¹ÙÀÎµùÇÒ »ó¼ö ¹öÆÛ »ý¼º
 	D3D11_BUFFER_DESC bd = {};
@@ -487,10 +449,13 @@ bool BSDFApp::InitScene()
 	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	bd.CPUAccessFlags = 0;
 
-	bd.ByteWidth = sizeof(ConstantBuffer);
-	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pConstantBuffer));
+	bd.ByteWidth = sizeof(TransBuffer);
+	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pTransBuffer));
 
-	bd.ByteWidth = sizeof(MaterialBuffer);
+	bd.ByteWidth = sizeof(LightBuffer);
+	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pLightBuffer));
+
+	bd.ByteWidth = sizeof(PBR_MatBuffer);
 	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pMatBuffer));
 
 	bd.ByteWidth = sizeof(BoneBuffer);
@@ -526,13 +491,41 @@ bool BSDFApp::InitScene()
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	HR_T(m_pDevice->CreateSamplerState(&sampDesc, &m_pComparisonSampler));
 
-
 	// ÃÊ±â°ª¼³Á¤
 	XMVECTOR Eye = XMVectorSet(0.0f, 4.0f, -10.0f, 0.0f);
 	XMVECTOR At = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	XMVECTOR Up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	m_View = XMMatrixLookAtLH(Eye, At, Up);
 	m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_ClientWidth / (FLOAT)m_ClientHeight, 0.01f, 100.0f);
+
+	// ½ºÅÂÆ½ ¸Þ½Ã
+	for (int i = 0; i < 4; i++) {
+		models.push_back(std::make_unique<Object<StaticMesh>>(m_pDevice));
+	}
+
+	//models[0]->model.LoadFile(L"../Resources/Models/Mass/Character.fbx");
+	models[0]->model.LoadFile(L"../Resources/Models/PrimRose/char.fbx");
+	models[0]->name = "Jane Doe";
+	models[1]->model.LoadFile(L"../Resources/Models/Zelda/Zelda.fbx");
+	models[1]->name = "Zelda";
+	models[2]->model.LoadFile(L"../Resources/Models/Tree/Tree.fbx");
+	models[2]->name = "Tree";
+	models[3]->model.LoadFile(L"../Resources/Models/Ground/Ground.fbx");
+	models[3]->name = "Ground";
+
+	// ½ºÄÌ·¹Å» ¸Þ½Ã
+	/*skeletal_models.push_back(std::make_unique<Object<SkeletalMesh>>(m_pDevice));*/
+
+	/*skeletal_models[0]->model.LoadFile(L"../Resources/Models/BoxHuman/BoxHuman.fbx");
+	skeletal_models[0]->name = "BoxHuman";*/
+	//skeletal_models[0]->model.LoadFile(L"../Resources/Models/Skin/SkinningTest.fbx");
+	//skeletal_models[0]->model.LoadFile(L"../Resources/Models/Mass/Zombie_Run.fbx");
+	/*skeletal_models[0]->model.LoadFile(L"../Resources/Models/Anim/Thriller3.fbx");
+	skeletal_models[0]->name = "Manny";*/
+
+	// Å¥ºê¸Ê ¸Þ½Ã
+	cube = std::make_unique<StaticMesh>(m_pDevice);
+	cube->LoadFile(L"../Resources/Models/Cube/Cube.fbx");
 
 	models[0]->transform.Scale = { 0.01f, 0.01f, 0.01f };
 	models[0]->transform.Position = { 5.0f, 0.0f, 0.0f };
@@ -543,32 +536,31 @@ bool BSDFApp::InitScene()
 	models[3]->transform.Scale = { 0.01f, 0.01f, 0.01f };
 	models[3]->transform.Position = { 0.0f, -0.01f, 0.0f };
 
-	skeletal_models[0]->transform.Scale = { 0.01f, 0.01f, 0.01f };
+	/*skeletal_models[0]->transform.Scale = { 0.01f, 0.01f, 0.01f };
 	skeletal_models[0]->transform.Position = { 0.0f, 0.0f, -5.0f };
 
-	skeletal_models[0]->model.PlayAnim(0);
+	skeletal_models[0]->model.PlayAnim(0);*/
 
 	return true;
 }
 
 void BSDFApp::UninitScene()
 {
-	SAFE_RELEASE(m_pConstantBuffer);
-	SAFE_RELEASE(m_pVertexShader);
-	SAFE_RELEASE(m_pSkyVertexShader);
-	SAFE_RELEASE(m_pPLightShader);
-	SAFE_RELEASE(m_pPixelShader);
-	SAFE_RELEASE(m_pSkyPixelShader);
-	SAFE_RELEASE(m_pInputLayout);
-	SAFE_RELEASE(m_pDepthStencilView);
-	SAFE_RELEASE(m_pSamplerLinear);
-	SAFE_RELEASE(m_defaultRS);
-
+	
 	SAFE_RELEASE(m_pSkyVertexShader);
 	SAFE_RELEASE(m_pSkyPixelShader);
 	SAFE_RELEASE(m_pSkyInputLayout);
 	SAFE_RELEASE(m_SkyboxRS);
 	SAFE_RELEASE(m_pSkyTextureRV);
+
+	SAFE_RELEASE(m_pTransBuffer);
+	SAFE_RELEASE(m_pDepthStencilView);
+	SAFE_RELEASE(m_pSamplerLinear);
+	SAFE_RELEASE(m_defaultRS);
+
+	SAFE_RELEASE(m_pVertexShader);
+	SAFE_RELEASE(m_pBRDFShader);
+	SAFE_RELEASE(m_pInputLayout);
 }
 
 bool BSDFApp::InitImGUI()
@@ -689,7 +681,7 @@ void BSDFApp::RenderGUI()
 		ImGui::SeparatorText("Animation");
 
 		// µð¹ö±ë¿ë
-		ImGui::Text(std::to_string(skeletal_models[0]->model.animIdx).c_str());
+		//ImGui::Text(std::to_string(skeletal_models[0]->model.animIdx).c_str());
 
 		ImGui::PopID();
 		ImGui::End();

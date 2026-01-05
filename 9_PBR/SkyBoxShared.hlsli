@@ -7,9 +7,7 @@ cbuffer _cb0 : register(b0)
     matrix View;
     matrix Projection;
     matrix NormalMatrix;
-    float4 vLightDir;
-    float4 vLightColor;
-    float4 vOutputColor;
+    float4 CamPos;
 }
 
 struct VS_SKYOUT
