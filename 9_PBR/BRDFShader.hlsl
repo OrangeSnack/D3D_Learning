@@ -42,11 +42,12 @@ float4 main(PS_INPUT input) : SV_TARGET
     clip(texColor.a - 0.5f);
     
     // 텍스처 샘플링
-    float3 albedo = _albedo.Sample(_sp0, input.Tex).rgb;
-    float metalic = _metalic.Sample(_sp0, input.Tex).r;
-    float roughness = _roughness.Sample(_sp0, input.Tex).r;
+    float3 albedo = mUseOverride ? mBaseColor : _albedo.Sample(_sp0, input.Tex).rgb;
+    float metalic = mUseOverride ? mMetalic : _metalic.Sample(_sp0, input.Tex).r;
+    float roughness = mUseOverride ? mRoughness : _roughness.Sample(_sp0, input.Tex).r;
     float ao = _ambientOcclusion.Sample(_sp0, input.Tex).r;
     float3 emissive = _emissive.Sample(_sp0, input.Tex).rgb;
+    
     
     // 노멀
     float3 normalMap = _normal.Sample(_sp0, input.Tex).xyz;

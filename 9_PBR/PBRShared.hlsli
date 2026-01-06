@@ -31,6 +31,9 @@ cbuffer MatBuffer : register(b2)
     float mRoughness;
     float mAoStrength;
     float mEmissive;
+    
+    int mUseOverride;
+    float3 mOverridePadding;
 }
 
 cbuffer ShadowVP : register(b3)

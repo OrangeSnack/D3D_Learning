@@ -71,13 +71,10 @@ public:
 	Vector4 m_Specular = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	// 메테리얼
-	Vector4 m_MatAmbients = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-	Vector4 m_MatDiffuse = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-	Vector4 m_MatSpecular = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-
-	int m_Shiness = 32;
-	bool useAC = true;		// 알파컷 사용
-	bool useAS = true;		// 알파소팅 사용
+	bool m_UseMatOverride = false;
+	Color m_BaseColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+	float m_Roughness = 0.0f;
+	float m_Metalic = 0.0f;
 
 	// End ---------
 

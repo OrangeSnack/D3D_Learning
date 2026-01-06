@@ -65,16 +65,16 @@ void BSDFApp::Update()
 	}*/
 
 	// 알파소팅 업데이트
-	if (useAS) {
+	/*if (useAS) {
 		std::sort(models.begin(), models.end(), [&](auto& md1, auto& md2) {
 			return (md1->transform.m_World * m_View)._43 > (md2->transform.m_World * m_View)._43; });
 	}
 	else {
 		auto it = std::find_if(models.begin(), models.end(), [](std::unique_ptr<Object<StaticMesh>>& md) {return md->name == "Tree"; });
-	
+
 		if(it != models.begin())
 			std::swap(*it, models[0]);
-	}
+	}*/
 
 	//m_World = 
 	//	XMMatrixScaling(scaleFactor, scaleFactor, scaleFactor) *
@@ -118,6 +118,10 @@ void BSDFApp::Render()
 	lb.vLightColor = m_LightColors;
 
 	PBR_MatBuffer mb;
+	mb.baseColor = m_BaseColor;
+	mb.roughness = m_Roughness;
+	mb.metalic = m_Metalic;
+	mb.useOverride = (UINT)m_UseMatOverride;
 
 	BoneBuffer bb;
 
@@ -638,8 +642,6 @@ void BSDFApp::RenderGUI()
 
 		ImGui::PushID(2);
 		ImGui::SeparatorText("Light");
-		ImGui::Checkbox("AlphaCut", &useAC);
-		ImGui::Checkbox("AlphaSort", &useAS);
 		ImGui::SliderFloat3("LightDir", lightDir, -1.0f, 1.0f);
 		ImGui::ColorEdit4("Color(l_i)", (float*)&m_LightColors);
 		ImGui::ColorEdit4("Ambients(l_a)", (float*)&m_Ambients);
@@ -663,16 +665,10 @@ void BSDFApp::RenderGUI()
 		ImGui::PushID(3);
 		ImGui::SeparatorText("Material");
 
-		/*ImGui::ColorEdit4("MatAmbients(k_a)", (float*)&m_MatAmbients);
-		ImGui::ColorEdit4("MatDiffuse(k_d)", (float*)&m_MatDiffuse);
-		ImGui::ColorEdit4("MatSpecular(k_s)", (float*)&m_MatSpecular);
-		ImGui::SliderInt("Shiness(a)", &m_Shiness, 32, 256);
-		if (ImGui::Button("Reset")) {
-			m_MatAmbients = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-			m_MatDiffuse = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-			m_MatSpecular = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-			m_Shiness = 32;
-		}*/
+		ImGui::Checkbox("Override", &m_UseMatOverride);
+		ImGui::ColorEdit4("BaseColor", &m_BaseColor.x);
+		ImGui::SliderFloat("Roughness", &m_Roughness, 0.0f, 1.0f);
+		ImGui::SliderFloat("Metalic", &m_Metalic, 0.0f, 1.0f);
 
 		ImGui::PopID();
 		ImGui::NewLine();
