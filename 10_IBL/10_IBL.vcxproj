@@ -21,10 +21,10 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{A15AC953-BBAA-4E7D-8F9C-453C631DF8D5}</ProjectGuid>
+    <ProjectGuid>{916CBBD3-7EAC-4F35-8A5C-A77048AA7167}</ProjectGuid>
     <RootNamespace>My1Lighting</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>07_ShadowMap</ProjectName>
+    <ProjectName>10_IBL</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -131,13 +131,13 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ShadowApp.cpp" />
+    <ClCompile Include="IBLApp.cpp" />
     <ClCompile Include="SkeletalMesh.cpp" />
     <ClCompile Include="StaticMesh.cpp" />
     <ClCompile Include="WinMain.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ShadowApp.h" />
+    <ClInclude Include="IBLApp.h" />
     <ClInclude Include="Shared.h" />
     <ClInclude Include="SkeletalMesh.h" />
     <ClInclude Include="StaticMesh.h" />
@@ -160,6 +160,12 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="BlinnPhongPixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="BRDFShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
@@ -201,6 +207,7 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="PBRShared.hlsli" />
     <None Include="Shared.hlsli" />
     <None Include="SkyBoxShared.hlsli" />
   </ItemGroup>

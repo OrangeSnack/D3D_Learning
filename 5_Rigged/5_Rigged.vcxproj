@@ -24,7 +24,7 @@
     <ProjectGuid>{69C20AC7-32A3-49F9-816A-F9F8F322E96C}</ProjectGuid>
     <RootNamespace>My1Lighting</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>5_Rigged</ProjectName>
+    <ProjectName>05_Rigged</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

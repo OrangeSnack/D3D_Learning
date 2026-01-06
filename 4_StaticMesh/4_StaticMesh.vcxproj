@@ -24,7 +24,7 @@
     <ProjectGuid>{A2483E0B-C2B4-471D-B412-7F220981443D}</ProjectGuid>
     <RootNamespace>My1Lighting</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>4_StaticMesh</ProjectName>
+    <ProjectName>04_StaticMesh</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

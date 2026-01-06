@@ -24,7 +24,7 @@
     <ProjectGuid>{A6E112CA-5976-430C-9766-591E850DC518}</ProjectGuid>
     <RootNamespace>My1Lighting</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>2_BlinnPhong</ProjectName>
+    <ProjectName>02_BlinnPhong</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

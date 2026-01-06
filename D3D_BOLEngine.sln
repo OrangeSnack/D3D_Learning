@@ -3,27 +3,29 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36310.24
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "0_ConstantBuffer", "BOLGame\BOLGame.vcxproj", "{5AEF5946-4C60-43CC-AD87-F207323A1BDC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "01_ConstantBuffer", "BOLGame\BOLGame.vcxproj", "{5AEF5946-4C60-43CC-AD87-F207323A1BDC}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BaseEngine", "BaseEngine\BaseEngine.vcxproj", "{85F115BF-070D-4EFD-BBCA-458BA5B9F885}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "1_Lighting_Skybox", "1_Lighting\1_Lighting.vcxproj", "{E15ECBF5-E013-4895-925A-468C5C5A4453}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "01_Lighting_Skybox", "1_Lighting\1_Lighting.vcxproj", "{E15ECBF5-E013-4895-925A-468C5C5A4453}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "2_BlinnPhong", "2_BlinnPhong\2_BlinnPhong.vcxproj", "{A6E112CA-5976-430C-9766-591E850DC518}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "02_BlinnPhong", "2_BlinnPhong\2_BlinnPhong.vcxproj", "{A6E112CA-5976-430C-9766-591E850DC518}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "3_NormalMap", "3_NormalMap\3_NormalMap.vcxproj", "{3E80175F-7695-463D-A3AB-5B058BED7DB3}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "03_NormalMap", "3_NormalMap\3_NormalMap.vcxproj", "{3E80175F-7695-463D-A3AB-5B058BED7DB3}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "4_StaticMesh", "4_StaticMesh\4_StaticMesh.vcxproj", "{A2483E0B-C2B4-471D-B412-7F220981443D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "04_StaticMesh", "4_StaticMesh\4_StaticMesh.vcxproj", "{A2483E0B-C2B4-471D-B412-7F220981443D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "5_Rigged", "5_Rigged\5_Rigged.vcxproj", "{69C20AC7-32A3-49F9-816A-F9F8F322E96C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "05_Rigged", "5_Rigged\5_Rigged.vcxproj", "{69C20AC7-32A3-49F9-816A-F9F8F322E96C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "6_Skinning", "6_Skinning\6_Skinning.vcxproj", "{3C554354-515D-4725-AD9C-262ADF5028F6}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "06_Skinning", "6_Skinning\6_Skinning.vcxproj", "{3C554354-515D-4725-AD9C-262ADF5028F6}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "7_ShadowMap", "7_ShadowMap\7_ShadowMap.vcxproj", "{A15AC953-BBAA-4E7D-8F9C-453C631DF8D5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "07_ShadowMap", "7_ShadowMap\7_ShadowMap.vcxproj", "{A15AC953-BBAA-4E7D-8F9C-453C631DF8D5}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "8_BRDF", "8_BRDF\8_BRDF.vcxproj", "{1970CCF5-B804-49D9-9BB0-851697EE7AA9}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "08_Engine", "8_BRDF\8_BRDF.vcxproj", "{1970CCF5-B804-49D9-9BB0-851697EE7AA9}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "9_PBR", "9_PBR\9_PBR.vcxproj", "{B54BB0CF-D1A9-43D5-B727-286EDB93BA48}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "09_PBR", "9_PBR\9_PBR.vcxproj", "{B54BB0CF-D1A9-43D5-B727-286EDB93BA48}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "10_IBL", "10_IBL\10_IBL.vcxproj", "{916CBBD3-7EAC-4F35-8A5C-A77048AA7167}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -121,6 +123,14 @@ Global
 		{B54BB0CF-D1A9-43D5-B727-286EDB93BA48}.Release|x64.Build.0 = Release|x64
 		{B54BB0CF-D1A9-43D5-B727-286EDB93BA48}.Release|x86.ActiveCfg = Release|Win32
 		{B54BB0CF-D1A9-43D5-B727-286EDB93BA48}.Release|x86.Build.0 = Release|Win32
+		{916CBBD3-7EAC-4F35-8A5C-A77048AA7167}.Debug|x64.ActiveCfg = Debug|x64
+		{916CBBD3-7EAC-4F35-8A5C-A77048AA7167}.Debug|x64.Build.0 = Debug|x64
+		{916CBBD3-7EAC-4F35-8A5C-A77048AA7167}.Debug|x86.ActiveCfg = Debug|Win32
+		{916CBBD3-7EAC-4F35-8A5C-A77048AA7167}.Debug|x86.Build.0 = Debug|Win32
+		{916CBBD3-7EAC-4F35-8A5C-A77048AA7167}.Release|x64.ActiveCfg = Release|x64
+		{916CBBD3-7EAC-4F35-8A5C-A77048AA7167}.Release|x64.Build.0 = Release|x64
+		{916CBBD3-7EAC-4F35-8A5C-A77048AA7167}.Release|x86.ActiveCfg = Release|Win32
+		{916CBBD3-7EAC-4F35-8A5C-A77048AA7167}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
