@@ -8,7 +8,7 @@
 struct PBR_MatBuffer {
 	DirectX::SimpleMath::Color baseColor = { 1.0f, 1.0f, 1.0f, 1.0f };	// 베이스 컬러
 	float metalic = 1.0f;
-	float roughness = 1.0f;
+	float roughness = 0.05f;
 	float aoStrength = 1.0f;
 	float emissive = 1.0f;
 };

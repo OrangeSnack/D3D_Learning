@@ -195,12 +195,21 @@ bool StaticMesh::LoadMaterials(std::vector<PBR_Materials>& _out, const StaticMes
 		}
 		// 메탈릭 없을시
 		if (_out[i].metalic == nullptr) {
-			HR_T(CreateWICTextureFromFile(m_pDevice, defaultWhite.c_str(), nullptr, &_out[i].metalic));
+			HR_T(CreateWICTextureFromFile(m_pDevice, defaultBlack.c_str(), nullptr, &_out[i].metalic));
 		}
 
 		// 러프니스
 		if (aiMat->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS)) {
 			if (aiMat->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &aiStr) == aiReturn_SUCCESS) {
+				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+				std::filesystem::path relativePath = _model->filePath / p.filename();
+
+				CreateResourceView(relativePath, &_out[i].roughness);
+				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
+			}
+		}
+		else if (aiMat->GetTextureCount(aiTextureType_SHININESS)) {
+			if (aiMat->GetTexture(aiTextureType_SHININESS, 0, &aiStr) == aiReturn_SUCCESS) {
 				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
 				std::filesystem::path relativePath = _model->filePath / p.filename();
 

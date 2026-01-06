@@ -111,7 +111,7 @@ void BSDFApp::Render()
 	tb.mView = XMMatrixTranspose(m_View);
 	tb.mProjection = XMMatrixTranspose(m_Projection);
 	tb.mNormalMatrix = XMMatrixInverse(nullptr, Matrix::Identity);
-	tb.mCamPos = (Vector4)m_Camera.m_Position;
+	tb.mCamPos = Vector4(m_Camera.m_Position.x, m_Camera.m_Position.y, m_Camera.m_Position.z, 1.0f);
 
 	LightBuffer lb;
 	lb.vLightDir = m_LightDirsEvaluated;
@@ -663,7 +663,7 @@ void BSDFApp::RenderGUI()
 		ImGui::PushID(3);
 		ImGui::SeparatorText("Material");
 
-		ImGui::ColorEdit4("MatAmbients(k_a)", (float*)&m_MatAmbients);
+		/*ImGui::ColorEdit4("MatAmbients(k_a)", (float*)&m_MatAmbients);
 		ImGui::ColorEdit4("MatDiffuse(k_d)", (float*)&m_MatDiffuse);
 		ImGui::ColorEdit4("MatSpecular(k_s)", (float*)&m_MatSpecular);
 		ImGui::SliderInt("Shiness(a)", &m_Shiness, 32, 256);
@@ -672,7 +672,7 @@ void BSDFApp::RenderGUI()
 			m_MatDiffuse = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 			m_MatSpecular = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 			m_Shiness = 32;
-		}
+		}*/
 
 		ImGui::PopID();
 		ImGui::NewLine();
