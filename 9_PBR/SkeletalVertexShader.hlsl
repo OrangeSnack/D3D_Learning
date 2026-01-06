@@ -1,4 +1,4 @@
-#include "Shared.hlsli"
+#include "PBRShared.hlsli"
 
 PS_INPUT main(VS_INPUT input)
 {
@@ -30,14 +30,14 @@ PS_INPUT main(VS_INPUT input)
         skinMat = mul(skinMat, World);
         output.Pos = mul(input.Pos, skinMat);
     #else
-        output.Pos = mul(input.Pos, World);
+        output.Pos = mul(input.Pos, mWorld);
     #endif
     
     output.W_Pos = output.Pos;
-    output.Pos = mul(output.Pos, View);
-    output.Pos = mul(output.Pos, Projection);
+    output.Pos = mul(output.Pos, mView);
+    output.Pos = mul(output.Pos, mProjection);
 
-    float4x4 normalMat = mul(skinMat, NormalMatrix);
+    float4x4 normalMat = mul(skinMat, mNormalMatrix);
     
     output.Norm = normalize(mul(input.Norm, (float3x3) normalMat));
     output.Tan = normalize(mul(input.Tan, (float3x3) normalMat));
