@@ -1,5 +1,5 @@
 #include "../BaseEngine/pch.h"
-#include "BSDFApp.h"
+#include "IBLApp.h"
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,

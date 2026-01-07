@@ -45,39 +45,11 @@ float4 main(PS_INPUT input) : SV_TARGET
     float3 albedo = mUseOverride ? mBaseColor : _albedo.Sample(_sp0, input.Tex).rgb;
     float metalic = mUseOverride ? mMetalic : _metalic.Sample(_sp0, input.Tex).r;
     float roughness = mUseOverride ? mRoughness : _roughness.Sample(_sp0, input.Tex).r;
-    float ao = _ambientOcclusion.Sample(_sp0, input.Tex).r;
-    float3 emissive = _emissive.Sample(_sp0, input.Tex).rgb;
-    
-    
-    // ³ë¸Ö
-    float3 normalMap = _normal.Sample(_sp0, input.Tex).xyz;
-    normalMap = normalMap * 2.0f - 1.0f;
-    float3x3 tbn = float3x3(normalize(input.Tan), normalize(input.BiTan), normalize(input.Norm));
-
-    // º¤ÅÍ
-    float3 N = normalize(mul(normalMap, tbn));
-    float3 V = normalize(mCamPos.xyz - input.W_Pos.xyz);
-    float3 L = normalize(-mLightDir.xyz);
-    float3 H = normalize(V + L);
-    
-    // ±âº»¹Ý»çÀ² ±¸ÇÏ±â
-    float3 F0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metalic);
-    
-    // BRDF ±¸¼º¿ä¼Ò
-    float NV = saturate(dot(N, V));
-    float NL = saturate(dot(N, L));
-    
-    float alpha = max(roughness * roughness, 0.001f);
-    float D = ndfGGX(N, H, alpha);
-    float3 F = Fresnel(H, V, F0);
-    float G = GeoSchlick(NV, NL, roughness);
-    
-    float3 kd = lerp(float3(1, 1, 1) - F, float3(0, 0, 0), metalic);
-    float3 diffuseBRDF = kd * albedo / 3.141592f;
-    float3 specularBRDF = (D * F * G) / max(4.0f * NL * NV, 0.001f);
+    float ao = mUseOverride ? mAoStrength : _ambientOcclusion.Sample(_sp0, input.Tex).r;
+    float3 emissive = mUseOverride ? mEmissive : _emissive.Sample(_sp0, input.Tex).rgb;
     
     // ½¦µµ¿ì¸Ê Ã³¸®
-    float currentShadowDepth = input.S_Pos.z / input.S_Pos.w;   // ½¦µµ¿ì¸Ê ±âÁØ NDC ZÁÂÇ¥
+    float currentShadowDepth = input.S_Pos.z / input.S_Pos.w; // ½¦µµ¿ì¸Ê ±âÁØ NDC ZÁÂÇ¥
     float2 shadowUV = input.S_Pos.xy / input.S_Pos.w;
     
     shadowUV.y *= -1.0f;
@@ -98,10 +70,56 @@ float4 main(PS_INPUT input) : SV_TARGET
         }
     }
     
+    // ³ë¸Ö
+    float3 normalMap = _normal.Sample(_sp0, input.Tex).xyz;
+    normalMap = normalize(normalMap * 2.0f - 1.0f);
+    float3x3 tbn = float3x3(normalize(input.Tan), normalize(input.BiTan), normalize(input.Norm));
+
+    // º¤ÅÍ
+    float3 N = normalize(mul(normalMap, tbn));
+    float3 V = normalize(mCamPos.xyz - input.W_Pos.xyz);
+    float3 L = normalize(-mLightDir.xyz);
+    float3 H = normalize(V + L);
+    
+    // ±âº»¹Ý»çÀ² ±¸ÇÏ±â
+    float3 F0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metalic);
+    
+    //BRDF ±¸¼º¿ä¼Ò
+
+    float NV = saturate(dot(N, V));
+    float NL = saturate(dot(N, L));
+    
+    float alpha = max(roughness * roughness, 0.001f);
+    float D = ndfGGX(N, H, alpha);
+    float3 F = Fresnel(H, V, F0);
+    float G = GeoSchlick(NV, NL, roughness);
+    
+    float3 kd = lerp(1.0f - F, 0.0f, metalic);
+    float3 diffuse = (kd * albedo / 3.141592f);
+    float3 specular = (D * F * G) / max(4.0f * NL * NV, 0.001f);
+    
+    // ±¤·® »ùÇÃ¸µ
+    float3 irradiance = _irradiance.Sample(_sp0, N).rgb;
+    float3 diffuseIBL = saturate(kd * albedo * irradiance);
+    
+    // LOD Mipmap ·¹º§ ¾ò±â
+    int specularTextureLevels, width, height;
+    _specular.GetDimensions(0, width, height, specularTextureLevels);
+    // ¹Ý»ç »ùÇÃ¸µ
+    float3 Lr = reflect(-V, N);
+    float3 PrefilteredColor = _specular.SampleLevel(_sp0, Lr, roughness * specularTextureLevels).rgb;
+    
+    // BRDF »ùÇÃ¸µ
+    float2 specularBRDF = _brdflut.Sample(_sp0, float2(NV, roughness)).rg;
+    float3 specularIBL = PrefilteredColor * (F0 * specularBRDF.r + specularBRDF.g);
+   
+    float3 amibentIBL = (diffuseIBL + specularIBL) * ao;
+    
     float3 light = mLightColor.rgb;
-    float3 direct = (diffuseBRDF + specularBRDF) * light * NL;
-    float3 color = direct * shadowFactor + emissive;
+    float3 direct = (diffuse + specular) * light * NL;
+    float3 color = (direct * shadowFactor) + amibentIBL + emissive;
     float4 finalColor = float4(pow(color, 1.0f / 2.2f), 1.0f);
     
     return finalColor;
+    //return float4(N, 1.0f);
 }

@@ -121,6 +121,8 @@ void IBLApp::Render()
 	mb.baseColor = m_BaseColor;
 	mb.roughness = m_Roughness;
 	mb.metalic = m_Metalic;
+	mb.aoStrength = m_Ao;
+	mb.emissive = 0.0f;
 	mb.useOverride = (UINT)m_UseMatOverride;
 
 	BoneBuffer bb;
@@ -225,6 +227,10 @@ void IBLApp::Render()
 	m_pDeviceContext->OMSetBlendState(m_pAlphaBS, nullptr, 0xFFFFFFFF);
 
 	m_pDeviceContext->PSSetShader(m_pBRDFShader, nullptr, 0);
+
+	// 리소스 업데이트
+	ID3D11ShaderResourceView* resources[3] = { m_pSkyEnvRV, m_pSkyIBLRV, m_pLUTRV };
+	m_pDeviceContext->PSSetShaderResources(7, 3, resources);
 
 	// 객체 렌더링
 	for (int i = 0; i < models.size(); i++) {
@@ -442,7 +448,7 @@ bool IBLApp::InitScene()
 		pixelShader->GetBufferSize(), NULL, &m_pSkyPixelShader));
 	SAFE_RELEASE(pixelShader);
 
-	HR_T(CompileShaderFromFile(L"BRDFShader.hlsl", "main", "ps_4_0", &pixelShader));
+	HR_T(CompileShaderFromFile(L"BRDFShader.hlsl", "main", "ps_5_0", &pixelShader));
 	HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
 		pixelShader->GetBufferSize(), NULL, &m_pBRDFShader));
 	SAFE_RELEASE(pixelShader);
@@ -469,10 +475,10 @@ bool IBLApp::InitScene()
 	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pShadowBuffer));
 
 	// 스카이박스 텍스쳐 로딩
-	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Church.dds", nullptr, &m_pSkyTextureRV));
-	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/CubeMap.dds", nullptr, &m_pSkyTextureRV));
-	//HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/Hanako.dds", nullptr, &m_pSkyTextureRV));
-	
+	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/HDRI/ParkingEnvHDR.dds", nullptr, &m_pSkyTextureRV));
+	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/HDRI/ParkingDiffuseHDR.dds", nullptr, &m_pSkyIBLRV));
+	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/HDRI/ParkingSpecularHDR.dds", nullptr, &m_pSkyEnvRV));
+	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/HDRI/ParkingBRDF.dds", nullptr, &m_pLUTRV));
 
 	// 일반 텍스처 샘플러
 	D3D11_SAMPLER_DESC sampDesc = {};
@@ -532,13 +538,30 @@ bool IBLApp::InitScene()
 	cube->LoadFile(L"../Resources/Models/Cube/Cube.fbx");
 
 	models[0]->transform.Scale = { 0.01f, 0.01f, 0.01f };
-	models[0]->transform.Position = { 5.0f, 0.0f, 0.0f };
+	models[0]->transform.Position = { 5.0f, 0.1f, 0.0f };
 
 	models[1]->transform.Scale = { 0.01f, 0.01f, 0.01f };
 	models[1]->transform.Position = { -5.0f, 0.0f, 0.0f };
 
 	models[3]->transform.Scale = { 0.01f, 0.01f, 0.01f };
 	models[3]->transform.Position = { 0.0f, -0.01f, 0.0f };
+
+	// 바닥 텍스쳐
+	if (!models[3]->model.m_pMaterials.empty()) {
+		std::filesystem::path albedo = L"../Resources/Texture/Floor/floor_tile_a.png";
+		std::filesystem::path normal = L"../Resources/Texture/Floor/floor_tile_n.png";
+		std::filesystem::path roughness = L"../Resources/Texture/Floor/floor_tile_s.png";
+
+		models[3]->model.CreateResourceView(albedo, &models[3]->model.m_pMaterials[0].diffuse);
+		models[3]->model.CreateResourceView(normal, &models[3]->model.m_pMaterials[0].normal);
+		models[3]->model.CreateResourceView(roughness, &models[3]->model.m_pMaterials[0].roughness);
+		/*HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Floor/floor_tile_a.png", nullptr, &models[3]->model.m_pMaterials[0].diffuse));
+		HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Floor/floor_tile_n.png", nullptr, &models[3]->model.m_pMaterials[0].normal));
+		HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Floor/floor_tile_s.png", nullptr, &models[3]->model.m_pMaterials[0].roughness));*/
+	}
+
+	// 카메라 속도조절
+	m_Camera.m_MoveSpeed = 10.0f;
 
 	/*skeletal_models[0]->transform.Scale = { 0.01f, 0.01f, 0.01f };
 	skeletal_models[0]->transform.Position = { 0.0f, 0.0f, -5.0f };
@@ -669,6 +692,7 @@ void IBLApp::RenderGUI()
 		ImGui::ColorEdit4("BaseColor", &m_BaseColor.x);
 		ImGui::SliderFloat("Roughness", &m_Roughness, 0.0f, 1.0f);
 		ImGui::SliderFloat("Metalic", &m_Metalic, 0.0f, 1.0f);
+		ImGui::SliderFloat("AO", &m_Ao, 0.0f, 1.0f);
 
 		ImGui::PopID();
 		ImGui::NewLine();

@@ -22,9 +22,9 @@ private:
 		aiProcess_ConvertToLeftHanded |		// DX용 왼손좌표계 변환
 		aiProcess_PreTransformVertices;		// 노드의 변환행렬을 적용한 버텍스 생성한다.  *StaticMesh로 처리할때만
 
-	std::wstring defaultWhite = L"../Resources/Texture/Default/Solid_White.png";
-	std::wstring defaultBlack = L"../Resources/Texture/Default/Solid_Black.png";
-	std::wstring defaultNormal = L"../Resources/Texture/Default/Default_Normal.png";
+	std::filesystem::path defaultWhite = L"../Resources/Texture/Default/Solid_White.png";
+	std::filesystem::path defaultBlack = L"../Resources/Texture/Default/Solid_Black.png";
+	std::filesystem::path defaultNormal = L"../Resources/Texture/Default/Default_Normal.png";
 
 	const aiScene* scene = nullptr;
 	std::filesystem::path filePath;

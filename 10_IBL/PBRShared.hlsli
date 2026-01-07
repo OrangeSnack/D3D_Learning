@@ -5,6 +5,9 @@ Texture2D _roughness : register(t3);
 Texture2D _ambientOcclusion : register(t4);
 Texture2D _emissive : register(t5);
 Texture2D _shadowmap : register(t6);
+TextureCube _specular : register(t7);
+TextureCube _irradiance : register(t8);
+Texture2D _brdflut : register(t9);
 
 SamplerState _sp0 : register(s0);
 

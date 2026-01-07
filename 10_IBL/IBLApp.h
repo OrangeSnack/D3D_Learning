@@ -75,6 +75,7 @@ public:
 	Color m_BaseColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 	float m_Roughness = 0.0f;
 	float m_Metalic = 0.0f;
+	float m_Ao = 1.0f;
 
 	// End ---------
 
@@ -115,7 +116,11 @@ public:
 	ID3D11PixelShader* m_pSkyPixelShader = nullptr;	// 스카이박스 픽셀 쉐이더
 	ID3D11InputLayout* m_pSkyInputLayout = nullptr;	// 스카이박스입력 레이아웃
 	ID3D11RasterizerState* m_SkyboxRS = nullptr;	// 스카이박스 전용 RS
+
 	ID3D11ShaderResourceView* m_pSkyTextureRV = nullptr;	// 스카이박스 텍스처 리소스 뷰.
+	ID3D11ShaderResourceView* m_pSkyEnvRV = nullptr;		// 큐브맵 리플렉션HDR
+	ID3D11ShaderResourceView* m_pSkyIBLRV = nullptr;		// IBL 맵
+	ID3D11ShaderResourceView* m_pLUTRV = nullptr;			// BRDF 룩업테이블
 
 	// 그림자
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> m_pShadowMap;

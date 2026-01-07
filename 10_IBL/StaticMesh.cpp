@@ -180,7 +180,7 @@ bool StaticMesh::LoadMaterials(std::vector<PBR_Materials>& _out, const StaticMes
 		}
 		// 디퓨즈 없을시
 		if (_out[i].diffuse == nullptr) {
-			HR_T(CreateWICTextureFromFile(m_pDevice, defaultWhite.c_str(), nullptr, &_out[i].diffuse));
+			CreateResourceView(defaultWhite, &_out[i].diffuse);
 		}
 
 		// 메탈릭
@@ -195,7 +195,7 @@ bool StaticMesh::LoadMaterials(std::vector<PBR_Materials>& _out, const StaticMes
 		}
 		// 메탈릭 없을시
 		if (_out[i].metalic == nullptr) {
-			HR_T(CreateWICTextureFromFile(m_pDevice, defaultBlack.c_str(), nullptr, &_out[i].metalic));
+			CreateResourceView(defaultBlack, &_out[i].metalic);
 		}
 
 		// 러프니스
@@ -219,7 +219,7 @@ bool StaticMesh::LoadMaterials(std::vector<PBR_Materials>& _out, const StaticMes
 		}
 		// 러프니스 없을시
 		if (_out[i].roughness == nullptr) {
-			HR_T(CreateWICTextureFromFile(m_pDevice, defaultWhite.c_str(), nullptr, &_out[i].roughness));
+			CreateResourceView(defaultWhite, &_out[i].roughness);
 		}
 
 		// 노말
@@ -234,7 +234,7 @@ bool StaticMesh::LoadMaterials(std::vector<PBR_Materials>& _out, const StaticMes
 		}
 		// 노말맵 없을시
 		if (_out[i].normal == nullptr) {
-			HR_T(CreateWICTextureFromFile(m_pDevice, defaultNormal.c_str(), nullptr, &_out[i].normal));
+			CreateResourceView(defaultNormal, &_out[i].normal);
 		}
 
 		// AO
@@ -249,7 +249,7 @@ bool StaticMesh::LoadMaterials(std::vector<PBR_Materials>& _out, const StaticMes
 		}
 		// AO 없을시
 		if (_out[i].ao == nullptr) {
-			HR_T(CreateWICTextureFromFile(m_pDevice, defaultWhite.c_str(), nullptr, &_out[i].ao));
+			CreateResourceView(defaultWhite, &_out[i].ao);
 		}
 
 		// 이미션
@@ -264,7 +264,7 @@ bool StaticMesh::LoadMaterials(std::vector<PBR_Materials>& _out, const StaticMes
 		}
 		// 이미션 없을시
 		if (_out[i].emissive == nullptr) {
-			HR_T(CreateWICTextureFromFile(m_pDevice, defaultBlack.c_str(), nullptr, &_out[i].emissive));
+			CreateResourceView(defaultBlack, &_out[i].emissive);
 		}
 	}
 
@@ -281,8 +281,20 @@ void StaticMesh::CreateResourceView(std::filesystem::path& _path, ID3D11ShaderRe
 		CreateShaderResourceView(m_pDevice, image.GetImages(), image.GetImageCount(), meta, _out);
 	}
 	else {
-		HR_T(CreateWICTextureFromFile(m_pDevice, _path.wstring().c_str(), nullptr, _out));
-		//HR_T(CreateWICTextureFromFile(m_pDevice, _path.wstring().c_str(), nullptr, _out));
+		ID3D11DeviceContext* context = nullptr;
+		m_pDevice->GetImmediateContext(&context);
+
+		HR_T(CreateWICTextureFromFileEx(
+			m_pDevice,
+			context,
+			_path.wstring().c_str(),
+			0,
+			D3D11_USAGE_DEFAULT,
+			D3D11_BIND_SHADER_RESOURCE,
+			0, 0,
+			WIC_LOADER_FORCE_RGBA32 | WIC_LOADER_IGNORE_SRGB,
+			nullptr,
+			_out));
 	}
 }
 
