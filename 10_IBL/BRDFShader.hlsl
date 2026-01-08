@@ -42,33 +42,11 @@ float4 main(PS_INPUT input) : SV_TARGET
     clip(texColor.a - 0.5f);
     
     // ÅØ½ºÃ³ »ùÇÃ¸µ
-    float3 albedo = mUseOverride ? mBaseColor : _albedo.Sample(_sp0, input.Tex).rgb;
+    float3 albedo = mUseOverride ? mBaseColor.rgb : _albedo.Sample(_sp0, input.Tex).rgb;
     float metalic = mUseOverride ? mMetalic : _metalic.Sample(_sp0, input.Tex).r;
     float roughness = mUseOverride ? mRoughness : _roughness.Sample(_sp0, input.Tex).r;
-    float ao = mUseOverride ? mAoStrength : _ambientOcclusion.Sample(_sp0, input.Tex).r;
+    float ao = mUseOverride ? mAoStrength : _ambientOcclusion.Sample(_sp0, input.Tex).r * mAoStrength;
     float3 emissive = mUseOverride ? mEmissive : _emissive.Sample(_sp0, input.Tex).rgb;
-    
-    // ½¦µµ¿ì¸Ê Ã³¸®
-    float currentShadowDepth = input.S_Pos.z / input.S_Pos.w; // ½¦µµ¿ì¸Ê ±âÁØ NDC ZÁÂÇ¥
-    float2 shadowUV = input.S_Pos.xy / input.S_Pos.w;
-    
-    shadowUV.y *= -1.0f;
-    shadowUV = (shadowUV * 0.5f) + 0.5f;
-    
-    float shadowFactor = 1.0f;
-    
-    if (shadowUV.x >= 0.0f && shadowUV.x <= 1.0f && shadowUV.y >= 0.0f && shadowUV.y <= 1.0f)
-    {
-        // Normal
-        {
-            float sampleShadowDepth = _shadowmap.Sample(_sp0, shadowUV).r;
-        
-            if (currentShadowDepth > sampleShadowDepth + 0.001f)
-            {
-                shadowFactor = 0.0f;
-            }
-        }
-    }
     
     // ³ë¸Ö
     float3 normalMap = _normal.Sample(_sp0, input.Tex).xyz;
@@ -114,6 +92,28 @@ float4 main(PS_INPUT input) : SV_TARGET
     float3 specularIBL = PrefilteredColor * (F0 * specularBRDF.r + specularBRDF.g);
    
     float3 amibentIBL = (diffuseIBL + specularIBL) * ao;
+    
+     // ½¦µµ¿ì¸Ê Ã³¸®
+    float currentShadowDepth = input.S_Pos.z / input.S_Pos.w; // ½¦µµ¿ì¸Ê ±âÁØ NDC ZÁÂÇ¥
+    float2 shadowUV = input.S_Pos.xy / input.S_Pos.w;
+    
+    shadowUV.y *= -1.0f;
+    shadowUV = (shadowUV * 0.5f) + 0.5f;
+    
+    float shadowFactor = 1.0f;
+    
+    if (shadowUV.x >= 0.0f && shadowUV.x <= 1.0f && shadowUV.y >= 0.0f && shadowUV.y <= 1.0f)
+    {
+        // Normal
+        {
+            float sampleShadowDepth = _shadowmap.Sample(_sp0, shadowUV).r;
+        
+            if (currentShadowDepth > sampleShadowDepth + 0.001f)
+            {
+                shadowFactor = 0.0f;
+            }
+        }
+    }
     
     float3 light = mLightColor.rgb;
     float3 direct = (diffuse + specular) * light * NL;
