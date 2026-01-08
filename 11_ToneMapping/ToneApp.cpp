@@ -45,11 +45,11 @@ void ToneApp::Update()
 
 	//float t = GameTimer::m_Instance->TotalTime();
 
-	// ÇÁ·ÎÁ§¼Ç ¸ÅÆ®¸¯½º ¼³Á¤
+	// í”„ë¡œì ì…˜ ë§¤íŠ¸ë¦­ìŠ¤ ì„¤ì •
 	m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4 * (camFov / 45.0f), m_ClientWidth / (FLOAT)m_ClientHeight, camFarZ[0], camFarZ[1]);
 	m_Camera.GetViewMatrix(m_View);
 
-	// ¿ÀºêÁ§Æ® ¸ÅÆ®¸¯½º ¾÷µ¥ÀÌÆ®
+	// ì˜¤ë¸Œì íŠ¸ ë§¤íŠ¸ë¦­ìŠ¤ ì—…ë°ì´íŠ¸
 	for (auto& mt : models) {
 		mt->transform.m_World =
 			Matrix::CreateScale(mt->transform.Scale) *
@@ -57,14 +57,14 @@ void ToneApp::Update()
 			Matrix::CreateTranslation(mt->transform.Position);
 	}
 
-	/*for (auto& sm : skeletal_models) {
-		sm->transform.m_World =
-			Matrix::CreateScale(sm->transform.Scale) *
-			Matrix::CreateFromYawPitchRoll(sm->transform.Rotation.y, sm->transform.Rotation.x, sm->transform.Rotation.z) *
-			Matrix::CreateTranslation(sm->transform.Position);
-	}*/
+    for (auto& sm : skeletal_models) {
+        sm->transform.m_World =
+            Matrix::CreateScale(sm->transform.Scale) *
+            Matrix::CreateFromYawPitchRoll(sm->transform.Rotation.y, sm->transform.Rotation.x, sm->transform.Rotation.z) *
+            Matrix::CreateTranslation(sm->transform.Position);
+    }
 
-	// ¾ËÆÄ¼ÒÆÃ ¾÷µ¥ÀÌÆ®
+	// ì•ŒíŒŒì†ŒíŒ… ì—…ë°ì´íŠ¸
 	/*if (useAS) {
 		std::sort(models.begin(), models.end(), [&](auto& md1, auto& md2) {
 			return (md1->transform.m_World * m_View)._43 > (md2->transform.m_World * m_View)._43; });
@@ -76,31 +76,27 @@ void ToneApp::Update()
 			std::swap(*it, models[0]);
 	}*/
 
-	//m_World = 
-	//	XMMatrixScaling(scaleFactor, scaleFactor, scaleFactor) *
-	//	XMMatrixRotationRollPitchYaw(cbRotation[0], cbRotation[1], cbRotation[2]);
-
-	// ¶óÀÌÆ® ¹æÇâ
+	// ë¼ì´íŠ¸ ë°©í–¥
 	m_CurrLightDirs.x = lightDir[0];
 	m_CurrLightDirs.y = lightDir[1];
 	m_CurrLightDirs.z = lightDir[2];
 
 	m_LightDirsEvaluated = m_CurrLightDirs;
 
-	//// ½ºÄÌ·¹Å»¸Ş½Ã ¾÷µ¥ÀÌÆ®
-	//for (const auto& skMesh : skeletal_models)
-	//	skMesh->model.Update();
+	// ìŠ¤ì¼ˆë ˆíƒˆë©”ì‹œ ì—…ë°ì´íŠ¸
+	for (const auto& skMesh : skeletal_models)
+		skMesh->model.Update();
 
-	// ½¦µµ¿ì ºä ¼³Á¤
-	//m_ShadowProjection = XMMatrixTranspose(XMMatrixPerspectiveFovLH(XM_PIDIV4 * shadowFov, m_ShadowViewport.Width / m_ShadowViewport.Height, shadowNearZ, shadowFarZ));
-	m_ShadowProjection = XMMatrixTranspose(
-		XMMatrixOrthographicLH(
-			m_ShadowViewport.Width,   // ³Êºñ
-			m_ShadowViewport.Height,  // ³ôÀÌ
-			shadowNearZ,              // nearZ
-			shadowFarZ                // farZ
-		)
-	);
+	// ì‰ë„ìš° ë·° ì„¤ì •
+	m_ShadowProjection = XMMatrixTranspose(XMMatrixPerspectiveFovLH(XM_PIDIV4 * shadowFov, m_ShadowViewport.Width / m_ShadowViewport.Height, shadowNearZ, shadowFarZ));
+	//m_ShadowProjection = XMMatrixTranspose(
+	//	XMMatrixOrthographicLH(
+	//		m_ShadowViewport.Width,   // ë„ˆë¹„
+	//		m_ShadowViewport.Height,  // ë†’ì´
+	//		shadowNearZ,              // nearZ
+	//		shadowFarZ                // farZ
+	//	)
+	//);
 	m_ShadowLookAt = m_Camera.m_Position + m_Camera.GetForward() * m_ShadowForwardDistFromCamera;
 
 	SimpleMath::Vector3 directionalLightDir{ m_CurrLightDirs.x, m_CurrLightDirs.y, m_CurrLightDirs.z };
@@ -110,7 +106,7 @@ void ToneApp::Update()
 
 void ToneApp::Render()
 {
-	// ¹è°æÄÃ·¯ ¼³Á¤
+	// ë°°ê²½ì»¬ëŸ¬ ì„¤ì •
 	float color[4] = { 0.0f, 0.5f, 0.5f, 1.0f };
 
 	// Update matrix variables and lighting variables
@@ -156,13 +152,13 @@ void ToneApp::Render()
 	m_pDeviceContext->VSSetConstantBuffers(0, 5, buffers);
 	m_pDeviceContext->PSSetConstantBuffers(0, 5, buffers);
 
-	// ----- ½ºÄ«ÀÌ¹Ú½º ·»´õ¸µ -----
+	// ----- ìŠ¤ì¹´ì´ë°•ìŠ¤ ë Œë”ë§ -----
 
-	// ½ºÄ«ÀÌ¹Ú½º¿ë ·»´õÅ¸°Ù ¼³Á¤
+	// ìŠ¤ì¹´ì´ë°•ìŠ¤ìš© ë Œë”íƒ€ê²Ÿ ì„¤ì •
 	m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, NULL);
 	m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
 
-	// ½ºÄ«ÀÌ¹Ú½º ·»´õ¸µ
+	// ìŠ¤ì¹´ì´ë°•ìŠ¤ ë Œë”ë§
 	m_pDeviceContext->IASetInputLayout(m_pSkyInputLayout);
 	m_pDeviceContext->VSSetShader(m_pSkyVertexShader, nullptr, 0);
 	m_pDeviceContext->PSSetShader(m_pSkyPixelShader, nullptr, 0);
@@ -173,10 +169,10 @@ void ToneApp::Render()
 	cube->Draw(m_pDeviceContext, false);
 	//m_pDeviceContext->DrawIndexed(m_nCubeIndices, 0, 0);
 
-	// ----- ¸ğµ¨ ·»´õ¸µ -----
+	// ----- ëª¨ë¸ ë Œë”ë§ -----
 
-	// ½¦µµ¿ì¸Ê ÆĞ½º
-	// ·»´õÅ¸°Ù ¼³Á¤
+	// ì‰ë„ìš°ë§µ íŒ¨ìŠ¤
+	// ë Œë”íƒ€ê²Ÿ ì„¤ì •
 	m_pDeviceContext->OMSetRenderTargets(0, nullptr, m_pShadowDSV.Get());
 	m_pDeviceContext->ClearDepthStencilView(m_pShadowDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	m_pDeviceContext->RSSetViewports(1, &m_ShadowViewport);
@@ -185,46 +181,24 @@ void ToneApp::Render()
 	m_pDeviceContext->RSSetState(m_defaultRS);
 	m_pDeviceContext->OMSetBlendState(m_pAlphaBS, nullptr, 0xFFFFFFFF);
 
-	// °´Ã¼ ±×¸²ÀÚ ·»´õ¸µ
+	// ê°ì²´ ê·¸ë¦¼ì ë Œë”ë§
 	for (int i = 0; i < models.size(); i++) {
 		tb.mWorld = XMMatrixTranspose(models[i]->transform.m_World);
 		tb.mNormalMatrix = XMMatrixInverse(nullptr, models[i]->transform.m_World);
 		m_pDeviceContext->UpdateSubresource(m_pTransBuffer, 0, nullptr, &tb, 0, 0);
 		models[i]->model.ShadowDraw(m_pDeviceContext, m_pShadowMapRSV.Get());
 	}
-	/*for (int i = 0; i < skeletal_models.size(); i++) {
-		tb.mWorld = XMMatrixTranspose(skeletal_models[i]->transform.m_World);
-		tb.mNormalMatrix = XMMatrixInverse(nullptr, skeletal_models[i]->transform.m_World);
-		m_pDeviceContext->UpdateSubresource(m_pTransBuffer, 0, nullptr, &tb, 0, 0);
-		skeletal_models[i]->model.SetResources(&mb, &bb);
-		skeletal_models[i]->model.ShadowDraw(m_pDeviceContext, buffers, 3, m_pShadowMapRSV.Get());
-	}*/
+    for (int i = 0; i < skeletal_models.size(); i++) {
+        tb.mWorld = XMMatrixTranspose(skeletal_models[i]->transform.m_World);
+        tb.mNormalMatrix = XMMatrixInverse(nullptr, skeletal_models[i]->transform.m_World);
+        m_pDeviceContext->UpdateSubresource(m_pTransBuffer, 0, nullptr, &tb, 0, 0);
+        skeletal_models[i]->model.SetResources(&mb, &bb);
+        skeletal_models[i]->model.ShadowDraw(m_pDeviceContext, buffers, 4, m_pShadowMapRSV.Get());
+    }
 
-	//// ¸ŞÀÎ ÆĞ½º
-	//
-	//// ·»´õÅ¸°Ù ¼³Á¤
-	//m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
-	//m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
+	//// ë©”ì¸ íŒ¨ìŠ¤
 
-	//m_pDeviceContext->IASetInputLayout(m_pInputLayout);
-	//m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
-	//ID3D11SamplerState* samplers[2] = {m_pSamplerLinear, m_pComparisonSampler};
-	//m_pDeviceContext->PSSetSamplers(0, 2, samplers);
-	//m_pDeviceContext->RSSetState(m_defaultRS);
-	//m_pDeviceContext->OMSetBlendState(m_pAlphaBS, nullptr, 0xFFFFFFFF);
-
-	//m_pDeviceContext->PSSetShader(m_pAlphaClipShader, nullptr, 0);
-
-	//// °´Ã¼ ·»´õ¸µ
-	//for (int i = 0; i < skeletal_models.size(); i++) {
-	//	cb1.mWorld = XMMatrixTranspose(skeletal_models[i]->transform.m_World);
-	//	cb1.mNormalMatrix = XMMatrixInverse(nullptr, skeletal_models[i]->transform.m_World);
-	//	m_pDeviceContext->UpdateSubresource(m_pTransBuffer, 0, nullptr, &cb1, 0, 0);
-	//	skeletal_models[i]->model.SetResources(&mb1, &bb1);
-	//	skeletal_models[i]->model.Draw(m_pDeviceContext, buffers, 3, 1);
-	//}
-
-	// PBR ·»´õ¸µ
+	// PBR ë Œë”ë§
 	m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
 	m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
 
@@ -236,17 +210,25 @@ void ToneApp::Render()
 
 	m_pDeviceContext->PSSetShader(m_pBRDFShader, nullptr, 0);
 
-	// ¸®¼Ò½º ¾÷µ¥ÀÌÆ®
+	// ë¦¬ì†ŒìŠ¤ ì—…ë°ì´íŠ¸
 	ID3D11ShaderResourceView* resources[3] = { m_pSkyEnvRV, m_pSkyIBLRV, m_pLUTRV };
 	m_pDeviceContext->PSSetShaderResources(7, 3, resources);
 
-	// °´Ã¼ ·»´õ¸µ
+	// ê°ì²´ ë Œë”ë§
 	for (int i = 0; i < models.size(); i++) {
 		tb.mWorld = XMMatrixTranspose(models[i]->transform.m_World);
 		tb.mNormalMatrix = XMMatrixInverse(nullptr, models[i]->transform.m_World);
 		m_pDeviceContext->UpdateSubresource(m_pTransBuffer, 0, nullptr, &tb, 0, 0);
 		models[i]->model.Draw(m_pDeviceContext);
 	}
+
+    for (int i = 0; i < skeletal_models.size(); i++) {
+        tb.mWorld = XMMatrixTranspose(skeletal_models[i]->transform.m_World);
+        tb.mNormalMatrix = XMMatrixInverse(nullptr, skeletal_models[i]->transform.m_World);
+        m_pDeviceContext->UpdateSubresource(m_pTransBuffer, 0, nullptr, &tb, 0, 0);
+        skeletal_models[i]->model.SetResources(&mb, &bb);
+        skeletal_models[i]->model.Draw(m_pDeviceContext, buffers, 3, 1);
+    }
 
 	// GUI Render
 	RenderGUI();
@@ -257,36 +239,36 @@ void ToneApp::Render()
 
 bool ToneApp::InitD3D()
 {
-	// ½º¿ÒÃ¼ÀÎ ¼Ó¼º ¼³Á¤ ±¸Á¶Ã¼ »ı¼º.
+	// ìŠ¤ì™‘ì²´ì¸ ì†ì„± ì„¤ì • êµ¬ì¡°ì²´ ìƒì„±.
 	DXGI_SWAP_CHAIN_DESC swapDesc = {};
 	swapDesc.BufferCount = 1;
 	swapDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swapDesc.OutputWindow = m_hWnd;	// ½º¿ÒÃ¼ÀÎ Ãâ·ÂÇÒ Ã¢ ÇÚµé °ª.
-	swapDesc.Windowed = true;		// Ã¢ ¸ğµå ¿©ºÎ ¼³Á¤.
+	swapDesc.OutputWindow = m_hWnd;	// ìŠ¤ì™‘ì²´ì¸ ì¶œë ¥í•  ì°½ í•¸ë“¤ ê°’.
+	swapDesc.Windowed = true;		// ì°½ ëª¨ë“œ ì—¬ë¶€ ì„¤ì •.
 	swapDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	// ¹é¹öÆÛ(ÅØ½ºÃ³)ÀÇ °¡·Î/¼¼·Î Å©±â ¼³Á¤.
+	// ë°±ë²„í¼(í…ìŠ¤ì²˜)ì˜ ê°€ë¡œ/ì„¸ë¡œ í¬ê¸° ì„¤ì •.
 	swapDesc.BufferDesc.Width = m_ClientWidth;
 	swapDesc.BufferDesc.Height = m_ClientHeight;
-	// È­¸é ÁÖ»çÀ² ¼³Á¤.
+	// í™”ë©´ ì£¼ì‚¬ìœ¨ ì„¤ì •.
 	swapDesc.BufferDesc.RefreshRate.Numerator = 60;
 	swapDesc.BufferDesc.RefreshRate.Denominator = 1;
-	// »ùÇÃ¸µ °ü·Ã ¼³Á¤.
+	// ìƒ˜í”Œë§ ê´€ë ¨ ì„¤ì •.
 	swapDesc.SampleDesc.Count = 1;
 	swapDesc.SampleDesc.Quality = 0;
 
 	UINT creationFlags = 0;
 
-	// ÀåÄ¡, ½º¿ÒÃ¼ÀÎ, ÄÁÅØ½ºÆ® »ı¼º
+	// ì¥ì¹˜, ìŠ¤ì™‘ì²´ì¸, ì»¨í…ìŠ¤íŠ¸ ìƒì„±
 	HR_T(D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, creationFlags, NULL, NULL,
 		D3D11_SDK_VERSION, &swapDesc, &m_pSwapChain, &m_pDevice, NULL, &m_pDeviceContext));
 	
-	// ·»´õÅ¸°Ù »ı¼º
+	// ë Œë”íƒ€ê²Ÿ ìƒì„±
 	ID3D11Texture2D* pBackBuffer = nullptr;
 	HR_T(m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer));
 	HR_T(m_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &m_pRenderTargetView));
 	SAFE_RELEASE(pBackBuffer);
 
-	// ºäÆ÷Æ®
+	// ë·°í¬íŠ¸
 	m_defaultViewport = {};
 	m_defaultViewport.TopLeftX = 0.0f;
 	m_defaultViewport.TopLeftY = 0.0f;
@@ -295,7 +277,7 @@ bool ToneApp::InitD3D()
 	m_defaultViewport.MinDepth = 0.0f;
 	m_defaultViewport.MaxDepth = 1.0f;
 
-	// ‰X½º »ı¼º
+	// ëŠìŠ¤ ìƒì„±
 	D3D11_TEXTURE2D_DESC descDepth = {};
 	descDepth.Width = m_ClientWidth;
 	descDepth.Height = m_ClientHeight;
@@ -312,7 +294,7 @@ bool ToneApp::InitD3D()
 	ID3D11Texture2D* textureDepthStencil = nullptr;
 	HR_T(m_pDevice->CreateTexture2D(&descDepth, nullptr, &textureDepthStencil));
 
-	// ½ºÅÄ½Ç ºä »ı¼º
+	// ìŠ¤íƒ ì‹¤ ë·° ìƒì„±
 	D3D11_DEPTH_STENCIL_VIEW_DESC dsv = {};
 	dsv.Format = descDepth.Format;
 	dsv.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
@@ -320,7 +302,7 @@ bool ToneApp::InitD3D()
 	HR_T(m_pDevice->CreateDepthStencilView(textureDepthStencil, &dsv, &m_pDepthStencilView));
 	SAFE_RELEASE(textureDepthStencil);
 
-	// ·¡½ºÅÍ¶óÀÌÀú ¼Ó¼º »ı¼º
+	// ë˜ìŠ¤í„°ë¼ì´ì € ì†ì„± ìƒì„±
 	D3D11_RASTERIZER_DESC skyRsDesc = {};
 	skyRsDesc.FillMode = D3D11_FILL_SOLID;
 	skyRsDesc.CullMode = D3D11_CULL_BACK;
@@ -347,7 +329,7 @@ bool ToneApp::InitD3D()
 	defaultRsDesc.AntialiasedLineEnable = FALSE;
 	HR_T(m_pDevice->CreateRasterizerState(&defaultRsDesc, &m_defaultRS));
 
-	// ¾ËÆÄ ºí·£µù »ı¼º
+	// ì•ŒíŒŒ ë¸”ëœë”© ìƒì„±
 	D3D11_BLEND_DESC blendDesc = {};
 	blendDesc.RenderTarget[0].BlendEnable = TRUE;
 	blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
@@ -359,10 +341,10 @@ bool ToneApp::InitD3D()
 	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	HR_T(m_pDevice->CreateBlendState(&blendDesc, &m_pAlphaBS));
 	
-	// ±âº» ºí·£µù °¡Á®¿À±â
+	// ê¸°ë³¸ ë¸”ëœë”© ê°€ì ¸ì˜¤ê¸°
 	m_pDeviceContext->OMGetBlendState(&m_pDefaultBS, nullptr, nullptr);
 
-	// ±×¸²ÀÚ¼³Á¤
+	// ê·¸ë¦¼ìì„¤ì •
 	m_ShadowViewport = {};
 	m_ShadowViewport.TopLeftX = 0.0f;
 	m_ShadowViewport.TopLeftY = 0.0f;
@@ -371,9 +353,9 @@ bool ToneApp::InitD3D()
 	m_ShadowViewport.MinDepth = 0.0f;
 	m_ShadowViewport.MaxDepth = 1.0f;
 
-	//±×¸²ÀÚ¿ë ShadowMap Texture¿Í SRV, DSV »ı¼º
+	//ê·¸ë¦¼ììš© ShadowMap Textureì™€ SRV, DSV ìƒì„±
 	{
-		// ÅØ½ºÃÄ »ı¼º
+		// í…ìŠ¤ì³ ìƒì„±
 		D3D11_TEXTURE2D_DESC texDesc = {};
 		texDesc.Width = (UINT)m_ShadowViewport.Width;
 		texDesc.Height = (UINT)m_ShadowViewport.Height;
@@ -386,13 +368,13 @@ bool ToneApp::InitD3D()
 		texDesc.SampleDesc.Quality = 0;
 		HR_T(m_pDevice->CreateTexture2D(&texDesc, nullptr, m_pShadowMap.GetAddressOf()));
 
-		// ½ºÅÙ½Çºä »ı¼º
+		// ìŠ¤í…ì‹¤ë·° ìƒì„±
 		D3D11_DEPTH_STENCIL_VIEW_DESC descDSV = {};
 		descDSV.Format = DXGI_FORMAT_D32_FLOAT;
 		descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		HR_T(m_pDevice->CreateDepthStencilView(m_pShadowMap.Get(), &descDSV, m_pShadowDSV.GetAddressOf()));
 	
-		// ¸®¼Ò½ººä »ı¼º
+		// ë¦¬ì†ŒìŠ¤ë·° ìƒì„±
 		D3D11_SHADER_RESOURCE_VIEW_DESC descSRV = {};
 		descSRV.Format = DXGI_FORMAT_R32_FLOAT;
 		descSRV.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
@@ -416,13 +398,13 @@ void ToneApp::UninitD3D()
 
 bool ToneApp::InitScene()
 {
-	// ¹öÅØ½º ½¦ÀÌ´õ ÄÄÆÄÀÏ
+	// ë²„í…ìŠ¤ ì‰ì´ë” ì»´íŒŒì¼
 	ID3D10Blob* vertexShader = nullptr;
 	HR_T(CompileShaderFromFile(L"SkeletalVertexShader.hlsl", "main", "vs_5_0", &vertexShader));
 	HR_T(m_pDevice->CreateVertexShader(vertexShader->GetBufferPointer(),
 		vertexShader->GetBufferSize(), NULL, &m_pVertexShader));
 
-	// ÀÎÇ² ·¹ÀÌ¾Æ¿ô »ı¼º
+	// ì¸í’‹ ë ˆì´ì•„ì›ƒ ìƒì„±
 	D3D11_INPUT_ELEMENT_DESC layout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -436,7 +418,7 @@ bool ToneApp::InitScene()
 		, vertexShader->GetBufferSize(), &m_pInputLayout));
 	SAFE_RELEASE(vertexShader);
 
-	// ½ºÄ«ÀÌ¹Ú½º ·¹ÀÌ¾Æ¿ô »ı¼º
+	// ìŠ¤ì¹´ì´ë°•ìŠ¤ ë ˆì´ì•„ì›ƒ ìƒì„±
 	HR_T(CompileShaderFromFile(L"SkyBoxVertexShader.hlsl", "main", "vs_4_0", &vertexShader));
 	HR_T(m_pDevice->CreateVertexShader(vertexShader->GetBufferPointer(), vertexShader->GetBufferSize(),
 		NULL, &m_pSkyVertexShader));
@@ -448,7 +430,7 @@ bool ToneApp::InitScene()
 		vertexShader->GetBufferSize(), &m_pSkyInputLayout));
 	SAFE_RELEASE(vertexShader);
 
-	// ÇÈ¼¿ ½¦ÀÌ´õ ÄÄÆÄÀÏ
+	// í”½ì…€ ì‰ì´ë” ì»´íŒŒì¼
 	ID3D10Blob* pixelShader = nullptr;
 
 	HR_T(CompileShaderFromFile(L"SkyBoxPixelShader.hlsl", "main", "ps_4_0", &pixelShader));
@@ -461,7 +443,7 @@ bool ToneApp::InitScene()
 		pixelShader->GetBufferSize(), NULL, &m_pBRDFShader));
 	SAFE_RELEASE(pixelShader);
 
-	// Render() ¿¡¼­ ÆÄÀÌÇÁ¶óÀÎ¿¡ ¹ÙÀÎµùÇÒ »ó¼ö ¹öÆÛ »ı¼º
+	// Render() ì—ì„œ íŒŒì´í”„ë¼ì¸ì— ë°”ì¸ë”©í•  ìƒìˆ˜ ë²„í¼ ìƒì„±
 	D3D11_BUFFER_DESC bd = {};
 	bd.Usage = D3D11_USAGE_DEFAULT;
 	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -482,13 +464,13 @@ bool ToneApp::InitScene()
 	bd.ByteWidth = sizeof(ShadowBuffer);
 	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pShadowBuffer));
 
-	// ½ºÄ«ÀÌ¹Ú½º ÅØ½ºÃÄ ·Îµù
+	// ìŠ¤ì¹´ì´ë°•ìŠ¤ í…ìŠ¤ì³ ë¡œë”©
 	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/HDRI/ParkingEnvHDR.dds", nullptr, &m_pSkyTextureRV));
 	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/HDRI/ParkingDiffuseHDR.dds", nullptr, &m_pSkyIBLRV));
 	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/HDRI/ParkingSpecularHDR.dds", nullptr, &m_pSkyEnvRV));
 	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/HDRI/ParkingBRDF.dds", nullptr, &m_pLUTRV));
 
-	// ÀÏ¹İ ÅØ½ºÃ³ »ùÇÃ·¯
+	// ì¼ë°˜ í…ìŠ¤ì²˜ ìƒ˜í”ŒëŸ¬
 	D3D11_SAMPLER_DESC sampDesc = {};
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -498,7 +480,7 @@ bool ToneApp::InitScene()
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	HR_T(m_pDevice->CreateSamplerState(&sampDesc, &m_pSamplerLinear));
 
-	// ºñ±³ »ùÇÃ·¯ (ShadowMap Àü¿ë)
+	// ë¹„êµ ìƒ˜í”ŒëŸ¬ (ShadowMap ì „ìš©)
 	ZeroMemory(&sampDesc, sizeof(sampDesc));
 	sampDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
 	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -509,14 +491,14 @@ bool ToneApp::InitScene()
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	HR_T(m_pDevice->CreateSamplerState(&sampDesc, &m_pComparisonSampler));
 
-	// ÃÊ±â°ª¼³Á¤
+	// ì´ˆê¸°ê°’ì„¤ì •
 	XMVECTOR Eye = XMVectorSet(0.0f, 4.0f, -10.0f, 0.0f);
 	XMVECTOR At = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	XMVECTOR Up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	m_View = XMMatrixLookAtLH(Eye, At, Up);
 	m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_ClientWidth / (FLOAT)m_ClientHeight, 0.01f, 100.0f);
 
-	// ½ºÅÂÆ½ ¸Ş½Ã
+	// ìŠ¤íƒœí‹± ë©”ì‹œ
 	for (int i = 0; i < 4; i++) {
 		models.push_back(std::make_unique<Object<StaticMesh>>(m_pDevice));
 	}
@@ -531,17 +513,17 @@ bool ToneApp::InitScene()
 	models[3]->model.LoadFile(L"../Resources/Models/Ground/Ground.fbx");
 	models[3]->name = "Ground";
 
-	// ½ºÄÌ·¹Å» ¸Ş½Ã
-	/*skeletal_models.push_back(std::make_unique<Object<SkeletalMesh>>(m_pDevice));*/
+	// ìŠ¤ì¼ˆë ˆíƒˆ ë©”ì‹œ
+	skeletal_models.push_back(std::make_unique<Object<SkeletalMesh>>(m_pDevice));
 
 	/*skeletal_models[0]->model.LoadFile(L"../Resources/Models/BoxHuman/BoxHuman.fbx");
 	skeletal_models[0]->name = "BoxHuman";*/
 	//skeletal_models[0]->model.LoadFile(L"../Resources/Models/Skin/SkinningTest.fbx");
 	//skeletal_models[0]->model.LoadFile(L"../Resources/Models/Mass/Zombie_Run.fbx");
-	/*skeletal_models[0]->model.LoadFile(L"../Resources/Models/Anim/Thriller3.fbx");
-	skeletal_models[0]->name = "Manny";*/
+    skeletal_models[0]->model.LoadFile(L"../Resources/Models/Anim/Thriller3.fbx");
+    skeletal_models[0]->name = "Manny";
 
-	// Å¥ºê¸Ê ¸Ş½Ã
+	// íë¸Œë§µ ë©”ì‹œ
 	cube = std::make_unique<StaticMesh>(m_pDevice);
 	cube->LoadFile(L"../Resources/Models/Cube/Cube.fbx");
 
@@ -554,7 +536,7 @@ bool ToneApp::InitScene()
 	models[3]->transform.Scale = { 0.01f, 0.01f, 0.01f };
 	models[3]->transform.Position = { 0.0f, -0.01f, 0.0f };
 
-	// ¹Ù´Ú ÅØ½ºÃÄ
+	// ë°”ë‹¥ í…ìŠ¤ì³
 	if (!models[3]->model.m_pMaterials.empty()) {
 		std::filesystem::path albedo = L"../Resources/Texture/Floor/floor_tile_a.png";
 		std::filesystem::path normal = L"../Resources/Texture/Floor/floor_tile_n.png";
@@ -568,13 +550,13 @@ bool ToneApp::InitScene()
 		HR_T(CreateWICTextureFromFile(m_pDevice, L"../Resources/Texture/Floor/floor_tile_s.png", nullptr, &models[3]->model.m_pMaterials[0].roughness));*/
 	}
 
-	// Ä«¸Ş¶ó ¼ÓµµÁ¶Àı
+	// ì¹´ë©”ë¼ ì†ë„ì¡°ì ˆ
 	m_Camera.m_MoveSpeed = 10.0f;
 
-	/*skeletal_models[0]->transform.Scale = { 0.01f, 0.01f, 0.01f };
-	skeletal_models[0]->transform.Position = { 0.0f, 0.0f, -5.0f };
+    skeletal_models[0]->transform.Scale = { 0.01f, 0.01f, 0.01f };
+    skeletal_models[0]->transform.Position = { 0.0f, 0.0f, -5.0f };
 
-	skeletal_models[0]->model.PlayAnim(0);*/
+    skeletal_models[0]->model.PlayAnim(0);
 
 	return true;
 }
@@ -601,7 +583,7 @@ void ToneApp::UninitScene()
 bool ToneApp::InitImGUI()
 {
 	/*
-		ImGui ÃÊ±âÈ­.
+		ImGui ì´ˆê¸°í™”.
 	*/
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -627,7 +609,7 @@ void ToneApp::UninitImGUI()
 
 void ToneApp::RenderGUI()
 {
-	//¾Æ·¡ºÎÅÍ´Â ImGUI
+	//ì•„ë˜ë¶€í„°ëŠ” ImGUI
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
@@ -708,7 +690,7 @@ void ToneApp::RenderGUI()
 		ImGui::PushID(4);
 		ImGui::SeparatorText("Animation");
 
-		// µğ¹ö±ë¿ë
+		// ë””ë²„ê¹…ìš©
 		//ImGui::Text(std::to_string(skeletal_models[0]->model.animIdx).c_str());
 
 		ImGui::PopID();
@@ -716,7 +698,7 @@ void ToneApp::RenderGUI()
 	}
 
 	{
-		// ½¦µµ¿ì¸Ê ÀÌ¹ÌÁö
+		// ì‰ë„ìš°ë§µ ì´ë¯¸ì§€
 		ImGui::Begin("ShadowMap");
 		ImGui::PushID(1);
 		ImGui::SeparatorText("Texture");

@@ -27,7 +27,7 @@ PS_INPUT main(VS_INPUT input)
         skinMat += mul(input.BoneWeight.z, tempMat[2]);
         skinMat += mul(input.BoneWeight.w, tempMat[3]);
         
-        skinMat = mul(skinMat, World);
+        skinMat = mul(skinMat, mWorld);
         output.Pos = mul(input.Pos, skinMat);
     #else
         output.Pos = mul(input.Pos, mWorld);
@@ -44,7 +44,7 @@ PS_INPUT main(VS_INPUT input)
     output.BiTan = normalize(mul(input.BiTan, (float3x3) normalMat));
     output.Tex = input.Tex;
     
-    // ÇöÀç À§Ä¡¸¦ ShadowMap À§Ä¡·Î º¯È¯
+    // í˜„ìž¬ ìœ„ì¹˜ë¥¼ ShadowMap ìœ„ì¹˜ë¡œ ë³€í™˜
     output.S_Pos = mul(float4(output.W_Pos.xyz, 1.0f), ShadowView);
     output.S_Pos = mul(output.S_Pos, ShadowProjection);
     

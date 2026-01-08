@@ -16,7 +16,7 @@
 #pragma comment (lib, "d3d11.lib")
 
 struct Transform {
-	Matrix m_World = Matrix::Identity;		// ¿ùµåÁÂÇ¥°è º¯È¯Çà·Ä
+	Matrix m_World = Matrix::Identity;		// ì›”ë“œì¢Œí‘œê³„ ë³€í™˜í–‰ë ¬
 	Vector3 Position = Vector3::Zero;		// x, y, z Position
 	Vector3 Rotation = Vector3::Zero;		// pitch, yaw, roll
 	Vector3 Scale = { 1.0f, 1.0f, 1.0f };	// x, y, z Scale
@@ -41,26 +41,26 @@ public:
 
 	Vector4 m_ClearColor = Vector4(0.45f, 0.55f, 0.60f, 1.00f);
 
-	// Directional ¶óÀÌÆ®
-	XMFLOAT4 m_LightColors = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);				// ¶óÀÌÆ® »ö»ó
-	XMFLOAT4 m_InitialLightDirs = XMFLOAT4(0.0f, -1.0f, 1.0f, 1.0f);	// ÃÊ±â ¶óÀÌÆ® ¹æÇâ
-	XMFLOAT4 m_CurrLightDirs = m_InitialLightDirs;							// ÇöÀç ¶óÀÌÆ® ¹æÇâ
-	XMFLOAT4 m_LightDirsEvaluated = {};										// °è»êµÈ ¶óÀÌÆ® ¹æÇâ
+	// Directional ë¼ì´íŠ¸
+	XMFLOAT4 m_LightColors = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);				// ë¼ì´íŠ¸ ìƒ‰ìƒ
+	XMFLOAT4 m_InitialLightDirs = XMFLOAT4(0.0f, -1.0f, 1.0f, 1.0f);	// ì´ˆê¸° ë¼ì´íŠ¸ ë°©í–¥
+	XMFLOAT4 m_CurrLightDirs = m_InitialLightDirs;							// í˜„ì¬ ë¼ì´íŠ¸ ë°©í–¥
+	XMFLOAT4 m_LightDirsEvaluated = {};										// ê³„ì‚°ëœ ë¼ì´íŠ¸ ë°©í–¥
 
-	// VS Àü´Ş¿ë ¸ÅÆ®¸¯½º
-	Matrix m_View;			// Ä«¸Ş¶óÁÂÇ¥°è º¯È¯Çà·Ä
-	Matrix m_Projection;	// ndcÁÂÇ¥°è º¯È¯Çà·Ä
+	// VS ì „ë‹¬ìš© ë§¤íŠ¸ë¦­ìŠ¤
+	Matrix m_View;			// ì¹´ë©”ë¼ì¢Œí‘œê³„ ë³€í™˜í–‰ë ¬
+	Matrix m_Projection;	// ndcì¢Œí‘œê³„ ë³€í™˜í–‰ë ¬
 
 	// ImGui --------
 
-	// Ä«¸Ş¶ó
+	// ì¹´ë©”ë¼
 	float camFov = 45.0f;
 	float camFarZ[2] = { 0.01f, 100.0f };
 
-	// ¿ÀºêÁ§Æ®
+	// ì˜¤ë¸Œì íŠ¸
 	std::vector<Transform> modelFactor;
 
-	// ¶óÀÌÆ®
+	// ë¼ì´íŠ¸
 	float lightDir[3] = {
 		m_InitialLightDirs.x,
 		m_InitialLightDirs.y,
@@ -70,7 +70,7 @@ public:
 	Vector4 m_Diffuse = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	Vector4 m_Specular = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	// ¸ŞÅ×¸®¾ó
+	// ë©”í…Œë¦¬ì–¼
 	bool m_UseMatOverride = false;
 	Color m_BaseColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 	float m_Roughness = 0.0f;
@@ -79,50 +79,49 @@ public:
 
 	// End ---------
 
-	// ·»´õ¸µ ÀÎÅÍÆäÀÌ½º
-	ID3D11Device* m_pDevice = nullptr;						// µğ¹ÙÀÌ½º
-	ID3D11DeviceContext* m_pDeviceContext = nullptr;		// µğ¹ÙÀÌ½º ÄÁÅØ½ºÆ®
-	IDXGISwapChain* m_pSwapChain = nullptr;					// ½º¿ÒÃ¼ÀÎ
-	ID3D11RenderTargetView* m_pRenderTargetView = nullptr;	// ·»´õ¸µ Å¸°Ùºä
-	ID3D11DepthStencilView* m_pDepthStencilView = nullptr;  // ±íÀÌ°ª Ã³¸®¸¦ À§ÇÑ ‰X½º½ºÅÙ½Ç ºä
+	// ë Œë”ë§ ì¸í„°í˜ì´ìŠ¤
+	ID3D11Device* m_pDevice = nullptr;						// ë””ë°”ì´ìŠ¤
+	ID3D11DeviceContext* m_pDeviceContext = nullptr;		// ë””ë°”ì´ìŠ¤ ì»¨í…ìŠ¤íŠ¸
+	IDXGISwapChain* m_pSwapChain = nullptr;					// ìŠ¤ì™‘ì²´ì¸
+	ID3D11RenderTargetView* m_pRenderTargetView = nullptr;	// ë Œë”ë§ íƒ€ê²Ÿë·°
+	ID3D11DepthStencilView* m_pDepthStencilView = nullptr;  // ê¹Šì´ê°’ ì²˜ë¦¬ë¥¼ ìœ„í•œ ëŠìŠ¤ìŠ¤í…ì‹¤ ë·°
 
-	// ·»´õ¸µ Á¤º¸
+	// ë Œë”ë§ ì •ë³´
 	
-	ID3D11Buffer* m_pTransBuffer = nullptr;		// »ó¼ö ¹öÆÛ
-	ID3D11Buffer* m_pLightBuffer = nullptr;			// ¶óÀÌÆ® ¹öÆÛ
-	ID3D11Buffer* m_pMatBuffer = nullptr;			// ¸ŞÅ×¸®¾ó ¹öÆÛ
-	ID3D11Buffer* m_pBoneBuffer = nullptr;			// º» ¹öÆÛ
-	ID3D11Buffer* m_pShadowBuffer = nullptr;		// ½¦µµ¿ì ¹öÆÛ
+	ID3D11Buffer* m_pTransBuffer = nullptr;		// ìƒìˆ˜ ë²„í¼
+	ID3D11Buffer* m_pLightBuffer = nullptr;			// ë¼ì´íŠ¸ ë²„í¼
+	ID3D11Buffer* m_pMatBuffer = nullptr;			// ë©”í…Œë¦¬ì–¼ ë²„í¼
+	ID3D11Buffer* m_pBoneBuffer = nullptr;			// ë³¸ ë²„í¼
+	ID3D11Buffer* m_pShadowBuffer = nullptr;		// ì‰ë„ìš° ë²„í¼
 
-	ID3D11SamplerState* m_pSamplerLinear = nullptr;		// »ùÇÃ·¯ »óÅÂ.
-	ID3D11SamplerState* m_pComparisonSampler = nullptr;	// ºñ±³»ùÇÃ·¯
-	ID3D11RasterizerState* m_defaultRS = nullptr;		// ±âº» RS
+	ID3D11SamplerState* m_pSamplerLinear = nullptr;		// ìƒ˜í”ŒëŸ¬ ìƒíƒœ.
+	ID3D11SamplerState* m_pComparisonSampler = nullptr;	// ë¹„êµìƒ˜í”ŒëŸ¬
+	ID3D11RasterizerState* m_defaultRS = nullptr;		// ê¸°ë³¸ RS
 	
-	ID3D11BlendState* m_pAlphaBS = nullptr;				// ¾ËÆÄºí·£µå ½ºÅ×ÀÌÆ®
-	ID3D11BlendState* m_pDefaultBS = nullptr;			// ±âº»ºí·£µå ½ºÅ×ÀÌÆ®
-	D3D11_VIEWPORT m_defaultViewport;					// ±âº» ºäÆ÷Æ®
+	ID3D11BlendState* m_pAlphaBS = nullptr;				// ì•ŒíŒŒë¸”ëœë“œ ìŠ¤í…Œì´íŠ¸
+	ID3D11BlendState* m_pDefaultBS = nullptr;			// ê¸°ë³¸ë¸”ëœë“œ ìŠ¤í…Œì´íŠ¸
+	D3D11_VIEWPORT m_defaultViewport;					// ê¸°ë³¸ ë·°í¬íŠ¸
 
-	// FBX ¸ğµ¨
-	std::vector < std::unique_ptr<Object<StaticMesh>>> models;		// ¸ğµ¨ ÀúÀå
-	/*std::vector < std::unique_ptr<Object<SkeletalMesh>>> skeletal_models;*/
-	//std::unique_ptr<Model> model;
-	ID3D11PixelShader* m_pBRDFShader = nullptr;			// BRDF ½¦ÀÌ´õ
-	ID3D11VertexShader* m_pVertexShader = nullptr;		// Á¤Á¡ ½¦ÀÌ´õ
-	ID3D11InputLayout* m_pInputLayout = nullptr;		// ÀÔ·Â ·¹ÀÌ¾Æ¿ô
+	// FBX ëª¨ë¸
+	std::vector < std::unique_ptr<Object<StaticMesh>>> models;		// ëª¨ë¸ ì €ì¥
+	std::vector < std::unique_ptr<Object<SkeletalMesh>>> skeletal_models;
+	ID3D11PixelShader* m_pBRDFShader = nullptr;			// BRDF ì‰ì´ë”
+	ID3D11VertexShader* m_pVertexShader = nullptr;		// ì •ì  ì‰ì´ë”
+	ID3D11InputLayout* m_pInputLayout = nullptr;		// ì…ë ¥ ë ˆì´ì•„ì›ƒ
 	
-	// ½ºÄ«ÀÌ¹Ú½º
+	// ìŠ¤ì¹´ì´ë°•ìŠ¤
 	std::unique_ptr<StaticMesh> cube;
-	ID3D11VertexShader* m_pSkyVertexShader = nullptr;	// ½ºÄ«ÀÌ¹Ú½º Á¤Á¡ ½¦ÀÌ´õ
-	ID3D11PixelShader* m_pSkyPixelShader = nullptr;	// ½ºÄ«ÀÌ¹Ú½º ÇÈ¼¿ ½¦ÀÌ´õ
-	ID3D11InputLayout* m_pSkyInputLayout = nullptr;	// ½ºÄ«ÀÌ¹Ú½ºÀÔ·Â ·¹ÀÌ¾Æ¿ô
-	ID3D11RasterizerState* m_SkyboxRS = nullptr;	// ½ºÄ«ÀÌ¹Ú½º Àü¿ë RS
+	ID3D11VertexShader* m_pSkyVertexShader = nullptr;	// ìŠ¤ì¹´ì´ë°•ìŠ¤ ì •ì  ì‰ì´ë”
+	ID3D11PixelShader* m_pSkyPixelShader = nullptr;	// ìŠ¤ì¹´ì´ë°•ìŠ¤ í”½ì…€ ì‰ì´ë”
+	ID3D11InputLayout* m_pSkyInputLayout = nullptr;	// ìŠ¤ì¹´ì´ë°•ìŠ¤ì…ë ¥ ë ˆì´ì•„ì›ƒ
+	ID3D11RasterizerState* m_SkyboxRS = nullptr;	// ìŠ¤ì¹´ì´ë°•ìŠ¤ ì „ìš© RS
 
-	ID3D11ShaderResourceView* m_pSkyTextureRV = nullptr;	// ½ºÄ«ÀÌ¹Ú½º ÅØ½ºÃ³ ¸®¼Ò½º ºä.
-	ID3D11ShaderResourceView* m_pSkyEnvRV = nullptr;		// Å¥ºê¸Ê ¸®ÇÃ·º¼ÇHDR
-	ID3D11ShaderResourceView* m_pSkyIBLRV = nullptr;		// IBL ¸Ê
-	ID3D11ShaderResourceView* m_pLUTRV = nullptr;			// BRDF ·è¾÷Å×ÀÌºí
+	ID3D11ShaderResourceView* m_pSkyTextureRV = nullptr;	// ìŠ¤ì¹´ì´ë°•ìŠ¤ í…ìŠ¤ì²˜ ë¦¬ì†ŒìŠ¤ ë·°.
+	ID3D11ShaderResourceView* m_pSkyEnvRV = nullptr;		// íë¸Œë§µ ë¦¬í”Œë ‰ì…˜HDR
+	ID3D11ShaderResourceView* m_pSkyIBLRV = nullptr;		// IBL ë§µ
+	ID3D11ShaderResourceView* m_pLUTRV = nullptr;			// BRDF ë£©ì—…í…Œì´ë¸”
 
-	// ±×¸²ÀÚ
+	// ê·¸ë¦¼ì
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> m_pShadowMap;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_pShadowDSV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_pShadowMapRSV;
@@ -145,7 +144,7 @@ public:
 	bool InitD3D();
 	void UninitD3D();
 
-	bool InitScene();		// ½¦ÀÌ´õ,¹öÅØ½º,ÀÎµ¦½º
+	bool InitScene();		// ì‰ì´ë”,ë²„í…ìŠ¤,ì¸ë±ìŠ¤
 	void UninitScene();
 
 	//IMGUI

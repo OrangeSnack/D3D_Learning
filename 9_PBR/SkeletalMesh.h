@@ -15,18 +15,18 @@ private:
 
 	Assimp::Importer importer;
 	unsigned int importFlags =
-		aiProcess_Triangulate |				// vertex »ï°¢Çü À¸·Î Ãâ·Â
-		aiProcess_GenNormals |				// Normal Á¤º¸ »ı¼º  
-		aiProcess_GenUVCoords |				// ÅØ½ºÃ³ ÁÂÇ¥ »ı¼º
-		aiProcess_CalcTangentSpace |		// ÅºÁ¨Æ® º¤ÅÍ »ı¼º
-		aiProcess_ConvertToLeftHanded;		// DX¿ë ¿Ş¼ÕÁÂÇ¥°è º¯È¯
+		aiProcess_Triangulate |				// vertex ì‚¼ê°í˜• ìœ¼ë¡œ ì¶œë ¥
+		aiProcess_GenNormals |				// Normal ì •ë³´ ìƒì„±  
+		aiProcess_GenUVCoords |				// í…ìŠ¤ì²˜ ì¢Œí‘œ ìƒì„±
+		aiProcess_CalcTangentSpace |		// íƒ„ì  íŠ¸ ë²¡í„° ìƒì„±
+		aiProcess_ConvertToLeftHanded;		// DXìš© ì™¼ì†ì¢Œí‘œê³„ ë³€í™˜
 
 	std::wstring defaultWhite = L"../Resources/Texture/Default/Solid_White.png";
 
 	const aiScene* scene = nullptr;
 	std::filesystem::path filePath;
 
-	// µğ¹ö±ë¿ëÀ¸·Î public ¼³Á¤ÇÔ. ¿ø·¡´Â privateÀ¸·Î ¼³Á¤ÇØ¾ßÇÔ
+	// ë””ë²„ê¹…ìš©ìœ¼ë¡œ public ì„¤ì •í•¨. ì›ë˜ëŠ” privateìœ¼ë¡œ ì„¤ì •í•´ì•¼í•¨
 public:
 	bool isPlaying = false;
 	bool isLooping = true;
@@ -44,29 +44,29 @@ public:
 	~SkeletalMesh();
 
 public:
-	std::vector<PBR_Materials> m_nMaterials;				// ¸ğµ¨ ¸ŞÅ×¸®¾ó
-	std::vector<ID3D11Buffer*> m_pVertexBuffer;			// ¸ğµ¨ ¹öÅØ½º ¹öÆÛ
-	std::vector<ID3D11Buffer*> m_pIndexBuffer;			// ¸ğµ¨ ÀÎµ¦½º ¹öÆÛ
-	std::vector<UINT> m_nIndices;						// ¸ğµ¨ ÀÎµ¦½º °³¼ö
-	//std::vector<aiMatrix4x4> nodeWorld;					// ³ëµåº° ¿ùµå¸ÅÆ®¸¯½º
-	ID3D11ShaderResourceView* modelRV[6] = { nullptr, };	// ¸ŞÅ×¸®¾ó
-	ID3D11PixelShader* m_pAlphaClipShader = nullptr;		// µğÇ»Áî Àü¿ë ½¦ÀÌ´õ
-	ID3D11VertexShader* m_pVertexShader = nullptr;			// ½ºÄÌ·¹Å»¿ë ¹öÅØ½º ½¦ÀÌ´õ
-	ID3D11VertexShader* m_pShadowVS = nullptr;				// ½¦µµ¿ì¸Ê ¹öÅØ½º ½¦ÀÌ´õ
+	std::vector<PBR_Materials> m_nMaterials;				// ëª¨ë¸ ë©”í…Œë¦¬ì–¼
+	std::vector<ID3D11Buffer*> m_pVertexBuffer;			// ëª¨ë¸ ë²„í…ìŠ¤ ë²„í¼
+	std::vector<ID3D11Buffer*> m_pIndexBuffer;			// ëª¨ë¸ ì¸ë±ìŠ¤ ë²„í¼
+	std::vector<UINT> m_nIndices;						// ëª¨ë¸ ì¸ë±ìŠ¤ ê°œìˆ˜
+	//std::vector<aiMatrix4x4> nodeWorld;					// ë…¸ë“œë³„ ì›”ë“œë§¤íŠ¸ë¦­ìŠ¤
+	ID3D11ShaderResourceView* modelRV[6] = { nullptr, };	// ë©”í…Œë¦¬ì–¼
+	ID3D11PixelShader* m_pAlphaClipShader = nullptr;		// ë””í“¨ì¦ˆ ì „ìš© ì‰ì´ë”
+	ID3D11VertexShader* m_pVertexShader = nullptr;			// ìŠ¤ì¼ˆë ˆíƒˆìš© ë²„í…ìŠ¤ ì‰ì´ë”
+	ID3D11VertexShader* m_pShadowVS = nullptr;				// ì‰ë„ìš°ë§µ ë²„í…ìŠ¤ ì‰ì´ë”
 
-	std::vector<aiAnimation*> animations;						// ¾Ö´Ï¸ŞÀÌ¼Ç ¸ğÀ½Áı
-	std::unordered_map<std::string, aiNodeAnim*> nodeAnimMap;	// ÀÌ¸§±â¹İ ³ëµå¸Ê
-	DirectX::SimpleMath::Matrix boneMat[BONE_MAXSIZE];			// º» ¸ÅÆ®¸¯½º ¸ğÀ½Áı
-	DirectX::SimpleMath::Matrix boneOffsetMat[BONE_MAXSIZE];	// º» ¿ÀÇÁ¼Â ¸ÅÆ®¸¯½º ¸ğÀ½Áı
-	std::unordered_map<std::string, UINT> boneIndex;			// º» ÀÎµ¦½º
-	std::unordered_map<std::string, aiMatrix4x4> nodeWorldMap;	// ³ëµåº° ¿ùµå¸Ê
+	std::vector<aiAnimation*> animations;						// ì• ë‹ˆë©”ì´ì…˜ ëª¨ìŒì§‘
+	std::unordered_map<std::string, aiNodeAnim*> nodeAnimMap;	// ì´ë¦„ê¸°ë°˜ ë…¸ë“œë§µ
+	DirectX::SimpleMath::Matrix boneMat[BONE_MAXSIZE];			// ë³¸ ë§¤íŠ¸ë¦­ìŠ¤ ëª¨ìŒì§‘
+	DirectX::SimpleMath::Matrix boneOffsetMat[BONE_MAXSIZE];	// ë³¸ ì˜¤í”„ì…‹ ë§¤íŠ¸ë¦­ìŠ¤ ëª¨ìŒì§‘
+	std::unordered_map<std::string, UINT> boneIndex;			// ë³¸ ì¸ë±ìŠ¤
+	std::unordered_map<std::string, aiMatrix4x4> nodeWorldMap;	// ë…¸ë“œë³„ ì›”ë“œë§µ
 
 	ID3D11Buffer* m_pOffsetBuffer = nullptr;
 	PBR_MatBuffer* matBuff = nullptr;
 	BoneBuffer* boneBuff = nullptr;
 
-	UINT m_VertexBufferStride = 0;		// ¹öÅØ½º ÇÏ³ªÀÇ Å©±â
-	UINT m_VertexBufferOffset = 0;		// ¹öÅØ½º ¹öÆÛÀÇ ¿ÀÇÁ¼Â
+	UINT m_VertexBufferStride = 0;		// ë²„í…ìŠ¤ í•˜ë‚˜ì˜ í¬ê¸°
+	UINT m_VertexBufferOffset = 0;		// ë²„í…ìŠ¤ ë²„í¼ì˜ ì˜¤í”„ì…‹
 protected:
 	bool LoadVertex(std::vector<Vertex>* _vertices, const aiMesh* _mesh);
 	bool LoadSkinInfo(std::vector<Vertex>& _vertices, const aiMesh* _mesh);

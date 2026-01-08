@@ -39,11 +39,11 @@ void SkeletalMesh::Update()
 
 bool SkeletalMesh::LoadFile(std::wstring _filePath)
 {
-	// ÆÄÀÏ°æ·Î ÀúÀå
+	// íŒŒì¼ê²½ë¡œ ì €ì¥
 	std::filesystem::path p = _filePath.c_str();
 
 	if (!p.has_filename())
-		return false;	// ÆÄÀÏÀÌ ¾ø´Ù´Â ¿¡·¯¹®±¸µµ Ãâ·Â?
+		return false;	// íŒŒì¼ì´ ì—†ë‹¤ëŠ” ì—ëŸ¬ë¬¸êµ¬ë„ ì¶œë ¥?
 	filePath = p.parent_path();
 
 	scene = importer.ReadFile(p.string(), importFlags);
@@ -56,16 +56,16 @@ bool SkeletalMesh::LoadFile(std::wstring _filePath)
 		return false;
 	}
 
-	// ³ëµåÅ½»öÇÏ¸ç ¿ùµå¸ÅÆ®¸¯½º ¸¸µé±â
+	// ë…¸ë“œíƒìƒ‰í•˜ë©° ì›”ë“œë§¤íŠ¸ë¦­ìŠ¤ ë§Œë“¤ê¸°
 	UpdateBoneMat();
 
-	// ¾Ö´Ï¸ŞÀÌ¼Ç ·Îµù
+	// ì• ë‹ˆë©”ì´ì…˜ ë¡œë”©
 	LoadAnimations(animations, scene);
 
-	// ¸ŞÅ×¸®¾ó ·Îµù
+	// ë©”í…Œë¦¬ì–¼ ë¡œë”©
 	LoadMaterials(m_nMaterials, this);
 
-	// ¹öÅØ½º, ÀÎµ¦½º ·Îµù
+	// ë²„í…ìŠ¤, ì¸ë±ìŠ¤ ë¡œë”©
 	std::vector<std::vector<Vertex>> modelVertices;
 	std::vector<std::vector<UINT>> modelIndices;
 
@@ -81,7 +81,7 @@ bool SkeletalMesh::LoadFile(std::wstring _filePath)
 		modelIndices.push_back(tempI);
 	}
 
-	// ¸ğµ¨ ¹öÆÛ »ı¼º.
+	// ëª¨ë¸ ë²„í¼ ìƒì„±.
 	// Vertex
 	D3D11_BUFFER_DESC bd = {};
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
@@ -121,14 +121,14 @@ bool SkeletalMesh::LoadFile(std::wstring _filePath)
 			m_pIndexBuffer.push_back(tempBuffer);
 	}
 
-	// ¹öÅØ½º ¹öÆÛ ¹ÙÀÎµù.
+	// ë²„í…ìŠ¤ ë²„í¼ ë°”ì¸ë”©.
 	m_VertexBufferStride = sizeof(Vertex);
 	m_VertexBufferOffset = 0;
 
 	for (const auto& indices : modelIndices)
 		m_nIndices.push_back(UINT(indices.size()));
 
-	// ¿ÀÇÁ¼Â ¹öÆÛ »ı¼º & ¹ÙÀÎµù
+	// ì˜¤í”„ì…‹ ë²„í¼ ìƒì„± & ë°”ì¸ë”©
 	ID3D11DeviceContext* tempContext = nullptr;
 	m_pDevice->GetImmediateContext(&tempContext);
 	BoneBuffer offsetBuffer;
@@ -146,10 +146,10 @@ bool SkeletalMesh::LoadFile(std::wstring _filePath)
 
 	if (m_pOffsetBuffer) {
 		tempContext->UpdateSubresource(m_pOffsetBuffer, 0, nullptr, &offsetBuffer, 0, 0);
-		tempContext->VSSetConstantBuffers(4, 1, &m_pOffsetBuffer);
+		tempContext->VSSetConstantBuffers(5, 1, &m_pOffsetBuffer);
 	}
 
-	// ¹öÅØ½º ½¦ÀÌ´õ »ı¼º
+	// ë²„í…ìŠ¤ ì‰ì´ë” ìƒì„±
 	D3D_SHADER_MACRO macros[] = {
 		{"VERTEX_SKINNING", "1"},
 		{nullptr, nullptr}
@@ -180,7 +180,7 @@ bool SkeletalMesh::LoadFile(std::wstring _filePath)
 		nullptr, 
 		&m_pVertexShader));
 
-	// ½¦µµ¿ì¸Ê VS »ı¼º
+	// ì‰ë„ìš°ë§µ VS ìƒì„±
 	HR_T(D3DCompileFromFile(
 		L"ShadowMapVS.hlsl",
 		macros,
@@ -238,21 +238,21 @@ bool SkeletalMesh::LoadVertex(std::vector<Vertex>* _vertices, const aiMesh* _mes
 	for (UINT i = 0; i < _mesh->mNumVertices; i++) {
 		Vertex v;
 
-		// ¹öÅØ½º Æ÷Áö¼Ç
+		// ë²„í…ìŠ¤ í¬ì§€ì…˜
 		v.Pos = Vector3(_mesh->mVertices[i].x, _mesh->mVertices[i].y, _mesh->mVertices[i].z);
 
-		// ¹öÅØ½º ³ë¸Ö
+		// ë²„í…ìŠ¤ ë…¸ë©€
 		if (_mesh->HasNormals()) {
 			v.Normal = Vector3(_mesh->mNormals[i].x, _mesh->mNormals[i].y, _mesh->mNormals[i].z);
 		}
 
-		// ¹öÅØ½º ÅºÁ¨Æ®
+		// ë²„í…ìŠ¤ íƒ„ì  íŠ¸
 		if (_mesh->HasTangentsAndBitangents()) {
 			v.Tangent = Vector3(_mesh->mTangents[i].x, _mesh->mTangents[i].y, _mesh->mTangents[i].z);
 			v.BiTangent = Vector3(_mesh->mBitangents[i].x, _mesh->mBitangents[i].y, _mesh->mBitangents[i].z);
 		}
 
-		// ¹öÅØ½º UVÁÂÇ¥
+		// ë²„í…ìŠ¤ UVì¢Œí‘œ
 		if (_mesh->HasTextureCoords(0)) {
 			v.Tex = Vector2(_mesh->mTextureCoords[0][i].x, _mesh->mTextureCoords[0][i].y);
 		}
@@ -265,28 +265,28 @@ bool SkeletalMesh::LoadVertex(std::vector<Vertex>* _vertices, const aiMesh* _mes
 
 bool SkeletalMesh::LoadSkinInfo(std::vector<Vertex>& _vertices, const aiMesh* _mesh)
 {
-	// ¹öÅØ½º º»
+	// ë²„í…ìŠ¤ ë³¸
 	if (_mesh->HasBones()) {
 		for (int i = 0; i < _mesh->mNumBones; i++) {
 			auto bone = _mesh->mBones[i];
 
-			// º» ¿ÀÇÁ¼Â ÀúÀå (±â»ıÄÚµå)
+			// ë³¸ ì˜¤í”„ì…‹ ì €ì¥ (ê¸°ìƒì½”ë“œ)
 			if (boneIndex.find(bone->mName.C_Str()) != boneIndex.end())
 				boneOffsetMat[boneIndex[bone->mName.C_Str()]] = ConvertMat(bone->mOffsetMatrix);
 
-			// ¹öÅØ½ºº° º»ÀÎµ¦½º, ¿şÀÌÆ® Áı¾î³Ö±â
+			// ë²„í…ìŠ¤ë³„ ë³¸ì¸ë±ìŠ¤, ì›¨ì´íŠ¸ ì§‘ì–´ë„£ê¸°
 			for (int j = 0; j < bone->mNumWeights; j++) {
 				UINT id = bone->mWeights[j].mVertexId;
 				float weight = bone->mWeights[j].mWeight;
 
 				float totalWeight = 0.0f;
 
-				// »ÌÀº index Á¤º¸¸¦ ÅëÇØ ¹öÅØ½º¹è¿­ Á¢±Ù
+				// ë½‘ì€ index ì •ë³´ë¥¼ í†µí•´ ë²„í…ìŠ¤ë°°ì—´ ì ‘ê·¼
 				for (int k = 0; k < 4; k++) {
-					// °¡ÁßÄ¡ ´õÇÏ±â
+					// ê°€ì¤‘ì¹˜ ë”í•˜ê¸°
 					totalWeight += _vertices[id].boneWeights[k];
 
-					// ºñ¾îÀÖÀ»½Ã Áı¾î³Ö±â
+					// ë¹„ì–´ìˆì„ì‹œ ì§‘ì–´ë„£ê¸°
 					if (_vertices[id].boneIndices[k] == -1) {
 						_vertices[id].boneIndices[k] = boneIndex[bone->mName.C_Str()];
 						_vertices[id].boneWeights[k] = weight;
@@ -329,80 +329,155 @@ bool SkeletalMesh::LoadIndex(std::vector<UINT>* _indices, const aiMesh* _mesh)
 
 bool SkeletalMesh::LoadMaterials(std::vector<PBR_Materials>& _out, const SkeletalMesh* _model)
 {
-	const aiScene* scene = _model->scene;
+    const aiScene* scene = _model->scene;
 
-	if (!_model->scene->HasMaterials())
-		return false;
+    if (!_model->scene->HasMaterials())
+        return false;
 
-	_out.resize(_model->scene->mNumMaterials);
+    _out.resize(_model->scene->mNumMaterials);
 
-	for (UINT i = 0; i < _model->scene->mNumMaterials; i++) {
-		// TODO :: ¸ŞÅ×¸®¾óÀ¸·Î ResourceView ¸¸µé±â
-		aiString aiStr;
-		aiMaterial* aiMat = scene->mMaterials[i];
-		
-		//// º£ÀÌ½º ÄÃ·¯
-		//aiColor4D baseColor;
-		//if (aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor) == AI_SUCCESS) {
-		//	_out[i].BaseColor = { baseColor.r, baseColor.g, baseColor.b, baseColor.a };
-		//}
-		//else if (aiMat->Get(AI_MATKEY_BASE_COLOR, baseColor) == AI_SUCCESS) {
-		//	_out[i].BaseColor = { baseColor.r, baseColor.g, baseColor.b, baseColor.a };
-		//}
+    for (UINT i = 0; i < _model->scene->mNumMaterials; i++) {
+        // TODO :: ë©”í…Œë¦¬ì–¼ìœ¼ë¡œ ResourceView ë§Œë“¤ê¸°
+        aiString aiStr;
+        aiMaterial* aiMat = scene->mMaterials[i];
 
-		// µğÇ»Áî
-		if (aiMat->GetTextureCount(aiTextureType_DIFFUSE)) {
-			if (aiMat->GetTexture(aiTextureType_DIFFUSE, 0, &aiStr) == aiReturn_SUCCESS) {
-				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
-				std::filesystem::path relativePath = _model->filePath / p.filename();
+        // ë² ì´ìŠ¤ ì»¬ëŸ¬
+        /*aiColor4D baseColor;
+        if (aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor) == AI_SUCCESS) {
+            _out[i].BaseColor = { baseColor.r, baseColor.g, baseColor.b, baseColor.a };
+        }
+        else if (aiMat->Get(AI_MATKEY_BASE_COLOR, baseColor) == AI_SUCCESS) {
+            _out[i].BaseColor = { baseColor.r, baseColor.g, baseColor.b, baseColor.a };
+        }*/
 
-				CreateResourceView(relativePath, &_out[i].diffuse);
-				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].diffuse));
-			}
-		}
-		// µğÇ»Áî°¡ ¾øÀ¸¸é?
-		if (_out[i].diffuse == nullptr) {
-			std::filesystem::path path = defaultWhite;
-			CreateResourceView(path, &_out[i].diffuse);
-			//HR_T(CreateWICTextureFromFile(m_pDevice, defaultDiffuse.c_str(), nullptr, &_out[i].diffuse));
-		}
+        // ë””í“¨ì¦ˆ
+        if (aiMat->GetTextureCount(aiTextureType_DIFFUSE)) {
+            if (aiMat->GetTexture(aiTextureType_DIFFUSE, 0, &aiStr) == aiReturn_SUCCESS) {
+                std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+                std::filesystem::path relativePath = _model->filePath / p.filename();
 
+                CreateResourceView(relativePath, &_out[i].diffuse);
+                //HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].diffuse));
+            }
+        }
+        // ë””í“¨ì¦ˆ ì—†ì„ì‹œ
+        if (_out[i].diffuse == nullptr) {
+            CreateResourceView(defaultWhite, &_out[i].diffuse);
+        }
 
-		// ½ºÆäÅ§·¯
-		//if (aiMat->GetTextureCount(aiTextureType_SPECULAR)) {
-		//	if (aiMat->GetTexture(aiTextureType_SPECULAR, 0, &aiStr) == aiReturn_SUCCESS) {
-		//		std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
-		//		std::filesystem::path relativePath = _model->filePath / p.filename();
+        // ë©”íƒˆë¦­
+        if (aiMat->GetTextureCount(aiTextureType_METALNESS)) {
+            if (aiMat->GetTexture(aiTextureType_METALNESS, 0, &aiStr) == aiReturn_SUCCESS) {
+                std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+                std::filesystem::path relativePath = _model->filePath / p.filename();
 
-		//		CreateResourceView(relativePath, &_out[i].specular);
-		//		//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].specular));
-		//	}
-		//}
+                CreateResourceView(relativePath, &_out[i].metalic);
+                //HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
+            }
+        }
+        // ë©”íƒˆë¦­ ì—†ì„ì‹œ
+        if (_out[i].metalic == nullptr) {
+            CreateResourceView(defaultBlack, &_out[i].metalic);
+        }
 
-		// ³ë¸»
-		if (aiMat->GetTextureCount(aiTextureType_NORMALS)) {
-			if (aiMat->GetTexture(aiTextureType_NORMALS, 0, &aiStr) == aiReturn_SUCCESS) {
-				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
-				std::filesystem::path relativePath = _model->filePath / p.filename();
+        // ëŸ¬í”„ë‹ˆìŠ¤
+        if (aiMat->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS)) {
+            if (aiMat->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &aiStr) == aiReturn_SUCCESS) {
+                std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+                std::filesystem::path relativePath = _model->filePath / p.filename();
 
-				CreateResourceView(relativePath, &_out[i].normal);
-				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
-			}
-		}
+                CreateResourceView(relativePath, &_out[i].roughness);
+                //HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
+            }
+        }
+        else if (aiMat->GetTextureCount(aiTextureType_SHININESS)) {
+            if (aiMat->GetTexture(aiTextureType_SHININESS, 0, &aiStr) == aiReturn_SUCCESS) {
+                std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+                std::filesystem::path relativePath = _model->filePath / p.filename();
 
-		// ÀÌ¹Ì¼Ç
-		if (aiMat->GetTextureCount(aiTextureType_EMISSIVE)) {
-			if (aiMat->GetTexture(aiTextureType_EMISSIVE, 0, &aiStr) == aiReturn_SUCCESS) {
-				std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
-				std::filesystem::path relativePath = _model->filePath / p.filename();
+                CreateResourceView(relativePath, &_out[i].roughness);
+                //HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
+            }
+        }
+        // ëŸ¬í”„ë‹ˆìŠ¤ ì—†ì„ì‹œ
+        if (_out[i].roughness == nullptr) {
+            CreateResourceView(defaultWhite, &_out[i].roughness);
+        }
 
-				CreateResourceView(relativePath, &_out[i].emissive);
-				//HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].emissive));
-			}
-		}
-	}
+        // ë…¸ë§
+        if (aiMat->GetTextureCount(aiTextureType_NORMALS)) {
+            if (aiMat->GetTexture(aiTextureType_NORMALS, 0, &aiStr) == aiReturn_SUCCESS) {
+                std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+                std::filesystem::path relativePath = _model->filePath / p.filename();
 
-	return true;
+                CreateResourceView(relativePath, &_out[i].normal);
+                //HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
+            }
+        }
+        // ë…¸ë§ë§µ ì—†ì„ì‹œ
+        if (_out[i].normal == nullptr) {
+            CreateResourceView(defaultNormal, &_out[i].normal);
+        }
+
+        // AO
+        if (aiMat->GetTextureCount(aiTextureType_AMBIENT_OCCLUSION)) {
+            if (aiMat->GetTexture(aiTextureType_AMBIENT_OCCLUSION, 0, &aiStr) == aiReturn_SUCCESS) {
+                std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+                std::filesystem::path relativePath = _model->filePath / p.filename();
+
+                CreateResourceView(relativePath, &_out[i].ao);
+                //HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].normal));
+            }
+        }
+        // AO ì—†ì„ì‹œ
+        if (_out[i].ao == nullptr) {
+            CreateResourceView(defaultWhite, &_out[i].ao);
+        }
+
+        // ì´ë¯¸ì…˜
+        if (aiMat->GetTextureCount(aiTextureType_EMISSIVE)) {
+            if (aiMat->GetTexture(aiTextureType_EMISSIVE, 0, &aiStr) == aiReturn_SUCCESS) {
+                std::filesystem::path p = std::filesystem::path(aiStr.C_Str());
+                std::filesystem::path relativePath = _model->filePath / p.filename();
+
+                CreateResourceView(relativePath, &_out[i].emissive);
+                //HR_T(CreateWICTextureFromFile(m_pDevice, relativePath.wstring().c_str(), nullptr, &_out[i].emissive));
+            }
+        }
+        // ì´ë¯¸ì…˜ ì—†ì„ì‹œ
+        if (_out[i].emissive == nullptr) {
+            CreateResourceView(defaultBlack, &_out[i].emissive);
+        }
+    }
+
+    return true;
+}
+
+void SkeletalMesh::CreateResourceView(std::filesystem::path& _path, ID3D11ShaderResourceView** _out)
+{
+    // TGAíŒŒì¼ í™•ì¸
+    if (_path.extension() == L".tga") {
+        DirectX::ScratchImage image;
+        DirectX::TexMetadata meta;
+        HR_T(DirectX::LoadFromTGAFile(_path.wstring().c_str(), &meta, image));
+        CreateShaderResourceView(m_pDevice, image.GetImages(), image.GetImageCount(), meta, _out);
+    }
+    else {
+        ID3D11DeviceContext* context = nullptr;
+        m_pDevice->GetImmediateContext(&context);
+
+        HR_T(CreateWICTextureFromFileEx(
+            m_pDevice,
+            context,
+            _path.wstring().c_str(),
+            0,
+            D3D11_USAGE_DEFAULT,
+            D3D11_BIND_SHADER_RESOURCE,
+            0, 0,
+            WIC_LOADER_FORCE_RGBA32 | WIC_LOADER_IGNORE_SRGB,
+            nullptr,
+            _out));
+    }
 }
 
 bool SkeletalMesh::LoadAnimations(std::vector<aiAnimation*>& _out, const aiScene* _scene)
@@ -429,23 +504,9 @@ bool SkeletalMesh::LoadNodeAnim(std::unordered_map<std::string, aiNodeAnim*>* _o
 	return true;
 }
 
-void SkeletalMesh::CreateResourceView(std::filesystem::path& _path, ID3D11ShaderResourceView** _out)
-{
-	// TGAÆÄÀÏ È®ÀÎ
-	if (_path.extension() == L".tga") {
-		DirectX::ScratchImage image;
-		DirectX::TexMetadata meta;
-		HR_T(DirectX::LoadFromTGAFile(_path.wstring().c_str(), &meta, image));
-		CreateShaderResourceView(m_pDevice, image.GetImages(), image.GetImageCount(), meta, _out);
-	}
-	else {
-		HR_T(CreateWICTextureFromFile(m_pDevice, _path.wstring().c_str(), nullptr, _out));
-	}
-}
-
 bool SkeletalMesh::UpdateBoneMat()
 {
-	// ³ëµåÅ½»öÇÏ¸ç ¿ùµå¸ÅÆ®¸¯½º ¸¸µé±â
+	// ë…¸ë“œíƒìƒ‰í•˜ë©° ì›”ë“œë§¤íŠ¸ë¦­ìŠ¤ ë§Œë“¤ê¸°
 	std::stack<aiNode*> nodes;
 	nodes.push(scene->mRootNode);
 
@@ -461,7 +522,7 @@ bool SkeletalMesh::UpdateBoneMat()
 		auto it = nodeAnimMap.find(temp->mName.C_Str());
 		if (it != nodeAnimMap.end()) {
 
-			// Àû¿ëµÉ Å°ÀÎµ¦½º ±¸ÇÏ±â
+			// ì ìš©ë  í‚¤ì¸ë±ìŠ¤ êµ¬í•˜ê¸°
 			const auto animNode = it->second;
 
 
@@ -470,7 +531,7 @@ bool SkeletalMesh::UpdateBoneMat()
 			int currRotIdx = FindKeyIndex(animNode->mRotationKeys, animNode->mNumRotationKeys, animTime);
 			int currScaIdx = FindKeyIndex(animNode->mScalingKeys, animNode->mNumScalingKeys, animTime);
 
-			// º¸°£°ª ±¸ÇÏ±â
+			// ë³´ê°„ê°’ êµ¬í•˜ê¸°
 			int nextIdx[3] = {
 				currPosIdx == animNode->mNumPositionKeys - 1 ? currPosIdx : currPosIdx + 1,
 				currRotIdx == animNode->mNumRotationKeys - 1 ? currRotIdx : currRotIdx + 1,
@@ -481,33 +542,33 @@ bool SkeletalMesh::UpdateBoneMat()
 			aiQuatKey rot = Evaluate(animNode->mRotationKeys[currRotIdx], animNode->mRotationKeys[nextIdx[1]], animTime);
 			aiVectorKey sca = Evaluate(animNode->mScalingKeys[currScaIdx], animNode->mScalingKeys[nextIdx[2]], animTime);
 
-			// ¸ÅÆ®¸¯½º ¸¸µé±â
+			// ë§¤íŠ¸ë¦­ìŠ¤ ë§Œë“¤ê¸°
 			aiMatrix4x4 matScale, matRot, matTrans;
 
 			aiMatrix4x4::Translation(pos.mValue, matTrans);
 			matRot = aiMatrix4x4(rot.mValue.GetMatrix());
 			aiMatrix4x4::Scaling(sca.mValue, matScale);
 
-			tempMat = matTrans * matRot * matScale;		// ¿­¿ì¼± ¸ÅÆ®¸¯½º¶ó TRS ¼ø¼­·Î °öÇØ¾ßÇÔ
+			tempMat = matTrans * matRot * matScale;		// ì—´ìš°ì„  ë§¤íŠ¸ë¦­ìŠ¤ë¼ TRS ìˆœì„œë¡œ ê³±í•´ì•¼í•¨
 			INT a = 0;
-			// TODO :: º»ÀÇ aiVertexWeight::mVertexId¿Í mWeight¸¦ ¹öÅØ½º ¼ÎÀÌ´õ¿¡ º¸³»±â. - ÇßÀ½
+			// TODO :: ë³¸ì˜ aiVertexWeight::mVertexIdì™€ mWeightë¥¼ ë²„í…ìŠ¤ ì…°ì´ë”ì— ë³´ë‚´ê¸°. - í–ˆìŒ
 		}
 
-		// ºÎ¸ğ ¸ÅÆ®¸¯½º °öÇÏ±â
+		// ë¶€ëª¨ ë§¤íŠ¸ë¦­ìŠ¤ ê³±í•˜ê¸°
 		if (currPar != nullptr) {
 			tempMat = nodeWorldMap[currPar->mName.C_Str()] * tempMat;
 		}
 
-		// ¸ÅÆ®¸¯½º ¸Ê¿¡ ÀúÀåÇÏ±â
+		// ë§¤íŠ¸ë¦­ìŠ¤ ë§µì— ì €ì¥í•˜ê¸°
 		nodeWorldMap[temp->mName.C_Str()] = tempMat;
 		boneIndex[temp->mName.C_Str()] = nodeIdx;
 		boneMat[nodeIdx] = ConvertMat(tempMat);
 		nodeIdx++;
 
-		// TODO :: º» ¿ùµå¸ÅÆ®¸¯½º ¾÷µ¥ÀÌÆ® ÇØÁÖ±â ( ³ëµå¼ö 128°³ »óÁ¤ÇÏ°í »ó¼ö¹öÆÛ¿¡ Áı¾î³ÖÀ»°Í!) - ÇßÀ½ º¸³»Áà¾ßÇÔ ÀÌÁ¦
-		//	±× ´ÙÀ½Àº ¹öÅØ½º ½¦ÀÌ´õ¿¡¼­ ÀÛ¾÷ÀÌ´Ù!! (¾ÆÁ÷ ¹öÅØ½º ±¸Á¶Ã¼ ¼öÁ¤ÇÑ°Å CB¿¡ ¹İ¿µ¾ÈÇÔ)
+		// TODO :: ë³¸ ì›”ë“œë§¤íŠ¸ë¦­ìŠ¤ ì—…ë°ì´íŠ¸ í•´ì£¼ê¸° ( ë…¸ë“œìˆ˜ 128ê°œ ìƒì •í•˜ê³  ìƒìˆ˜ë²„í¼ì— ì§‘ì–´ë„£ì„ê²ƒ!) - í–ˆìŒ ë³´ë‚´ì¤˜ì•¼í•¨ ì´ì œ
+		//	ê·¸ ë‹¤ìŒì€ ë²„í…ìŠ¤ ì‰ì´ë”ì—ì„œ ì‘ì—…ì´ë‹¤!! (ì•„ì§ ë²„í…ìŠ¤ êµ¬ì¡°ì²´ ìˆ˜ì •í•œê±° CBì— ë°˜ì˜ì•ˆí•¨)
 
-		// ÀÚ½Ä³ëµå Ãß°¡
+		// ìì‹ë…¸ë“œ ì¶”ê°€
 		for (int i = 0; i < temp->mNumChildren; i++) {
 			nodes.push(temp->mChildren[i]);
 		}
@@ -522,7 +583,7 @@ int SkeletalMesh::FindKeyIndex(const aiVectorKey* _keys, int _size, float _animT
 		if (_animTime < _keys[i + 1].mTime)
 			return i;
 	}
-	return _size - 1; // ¸¶Áö¸· ±¸°£
+	return _size - 1; // ë§ˆì§€ë§‰ êµ¬ê°„
 }
 
 int SkeletalMesh::FindKeyIndex(const aiQuatKey* _keys, int _size, float _animTime)
@@ -531,7 +592,7 @@ int SkeletalMesh::FindKeyIndex(const aiQuatKey* _keys, int _size, float _animTim
 		if (_animTime < _keys[i + 1].mTime)
 			return i;
 	}
-	return _size - 1; // ¸¶Áö¸· ±¸°£
+	return _size - 1; // ë§ˆì§€ë§‰ êµ¬ê°„
 }
 
 aiVectorKey SkeletalMesh::Evaluate(const aiVectorKey& _k1, const aiVectorKey& _k2, float _currTime) {
@@ -574,23 +635,23 @@ bool SkeletalMesh::SetResources(PBR_MatBuffer* _matBuffer, BoneBuffer* _boneBuff
 
 bool SkeletalMesh::ShadowDraw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer** _bufferList, UINT _boneBuffIdx, ID3D11ShaderResourceView* _rsv)
 {
-	// ½¦ÀÌ´õ ¾÷µ¥ÀÌÆ®
+	// ì‰ì´ë” ì—…ë°ì´íŠ¸
 	ID3D11VertexShader* defaultShader = nullptr;
 	_deviceContext->VSGetShader(&defaultShader, nullptr, nullptr);
 	_deviceContext->VSSetShader(m_pShadowVS, nullptr, 0);
 
-	// RSV µî·Ï
-	modelRV[5] = _rsv;
+	// RSV ë“±ë¡
+	modelRV[6] = _rsv;
 
-	// ¸ÅÆ®¸¯½º ¾÷µ¥ÀÌÆ®
+	// ë§¤íŠ¸ë¦­ìŠ¤ ì—…ë°ì´íŠ¸
 	for (int i = 0; i < BONE_MAXSIZE; i++) {
 		boneBuff->boneMat[i] = boneMat[i];
 	}
 
-	// º»¹öÆÛ ¾÷µ¥ÀÌÆ®
+	// ë³¸ë²„í¼ ì—…ë°ì´íŠ¸
 	_deviceContext->UpdateSubresource(_bufferList[_boneBuffIdx], 0, nullptr, boneBuff, 0, 0);
 
-	// ³ëµå¿¡ µû¶ó ÀÎµ¦½º ºÒ·¯¿Í¼­ ¾÷µ¥ÀÌÆ®
+	// ë…¸ë“œì— ë”°ë¼ ì¸ë±ìŠ¤ ë¶ˆëŸ¬ì™€ì„œ ì—…ë°ì´íŠ¸
 	std::stack<aiNode*> nodes;
 	nodes.push(scene->mRootNode);
 	int nodeIdx = 0;
@@ -599,7 +660,7 @@ bool SkeletalMesh::ShadowDraw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer*
 		aiNode* node = nodes.top();
 		nodes.pop();
 
-		// ¸Ş½Ã ±×¸®±â
+		// ë©”ì‹œ ê·¸ë¦¬ê¸°
 		for (int i = 0; i < node->mNumMeshes; i++) {
 			int meshIdx = node->mMeshes[i];
 			_deviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer[meshIdx], &m_VertexBufferStride, &m_VertexBufferOffset);
@@ -608,7 +669,7 @@ bool SkeletalMesh::ShadowDraw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer*
 			_deviceContext->DrawIndexed(m_nIndices[meshIdx], 0, 0);
 		}
 
-		// Â÷ÀÏµå Å¥¿¡ ³Ö±â
+		// ì°¨ì¼ë“œ íì— ë„£ê¸°
 		for (int i = 0; i < node->mNumChildren; i++) {
 			nodes.push(node->mChildren[i]);
 		}
@@ -616,7 +677,7 @@ bool SkeletalMesh::ShadowDraw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer*
 		nodeIdx++;
 	}
 
-	// ½¦ÀÌ´õ µ¹·Á³õ±â
+	// ì‰ì´ë” ëŒë ¤ë†“ê¸°
 	_deviceContext->VSSetShader(defaultShader, nullptr, 0);
 
 	return true;
@@ -624,7 +685,7 @@ bool SkeletalMesh::ShadowDraw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer*
 
 bool SkeletalMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer** _bufferList, UINT _boneBuffIdx, UINT _matBuffIdx, ID3D11VertexShader* _vShader /*= nullptr*/, ID3D11PixelShader* _pShader /*= nullptr*/, bool _useMat /*= true*/)
 {
-	// ½¦ÀÌ´õ ¾÷µ¥ÀÌÆ®
+	// ì‰ì´ë” ì—…ë°ì´íŠ¸
 	ID3D11VertexShader* defaultShader = nullptr;
 	_deviceContext->VSGetShader(&defaultShader, nullptr, nullptr);
 	if (_vShader)
@@ -635,15 +696,15 @@ bool SkeletalMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer** _buf
 	if (_pShader)
 		_deviceContext->PSSetShader(_pShader, nullptr, 0);
 
-	// ¸ÅÆ®¸¯½º ¾÷µ¥ÀÌÆ®
+	// ë§¤íŠ¸ë¦­ìŠ¤ ì—…ë°ì´íŠ¸
 	for (int i = 0; i < BONE_MAXSIZE; i++) {
 		boneBuff->boneMat[i] = boneMat[i];
 	}
 
-	// º»¹öÆÛ ¾÷µ¥ÀÌÆ®
+	// ë³¸ë²„í¼ ì—…ë°ì´íŠ¸
 	_deviceContext->UpdateSubresource(_bufferList[_boneBuffIdx], 0, nullptr, boneBuff, 0, 0);
 
-	// ³ëµå¿¡ µû¶ó ÀÎµ¦½º ºÒ·¯¿Í¼­ ¾÷µ¥ÀÌÆ®
+	// ë…¸ë“œì— ë”°ë¼ ì¸ë±ìŠ¤ ë¶ˆëŸ¬ì™€ì„œ ì—…ë°ì´íŠ¸
 	std::stack<aiNode*> nodes;
 	nodes.push(scene->mRootNode);
 	int nodeIdx = 0;
@@ -652,35 +713,29 @@ bool SkeletalMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer** _buf
 		aiNode* node = nodes.top();
 		nodes.pop();
 
-		// ¸Ş½Ã ±×¸®±â
+		// ë©”ì‹œ ê·¸ë¦¬ê¸°
 		for (int i = 0; i < node->mNumMeshes; i++) {
 			int meshIdx = node->mMeshes[i];
 			_deviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer[meshIdx], &m_VertexBufferStride, &m_VertexBufferOffset);
 			_deviceContext->IASetIndexBuffer(m_pIndexBuffer[meshIdx], DXGI_FORMAT_R32_UINT, 0);
 
-			/*if (_useMat) {
-				UINT matIdx = scene->mMeshes[meshIdx]->mMaterialIndex;
-				modelRV[0] = m_nMaterials[matIdx].diffuse;
-				modelRV[1] = m_nMaterials[matIdx].normal;
-				modelRV[2] = m_nMaterials[matIdx].specular;
-				modelRV[3] = m_nMaterials[matIdx].emissive;
-				modelRV[4] = nullptr;
-				matBuff->Matdiffuse = m_nMaterials[matIdx].BaseColor;
+			if (_useMat) {
+                UINT matIdx = scene->mMeshes[i]->mMaterialIndex;
+                modelRV[0] = m_nMaterials[matIdx].diffuse;
+                modelRV[1] = m_nMaterials[matIdx].normal;
+                modelRV[2] = m_nMaterials[matIdx].metalic;
+                modelRV[3] = m_nMaterials[matIdx].roughness;
+                modelRV[4] = m_nMaterials[matIdx].ao;
+                modelRV[5] = m_nMaterials[matIdx].emissive;
 
-				_deviceContext->PSSetShaderResources(0, 6, modelRV);
+                _deviceContext->PSSetShaderResources(0, 7, modelRV);
 				_deviceContext->UpdateSubresource(_bufferList[_matBuffIdx], 0, nullptr, matBuff, 0, 0);
-			}*/
-
-			//Matrix nodeMat = ConvertMat(nodeWorldMap[node->mName.C_Str()]);
-
-			//_cb->skinMat = nodeMat;
-			//_cb->skinNorm = XMMatrixInverse(nullptr, XMMatrixTranspose(nodeMat));
-			//_deviceContext->UpdateSubresource(_cbBuff, 0, nullptr, _cb, 0, 0);
+			}
 
 			_deviceContext->DrawIndexed(m_nIndices[meshIdx], 0, 0);
 		}
 
-		// Â÷ÀÏµå Å¥¿¡ ³Ö±â
+		// ì°¨ì¼ë“œ íì— ë„£ê¸°
 		for (int i = 0; i < node->mNumChildren; i++) {
 			nodes.push(node->mChildren[i]);
 		}
@@ -688,7 +743,7 @@ bool SkeletalMesh::Draw(ID3D11DeviceContext* _deviceContext, ID3D11Buffer** _buf
 		nodeIdx++;
 	}
 
-	// ½¦ÀÌ´õ µ¹·Á³õ±â
+	// ì‰ì´ë” ëŒë ¤ë†“ê¸°
 	_deviceContext->VSSetShader(defaultShader, nullptr, 0);
 
 	return true;
