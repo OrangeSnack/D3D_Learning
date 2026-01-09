@@ -55,15 +55,22 @@ cbuffer BoneOffSetBuffer : register(b5)
     matrix boneOffsetMat[256];
 }
 
+cbuffer ToneBuffer : register(b6)
+{
+    float mExposure;
+    float mBrightness;
+    float2 mTonePadding;
+}
+
 struct PS_INPUT
 {
     float4 Pos : SV_POSITION;
-    float4 W_Pos : POSITION;    // ¿ùµå Æ÷Áö¼Ç
+    float4 W_Pos : POSITION;    // ì›”ë“œ í¬ì§€ì…˜
     float3 Norm : NORMAL;
     float3 Tan : TANGENT;
     float3 BiTan : BITANGENT;
-    float2 Tex : TEXCOORD0;     // ÅØ½ºÃÄ UV
-    float4 S_Pos : TEXCOORD1;   // ½¦µµ¿ì Æ÷Áö¼Ç
+    float2 Tex : TEXCOORD0;     // í…ìŠ¤ì³ UV
+    float4 S_Pos : TEXCOORD1;   // ì‰ë„ìš° í¬ì§€ì…˜
 };
 
 struct VS_INPUT

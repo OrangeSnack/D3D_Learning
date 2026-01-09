@@ -5,8 +5,23 @@
 
 #define BONE_MAXSIZE 256
 
+struct ToneBuffer {
+    float exposure = 1.0f;
+    float brightness = 1.0f;
+    DirectX::SimpleMath::Vector2 tonePadding;
+};
+
+struct PBR_Materials {
+    ID3D11ShaderResourceView* diffuse = nullptr;		// ë””í“¨ì¦ˆë§µ
+    ID3D11ShaderResourceView* normal = nullptr;			// ë…¸ë©€ë§µ
+    ID3D11ShaderResourceView* metalic = nullptr;		// ë©”íƒˆë¦­ë§µ
+    ID3D11ShaderResourceView* roughness = nullptr;		// ê±°ì¹ ê¸°ë§µ
+    ID3D11ShaderResourceView* ao = nullptr;				// AOë§µ
+    ID3D11ShaderResourceView* emissive = nullptr;		// ë°œê´‘ë§µ
+};
+
 struct PBR_MatBuffer {
-	DirectX::SimpleMath::Color baseColor = { 1.0f, 1.0f, 1.0f, 1.0f };	// º£ÀÌ½º ÄÃ·¯
+	DirectX::SimpleMath::Color baseColor = { 1.0f, 1.0f, 1.0f, 1.0f };	// ë² ì´ìŠ¤ ì»¬ëŸ¬
 
 	float metalic = 1.0f;
 	float roughness = 0.05f;
@@ -43,32 +58,23 @@ struct BoneBuffer
 
 struct Vertex
 {
-	DirectX::SimpleMath::Vector3 Pos;		// Á¤Á¡ À§Ä¡ Á¤º¸
-	DirectX::SimpleMath::Vector3 Normal;	// ³ë¸Ö
-	DirectX::SimpleMath::Vector3 Tangent;	// ÅºÁ¨Æ®
-	DirectX::SimpleMath::Vector3 BiTangent;	// BiÅºÁ¨Æ®
-	DirectX::SimpleMath::Vector2 Tex;		// ÅØ½ºÃÄ UV
-	int boneIndices[4] = { -1, -1, -1, -1 };				// ¹öÅØ½º¿Í ¿¬°áµÈ º»µéÀÇ ÀÎµ¦½º
-	float boneWeights[4] = { 0.0f, 0.0f, 0.0f, 0.0f };		// °¢ º»µéÀÇ °¡ÁßÄ¡
-};
-
-struct PBR_Materials {
-	ID3D11ShaderResourceView* diffuse = nullptr;		// µğÇ»Áî¸Ê
-	ID3D11ShaderResourceView* normal = nullptr;			// ³ë¸Ö¸Ê
-	ID3D11ShaderResourceView* metalic = nullptr;		// ¸ŞÅ»¸¯¸Ê
-	ID3D11ShaderResourceView* roughness = nullptr;		// °ÅÄ¥±â¸Ê
-	ID3D11ShaderResourceView* ao = nullptr;				// AO¸Ê
-	ID3D11ShaderResourceView* emissive = nullptr;		// ¹ß±¤¸Ê
+	DirectX::SimpleMath::Vector3 Pos;		// ì •ì  ìœ„ì¹˜ ì •ë³´
+	DirectX::SimpleMath::Vector3 Normal;	// ë…¸ë©€
+	DirectX::SimpleMath::Vector3 Tangent;	// íƒ„ì  íŠ¸
+	DirectX::SimpleMath::Vector3 BiTangent;	// Biíƒ„ì  íŠ¸
+	DirectX::SimpleMath::Vector2 Tex;		// í…ìŠ¤ì³ UV
+	int boneIndices[4] = { -1, -1, -1, -1 };				// ë²„í…ìŠ¤ì™€ ì—°ê²°ëœ ë³¸ë“¤ì˜ ì¸ë±ìŠ¤
+	float boneWeights[4] = { 0.0f, 0.0f, 0.0f, 0.0f };		// ê° ë³¸ë“¤ì˜ ê°€ì¤‘ì¹˜
 };
 
 // --OUTDATED--
 
 //struct Materials {
-//	ID3D11ShaderResourceView* diffuse = nullptr;		// µğÇ»Áî¸Ê
-//	ID3D11ShaderResourceView* specular = nullptr;		// ½ºÆåÅ§·¯¸Ê
-//	ID3D11ShaderResourceView* normal = nullptr;			// ³ë¸Ö¸Ê
-//	ID3D11ShaderResourceView* emissive = nullptr;		// ¹ß±¤¸Ê
-//	DirectX::SimpleMath::Color BaseColor = { 1.0f, 1.0f, 1.0f, 1.0f };	// º£ÀÌ½º ÄÃ·¯
+//	ID3D11ShaderResourceView* diffuse = nullptr;		// ë””í“¨ì¦ˆë§µ
+//	ID3D11ShaderResourceView* specular = nullptr;		// ìŠ¤í™í˜ëŸ¬ë§µ
+//	ID3D11ShaderResourceView* normal = nullptr;			// ë…¸ë©€ë§µ
+//	ID3D11ShaderResourceView* emissive = nullptr;		// ë°œê´‘ë§µ
+//	DirectX::SimpleMath::Color BaseColor = { 1.0f, 1.0f, 1.0f, 1.0f };	// ë² ì´ìŠ¤ ì»¬ëŸ¬
 //};
 
 //struct ConstantBuffer
@@ -87,11 +93,11 @@ struct PBR_Materials {
 //
 //	DirectX::SimpleMath::Vector4 camPos;
 //
-//	DirectX::SimpleMath::Vector4 ambient;		// ¶óÀÌÆ® Á¤º¸
+//	DirectX::SimpleMath::Vector4 ambient;		// ë¼ì´íŠ¸ ì •ë³´
 //	DirectX::SimpleMath::Vector4 diffuse;
 //	DirectX::SimpleMath::Vector4 specular;
 //
-//	DirectX::SimpleMath::Vector4 Matambient;	// ¸ŞÅ×¸®¾ó Á¤º¸
+//	DirectX::SimpleMath::Vector4 Matambient;	// ë©”í…Œë¦¬ì–¼ ì •ë³´
 //	DirectX::SimpleMath::Vector4 Matdiffuse;
 //	DirectX::SimpleMath::Vector4 Matspecular;
 //

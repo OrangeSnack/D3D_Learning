@@ -106,43 +106,49 @@ void ToneApp::Update()
 
 void ToneApp::Render()
 {
-	// 배경컬러 설정
-	float color[4] = { 0.0f, 0.5f, 0.5f, 1.0f };
+    // Update matrix variables and lighting variables
+    TransBuffer tb;
+    tb.mWorld = XMMatrixTranspose(Matrix::Identity);
+    tb.mView = XMMatrixTranspose(m_View);
+    tb.mProjection = XMMatrixTranspose(m_Projection);
+    tb.mNormalMatrix = XMMatrixInverse(nullptr, Matrix::Identity);
+    tb.mCamPos = Vector4(m_Camera.m_Position.x, m_Camera.m_Position.y, m_Camera.m_Position.z, 1.0f);
 
-	// Update matrix variables and lighting variables
-	TransBuffer tb;
-	tb.mWorld = XMMatrixTranspose(Matrix::Identity);
-	tb.mView = XMMatrixTranspose(m_View);
-	tb.mProjection = XMMatrixTranspose(m_Projection);
-	tb.mNormalMatrix = XMMatrixInverse(nullptr, Matrix::Identity);
-	tb.mCamPos = Vector4(m_Camera.m_Position.x, m_Camera.m_Position.y, m_Camera.m_Position.z, 1.0f);
+    LightBuffer lb;
+    lb.vLightDir = m_LightDirsEvaluated;
+    lb.vLightColor = m_LightColors;
 
-	LightBuffer lb;
-	lb.vLightDir = m_LightDirsEvaluated;
-	lb.vLightColor = m_LightColors;
+    PBR_MatBuffer mb;
+    mb.baseColor = m_BaseColor;
+    mb.roughness = m_Roughness;
+    mb.metalic = m_Metalic;
+    mb.aoStrength = m_Ao;
+    mb.emissive = 0.0f;
+    mb.useOverride = (UINT)m_UseMatOverride;
 
-	PBR_MatBuffer mb;
-	mb.baseColor = m_BaseColor;
-	mb.roughness = m_Roughness;
-	mb.metalic = m_Metalic;
-	mb.aoStrength = m_Ao;
-	mb.emissive = 0.0f;
-	mb.useOverride = (UINT)m_UseMatOverride;
+    BoneBuffer bb;
 
-	BoneBuffer bb;
+    ShadowBuffer sb;
+    sb.ShadowProjection = m_ShadowProjection;
+    sb.ShadowView = m_ShadowView;
 
-	ShadowBuffer sb;
-	sb.ShadowProjection = m_ShadowProjection;
-	sb.ShadowView = m_ShadowView;
+    ToneBuffer tnb;
+    tnb.brightness = m_brightness;
+    tnb.exposure = m_exposure;
 
-	m_pDeviceContext->UpdateSubresource(m_pTransBuffer, 0, nullptr, &tb, 0, 0);
-	m_pDeviceContext->UpdateSubresource(m_pLightBuffer, 0, nullptr, &lb, 0, 0);
-	m_pDeviceContext->UpdateSubresource(m_pMatBuffer, 0, nullptr, &mb, 0, 0);
-	m_pDeviceContext->UpdateSubresource(m_pBoneBuffer, 0, nullptr, &bb, 0, 0);
-	m_pDeviceContext->UpdateSubresource(m_pShadowBuffer, 0, nullptr, &sb, 0, 0);
+    m_pDeviceContext->UpdateSubresource(m_pTransBuffer, 0, nullptr, &tb, 0, 0);
+    m_pDeviceContext->UpdateSubresource(m_pLightBuffer, 0, nullptr, &lb, 0, 0);
+    m_pDeviceContext->UpdateSubresource(m_pMatBuffer, 0, nullptr, &mb, 0, 0);
+    m_pDeviceContext->UpdateSubresource(m_pBoneBuffer, 0, nullptr, &bb, 0, 0);
+    m_pDeviceContext->UpdateSubresource(m_pShadowBuffer, 0, nullptr, &sb, 0, 0);
+    m_pDeviceContext->UpdateSubresource(m_pToneBuffer, 0, nullptr, &tnb, 0, 0);
+
+    // 배경컬러 설정
+    float color[4] = { 0.0f, 0.5f, 0.5f, 1.0f };
 
 	// Clear 
 	m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView, color);
+    m_pDeviceContext->ClearRenderTargetView(m_pHDRRTV, color);
 	m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	// Render Setting
@@ -151,11 +157,13 @@ void ToneApp::Render()
 	ID3D11Buffer* buffers[] = { m_pTransBuffer,  m_pLightBuffer, m_pMatBuffer, m_pShadowBuffer, m_pBoneBuffer };
 	m_pDeviceContext->VSSetConstantBuffers(0, 5, buffers);
 	m_pDeviceContext->PSSetConstantBuffers(0, 5, buffers);
+    m_pDeviceContext->PSSetConstantBuffers(6, 1, &m_pToneBuffer);
 
 	// ----- 스카이박스 렌더링 -----
 
 	// 스카이박스용 렌더타겟 설정
 	m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, NULL);
+    //m_pDeviceContext->OMSetRenderTargets(1, &m_pHDRRTV, NULL);
 	m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
 
 	// 스카이박스 렌더링
@@ -200,7 +208,8 @@ void ToneApp::Render()
 
 	// PBR 렌더링
 	m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
-	m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
+    //m_pDeviceContext->OMSetRenderTargets(1, &m_pHDRRTV, m_pDepthStencilView);
+    m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
 
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
 	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
@@ -261,12 +270,31 @@ bool ToneApp::InitD3D()
 	// 장치, 스왑체인, 컨텍스트 생성
 	HR_T(D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, creationFlags, NULL, NULL,
 		D3D11_SDK_VERSION, &swapDesc, &m_pSwapChain, &m_pDevice, NULL, &m_pDeviceContext));
-	
-	// 렌더타겟 생성
-	ID3D11Texture2D* pBackBuffer = nullptr;
-	HR_T(m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer));
-	HR_T(m_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &m_pRenderTargetView));
-	SAFE_RELEASE(pBackBuffer);
+
+    // HDR 렌더타겟 만들기
+    D3D11_TEXTURE2D_DESC texDesc = {};
+    texDesc.Width = m_ClientWidth;
+    texDesc.Height = m_ClientHeight;
+    texDesc.MipLevels = 1;
+    texDesc.ArraySize = 1;
+    texDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; // HDR 포맷
+    texDesc.SampleDesc.Count = 1;       // 멀티샘플링 없으면 1
+    texDesc.SampleDesc.Quality = 0;
+    texDesc.Usage = D3D11_USAGE_DEFAULT;
+    texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    texDesc.CPUAccessFlags = 0;
+    texDesc.MiscFlags = 0;
+
+    HR_T(m_pDevice->CreateTexture2D(&texDesc, nullptr, &m_pSceneHDR));
+    HR_T(m_pDevice->CreateRenderTargetView(m_pSceneHDR, nullptr, &m_pHDRRTV));
+
+    // 렌더타겟 생성
+    ID3D11Texture2D* pBackBuffer = nullptr;
+
+    //HR_T(m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&m_pSceneHDR));
+    HR_T(m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer));
+    HR_T(m_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &m_pRenderTargetView));
+    SAFE_RELEASE(pBackBuffer);
 
 	// 뷰포트
 	m_defaultViewport = {};
@@ -382,8 +410,6 @@ bool ToneApp::InitD3D()
 		HR_T(m_pDevice->CreateShaderResourceView(m_pShadowMap.Get(), &descSRV, m_pShadowMapRSV.GetAddressOf()));
 	}
 	
-
-
 	return true;
 }
 
@@ -463,6 +489,9 @@ bool ToneApp::InitScene()
 
 	bd.ByteWidth = sizeof(ShadowBuffer);
 	HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pShadowBuffer));
+
+    bd.ByteWidth = sizeof(ToneBuffer);
+    HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pToneBuffer));
 
 	// 스카이박스 텍스쳐 로딩
 	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/HDRI/ParkingEnvHDR.dds", nullptr, &m_pSkyTextureRV));
@@ -715,6 +744,17 @@ void ToneApp::RenderGUI()
 
 		ImGui::End();
 	}
+
+    {
+        // 톤매핑
+        ImGui::Begin("ToneMapping");
+        ImGui::PushID(1);
+        ImGui::SliderFloat("Exposure", &m_exposure, 0.01f, 5.0f);
+        ImGui::SliderFloat("Brightness", &m_brightness, 0.01f, 5.0f);
+        ImGui::PopID();
+
+        ImGui::End();
+    }
 
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());

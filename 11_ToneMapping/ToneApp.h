@@ -86,6 +86,13 @@ public:
 	ID3D11RenderTargetView* m_pRenderTargetView = nullptr;	// 렌더링 타겟뷰
 	ID3D11DepthStencilView* m_pDepthStencilView = nullptr;  // 깊이값 처리를 위한 뎊스스텐실 뷰
 
+    // 톤맵핑용 (ToneMapping)
+    ID3D11Texture2D* m_pSceneHDR = nullptr;         // HDR 저장용 렌더타겟
+    ID3D11RenderTargetView* m_pHDRRTV = nullptr;    // HDR RTV
+    float m_exposure = 1.0f;    // IMGUI용 노출도
+    float m_brightness = 1.0f;  // IMGUI용 밝기
+    ID3D11Buffer* m_pToneBuffer = nullptr;   // 톤맵 버퍼
+
 	// 렌더링 정보
 	
 	ID3D11Buffer* m_pTransBuffer = nullptr;		// 상수 버퍼
