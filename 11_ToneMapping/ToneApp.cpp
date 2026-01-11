@@ -141,7 +141,6 @@ void ToneApp::Render()
     m_pDeviceContext->UpdateSubresource(m_pMatBuffer, 0, nullptr, &mb, 0, 0);
     m_pDeviceContext->UpdateSubresource(m_pBoneBuffer, 0, nullptr, &bb, 0, 0);
     m_pDeviceContext->UpdateSubresource(m_pShadowBuffer, 0, nullptr, &sb, 0, 0);
-    m_pDeviceContext->UpdateSubresource(m_pToneBuffer, 0, nullptr, &tnb, 0, 0);
 
     // 배경컬러 설정
     float color[4] = { 0.0f, 0.5f, 0.5f, 1.0f };
@@ -157,13 +156,12 @@ void ToneApp::Render()
 	ID3D11Buffer* buffers[] = { m_pTransBuffer,  m_pLightBuffer, m_pMatBuffer, m_pShadowBuffer, m_pBoneBuffer };
 	m_pDeviceContext->VSSetConstantBuffers(0, 5, buffers);
 	m_pDeviceContext->PSSetConstantBuffers(0, 5, buffers);
-    m_pDeviceContext->PSSetConstantBuffers(6, 1, &m_pToneBuffer);
 
 	// ----- 스카이박스 렌더링 -----
 
 	// 스카이박스용 렌더타겟 설정
-	m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, NULL);
-    //m_pDeviceContext->OMSetRenderTargets(1, &m_pHDRRTV, NULL);
+	//m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, NULL);
+    m_pDeviceContext->OMSetRenderTargets(1, &m_pHDRRTV, NULL);
 	m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
 
 	// 스카이박스 렌더링
@@ -207,8 +205,8 @@ void ToneApp::Render()
 	//// 메인 패스
 
 	// PBR 렌더링
-	m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
-    //m_pDeviceContext->OMSetRenderTargets(1, &m_pHDRRTV, m_pDepthStencilView);
+	//m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
+    m_pDeviceContext->OMSetRenderTargets(1, &m_pHDRRTV, m_pDepthStencilView);
     m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
 
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
@@ -238,6 +236,23 @@ void ToneApp::Render()
         skeletal_models[i]->model.SetResources(&mb, &bb);
         skeletal_models[i]->model.Draw(m_pDeviceContext, buffers, 3, 1);
     }
+
+    // LDR 변환
+    m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, NULL);
+    m_pDeviceContext->UpdateSubresource(m_pToneBuffer, 0, nullptr, &tnb, 0, 0);
+    m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_pToneBuffer);
+    m_pDeviceContext->IASetInputLayout(m_quadInputLayout);
+
+    m_pDeviceContext->VSSetShader(m_pToneVS, nullptr, 0);
+    m_pDeviceContext->PSSetShader(m_pTonePS, nullptr, 0);
+    m_pDeviceContext->PSSetShaderResources(0, 1, m_pHDRRSV.GetAddressOf());
+
+    // 쿼드 렌더링
+    UINT stride = sizeof(QuadVertex);
+    UINT offset = 0;
+    m_pDeviceContext->IASetIndexBuffer(m_quadIndices, DXGI_FORMAT_R32_UINT, 0);
+    m_pDeviceContext->IASetVertexBuffers(0, 1, &m_quadBuffer, &stride, &offset);
+    m_pDeviceContext->DrawIndexed(6, 0, 0);
 
 	// GUI Render
 	RenderGUI();
@@ -286,7 +301,14 @@ bool ToneApp::InitD3D()
     texDesc.MiscFlags = 0;
 
     HR_T(m_pDevice->CreateTexture2D(&texDesc, nullptr, &m_pSceneHDR));
-    HR_T(m_pDevice->CreateRenderTargetView(m_pSceneHDR, nullptr, &m_pHDRRTV));
+    HR_T(m_pDevice->CreateRenderTargetView(m_pSceneHDR.Get(), nullptr, &m_pHDRRTV));
+
+    // HDR 리소스뷰 생성
+    D3D11_SHADER_RESOURCE_VIEW_DESC hdrSRV = {};
+    hdrSRV.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+    hdrSRV.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    hdrSRV.Texture2D.MipLevels = 1;
+    HR_T(m_pDevice->CreateShaderResourceView(m_pSceneHDR.Get(), &hdrSRV, m_pHDRRSV.GetAddressOf()));
 
     // 렌더타겟 생성
     ID3D11Texture2D* pBackBuffer = nullptr;
@@ -456,6 +478,20 @@ bool ToneApp::InitScene()
 		vertexShader->GetBufferSize(), &m_pSkyInputLayout));
 	SAFE_RELEASE(vertexShader);
 
+    // 스카이박스 레이아웃 생성
+    HR_T(CompileShaderFromFile(L"ToneVS.hlsl", "main", "vs_4_0", &vertexShader));
+    HR_T(m_pDevice->CreateVertexShader(vertexShader->GetBufferPointer(), vertexShader->GetBufferSize(),
+        NULL, &m_pToneVS));
+
+    // 쿼드 레이아웃 생성
+    D3D11_INPUT_ELEMENT_DESC quad_layout[] = {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+    };
+    HR_T(m_pDevice->CreateInputLayout(quad_layout, ARRAYSIZE(quad_layout), vertexShader->GetBufferPointer(),
+        vertexShader->GetBufferSize(), &m_quadInputLayout));
+    SAFE_RELEASE(vertexShader);
+
 	// 픽셀 쉐이더 컴파일
 	ID3D10Blob* pixelShader = nullptr;
 
@@ -468,6 +504,11 @@ bool ToneApp::InitScene()
 	HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
 		pixelShader->GetBufferSize(), NULL, &m_pBRDFShader));
 	SAFE_RELEASE(pixelShader);
+
+    HR_T(CompileShaderFromFile(L"TonePS.hlsl", "main", "ps_4_0", &pixelShader));
+    HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
+        pixelShader->GetBufferSize(), NULL, &m_pTonePS));
+    SAFE_RELEASE(pixelShader);
 
 	// Render() 에서 파이프라인에 바인딩할 상수 버퍼 생성
 	D3D11_BUFFER_DESC bd = {};
@@ -492,6 +533,34 @@ bool ToneApp::InitScene()
 
     bd.ByteWidth = sizeof(ToneBuffer);
     HR_T(m_pDevice->CreateBuffer(&bd, nullptr, &m_pToneBuffer));
+
+    // 쿼드버퍼 만들기
+    
+    QuadVertex quadVertices[] = 
+    {
+        { DirectX::XMFLOAT3(-1.0f, -1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 1.0f) }, // 좌하
+        { DirectX::XMFLOAT3(-1.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 0.0f) }, // 좌상
+        { DirectX::XMFLOAT3(1.0f, -1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f) }, // 우하
+        { DirectX::XMFLOAT3(1.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 0.0f) }, // 우상
+    };
+
+    UINT quadIndices[] = { 0, 1, 2, 2, 1, 3 };
+
+    //VB
+    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bd.ByteWidth = sizeof(quadVertices);
+
+    D3D11_SUBRESOURCE_DATA subData = {};
+    subData.pSysMem = quadVertices;
+
+    m_pDevice->CreateBuffer(&bd, &subData, &m_quadBuffer);
+
+    //IB
+    bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+    bd.ByteWidth = sizeof(quadIndices);
+    subData.pSysMem = quadIndices;
+
+    m_pDevice->CreateBuffer(&bd, &subData, &m_quadIndices);
 
 	// 스카이박스 텍스쳐 로딩
 	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/HDRI/ParkingEnvHDR.dds", nullptr, &m_pSkyTextureRV));
@@ -686,14 +755,7 @@ void ToneApp::RenderGUI()
 		ImGui::SeparatorText("Light");
 		ImGui::SliderFloat3("LightDir", lightDir, -1.0f, 1.0f);
 		ImGui::ColorEdit4("Color(l_i)", (float*)&m_LightColors);
-		ImGui::ColorEdit4("Ambients(l_a)", (float*)&m_Ambients);
-		ImGui::ColorEdit4("Diffuse", (float*)&m_Diffuse);
-		ImGui::ColorEdit4("Specular", (float*)&m_Specular);
 		if (ImGui::Button("Reset")) {
-			m_Ambients = Vector4(0.3f, 0.3f, 0.3f, 1.0f);
-			m_Diffuse = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-			m_Specular = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-
 			lightDir[0] = m_InitialLightDirs.x;
 			lightDir[1] = m_InitialLightDirs.y;
 			lightDir[2] = m_InitialLightDirs.z;
@@ -749,8 +811,12 @@ void ToneApp::RenderGUI()
         // 톤매핑
         ImGui::Begin("ToneMapping");
         ImGui::PushID(1);
-        ImGui::SliderFloat("Exposure", &m_exposure, 0.01f, 5.0f);
+        ImGui::SliderFloat("Exposure", &m_exposure, -2.0f, 2.0f);
         ImGui::SliderFloat("Brightness", &m_brightness, 0.01f, 5.0f);
+        if (ImGui::Button("Reset")) {
+            m_exposure = 0.0f;
+            m_brightness = 1.0f;
+        }
         ImGui::PopID();
 
         ImGui::End();

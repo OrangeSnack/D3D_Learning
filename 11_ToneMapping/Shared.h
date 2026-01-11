@@ -67,6 +67,12 @@ struct Vertex
 	float boneWeights[4] = { 0.0f, 0.0f, 0.0f, 0.0f };		// 각 본들의 가중치
 };
 
+struct QuadVertex
+{
+    DirectX::XMFLOAT3 position;
+    DirectX::XMFLOAT2 uv;
+};
+
 // --OUTDATED--
 
 //struct Materials {

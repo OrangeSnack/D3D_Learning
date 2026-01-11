@@ -34,6 +34,9 @@
     <Filter Include="Shader\Basic\PS\PBR">
       <UniqueIdentifier>{1321066a-e475-4b4b-907b-711375579ebe}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader\Tonemap">
+      <UniqueIdentifier>{5e4370c0-0a69-499e-8260-59a51a8e64b3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ToneApp.cpp">
@@ -93,6 +96,12 @@
     </FxCompile>
     <FxCompile Include="BRDFShader.hlsl">
       <Filter>Shader\Basic\PS\PBR</Filter>
+    </FxCompile>
+    <FxCompile Include="ToneVS.hlsl">
+      <Filter>Shader\Tonemap</Filter>
+    </FxCompile>
+    <FxCompile Include="TonePS.hlsl">
+      <Filter>Shader\Tonemap</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

@@ -66,9 +66,6 @@ public:
 		m_InitialLightDirs.y,
 		m_InitialLightDirs.z
 	};
-	Vector4 m_Ambients = Vector4(0.3f, 0.3f, 0.3f, 1.0f);
-	Vector4 m_Diffuse = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-	Vector4 m_Specular = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	// 메테리얼
 	bool m_UseMatOverride = false;
@@ -87,19 +84,26 @@ public:
 	ID3D11DepthStencilView* m_pDepthStencilView = nullptr;  // 깊이값 처리를 위한 뎊스스텐실 뷰
 
     // 톤맵핑용 (ToneMapping)
-    ID3D11Texture2D* m_pSceneHDR = nullptr;         // HDR 저장용 렌더타겟
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> m_pSceneHDR = nullptr;         // HDR 저장용 렌더타겟
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_pHDRRSV = nullptr;  // HDR 리소스뷰
     ID3D11RenderTargetView* m_pHDRRTV = nullptr;    // HDR RTV
-    float m_exposure = 1.0f;    // IMGUI용 노출도
+    float m_exposure = 0.0f;    // IMGUI용 노출도
     float m_brightness = 1.0f;  // IMGUI용 밝기
-    ID3D11Buffer* m_pToneBuffer = nullptr;   // 톤맵 버퍼
+    ID3D11Buffer* m_pToneBuffer = nullptr;      // 톤맵 버퍼
+    ID3D11VertexShader* m_pToneVS = nullptr;    // 톤맵 VS
+    ID3D11PixelShader* m_pTonePS = nullptr;     // 톤맵 PS
+
+    // 후처리용 쿼드버퍼
+    ID3D11Buffer* m_quadBuffer = nullptr;
+    ID3D11Buffer* m_quadIndices = nullptr;
+    ID3D11InputLayout* m_quadInputLayout = nullptr;
 
 	// 렌더링 정보
-	
 	ID3D11Buffer* m_pTransBuffer = nullptr;		// 상수 버퍼
-	ID3D11Buffer* m_pLightBuffer = nullptr;			// 라이트 버퍼
-	ID3D11Buffer* m_pMatBuffer = nullptr;			// 메테리얼 버퍼
-	ID3D11Buffer* m_pBoneBuffer = nullptr;			// 본 버퍼
-	ID3D11Buffer* m_pShadowBuffer = nullptr;		// 쉐도우 버퍼
+	ID3D11Buffer* m_pLightBuffer = nullptr;		// 라이트 버퍼
+	ID3D11Buffer* m_pMatBuffer = nullptr;		// 메테리얼 버퍼
+	ID3D11Buffer* m_pBoneBuffer = nullptr;		// 본 버퍼
+	ID3D11Buffer* m_pShadowBuffer = nullptr;	// 쉐도우 버퍼
 
 	ID3D11SamplerState* m_pSamplerLinear = nullptr;		// 샘플러 상태.
 	ID3D11SamplerState* m_pComparisonSampler = nullptr;	// 비교샘플러

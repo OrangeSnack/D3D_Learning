@@ -1,4 +1,4 @@
-// ÇÈ¼¿ ¼ÎÀÌ´õ(½¦ÀÌ´õ/¼ÎÀÌ´õ).
+// í”½ì…€ ì…°ì´ë”(ì‰ì´ë”/ì…°ì´ë”).
 #include "PBRShared.hlsli"
 
 // GGX
@@ -37,32 +37,32 @@ float GeoSchlick(float NV, float NL, float roughness)
 
 float4 main(PS_INPUT input) : SV_TARGET
 {
-    // ¾ËÆÄÅ×½ºÆ®
+    // ì•ŒíŒŒí…ŒìŠ¤íŠ¸
     float4 texColor = _albedo.Sample(_sp0, input.Tex);
     clip(texColor.a - 0.5f);
     
-    // ÅØ½ºÃ³ »ùÇÃ¸µ
+    // í…ìŠ¤ì²˜ ìƒ˜í”Œë§
     float3 albedo = mUseOverride ? mBaseColor : _albedo.Sample(_sp0, input.Tex).rgb;
     float metalic = mUseOverride ? mMetalic : _metalic.Sample(_sp0, input.Tex).r;
     float roughness = mUseOverride ? mRoughness : _roughness.Sample(_sp0, input.Tex).r;
     float ao = mUseOverride ? mAoStrength : _ambientOcclusion.Sample(_sp0, input.Tex).r * mAoStrength;
     float3 emissive = mUseOverride ? mEmissive : _emissive.Sample(_sp0, input.Tex).rgb;
     
-    // ³ë¸Ö
+    // ë…¸ë©€
     float3 normalMap = _normal.Sample(_sp0, input.Tex).xyz;
     normalMap = normalize(normalMap * 2.0f - 1.0f);
     float3x3 tbn = float3x3(normalize(input.Tan), normalize(input.BiTan), normalize(input.Norm));
 
-    // º¤ÅÍ
+    // ë²¡í„°
     float3 N = normalize(mul(normalMap, tbn));
     float3 V = normalize(mCamPos.xyz - input.W_Pos.xyz);
     float3 L = normalize(-mLightDir.xyz);
     float3 H = normalize(V + L);
     
-    // ±âº»¹İ»çÀ² ±¸ÇÏ±â
+    // ê¸°ë³¸ë°˜ì‚¬ìœ¨ êµ¬í•˜ê¸°
     float3 F0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metalic);
     
-    //BRDF ±¸¼º¿ä¼Ò
+    //BRDF êµ¬ì„±ìš”ì†Œ
 
     float NV = saturate(dot(N, V));
     float NL = saturate(dot(N, L));
@@ -76,25 +76,25 @@ float4 main(PS_INPUT input) : SV_TARGET
     float3 diffuse = (kd * albedo / 3.141592f);
     float3 specular = (D * F * G) / max(4.0f * NL * NV, 0.001f);
     
-    // ±¤·® »ùÇÃ¸µ
+    // ê´‘ëŸ‰ ìƒ˜í”Œë§
     float3 irradiance = _irradiance.Sample(_sp0, N).rgb;
     float3 diffuseIBL = saturate(kd * albedo * irradiance);
     
-    // LOD Mipmap ·¹º§ ¾ò±â
+    // LOD Mipmap ë ˆë²¨ ì–»ê¸°
     int specularTextureLevels, width, height;
     _specular.GetDimensions(0, width, height, specularTextureLevels);
-    // ¹İ»ç »ùÇÃ¸µ
+    // ë°˜ì‚¬ ìƒ˜í”Œë§
     float3 Lr = reflect(-V, N);
     float3 PrefilteredColor = _specular.SampleLevel(_sp0, Lr, roughness * specularTextureLevels).rgb;
     
-    // BRDF »ùÇÃ¸µ
+    // BRDF ìƒ˜í”Œë§
     float2 specularBRDF = _brdflut.Sample(_sp0, float2(NV, roughness)).rg;
     float3 specularIBL = PrefilteredColor * (F0 * specularBRDF.r + specularBRDF.g);
    
     float3 amibentIBL = (diffuseIBL + specularIBL) * ao;
     
-     // ½¦µµ¿ì¸Ê Ã³¸®
-    float currentShadowDepth = input.S_Pos.z / input.S_Pos.w; // ½¦µµ¿ì¸Ê ±âÁØ NDC ZÁÂÇ¥
+     // ì‰ë„ìš°ë§µ ì²˜ë¦¬
+    float currentShadowDepth = input.S_Pos.z / input.S_Pos.w; // ì‰ë„ìš°ë§µ ê¸°ì¤€ NDC Zì¢Œí‘œ
     float2 shadowUV = input.S_Pos.xy / input.S_Pos.w;
     
     shadowUV.y *= -1.0f;
@@ -118,8 +118,8 @@ float4 main(PS_INPUT input) : SV_TARGET
     float3 light = mLightColor.rgb;
     float3 direct = (diffuse + specular) * light * NL;
     float3 color = (direct * shadowFactor) + amibentIBL + emissive;
-    float4 finalColor = float4(pow(color, 1.0f / 2.2f), 1.0f);
+    //float4 finalColor = float4(pow(color, 1.0f / 2.2f), 1.0f);
     
-    return finalColor;
+    return float4(color, 1.0f);
     //return float4(N, 1.0f);
 }
