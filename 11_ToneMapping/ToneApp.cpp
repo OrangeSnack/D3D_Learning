@@ -811,8 +811,8 @@ void ToneApp::RenderGUI()
         // 톤매핑
         ImGui::Begin("ToneMapping");
         ImGui::PushID(1);
-        ImGui::SliderFloat("Exposure", &m_exposure, -2.0f, 2.0f);
-        ImGui::SliderFloat("Brightness", &m_brightness, 0.01f, 5.0f);
+        ImGui::SliderFloat("Exposure", &m_exposure, -5.0f, 5.0f);
+        ImGui::SliderFloat("Intensity", &m_brightness, 0.01f, 5.0f);
         if (ImGui::Button("Reset")) {
             m_exposure = 0.0f;
             m_brightness = 1.0f;
