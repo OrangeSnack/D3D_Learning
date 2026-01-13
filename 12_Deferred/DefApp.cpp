@@ -1,4 +1,4 @@
-#include "ToneApp.h"
+#include "DefApp.h"
 #include "../BaseEngine/Helper.h"
 #include <d3dcompiler.h>
 #include <Directxtk/DDSTextureLoader.h>
@@ -9,18 +9,18 @@
 
 #pragma comment(lib,"d3dcompiler.lib")
 
-ToneApp::ToneApp(HINSTANCE hInstance) : GameApp(hInstance)
+DefApp::DefApp(HINSTANCE hInstance) : GameApp(hInstance)
 {
 }
 
-ToneApp::~ToneApp()
+DefApp::~DefApp()
 {
 	UninitImGUI();
 	UninitScene();
 	UninitD3D();
 }
 
-bool ToneApp::Initialize(UINT Width, UINT Height)
+bool DefApp::Initialize(UINT Width, UINT Height)
 {
 	__super::Initialize(Width, Height);
 
@@ -39,7 +39,7 @@ bool ToneApp::Initialize(UINT Width, UINT Height)
 	return true;
 }
 
-void ToneApp::Update()
+void DefApp::Update()
 {
 	__super::Update();
 
@@ -104,7 +104,7 @@ void ToneApp::Update()
 	m_ShadowView = XMMatrixTranspose(XMMatrixLookAtLH(m_ShadowPos, m_ShadowLookAt, Vector3(0.0f, 1.0f, 0.0f)));
 }
 
-void ToneApp::Render()
+void DefApp::Render()
 {
     // Update matrix variables and lighting variables
     TransBuffer tb;
@@ -148,6 +148,11 @@ void ToneApp::Render()
 	// Clear 
 	m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView, color);
     m_pDeviceContext->ClearRenderTargetView(m_pHDRRTV, color);
+    m_pDeviceContext->ClearRenderTargetView(m_pBaseColorRTV.Get(), color);
+    m_pDeviceContext->ClearRenderTargetView(m_pARMRTV.Get(), color);
+    m_pDeviceContext->ClearRenderTargetView(m_pNormalRTV.Get(), color);
+    m_pDeviceContext->ClearRenderTargetView(m_pPosRTV.Get(), color);
+
 	m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	// Render Setting
@@ -157,31 +162,14 @@ void ToneApp::Render()
 	m_pDeviceContext->VSSetConstantBuffers(0, 5, buffers);
 	m_pDeviceContext->PSSetConstantBuffers(0, 5, buffers);
 
-	// ----- 스카이박스 렌더링 -----
-
-	// 스카이박스용 렌더타겟 설정
-	//m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, NULL);
-    m_pDeviceContext->OMSetRenderTargets(1, &m_pHDRRTV, NULL);
-	m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
-
-	// 스카이박스 렌더링
-	m_pDeviceContext->IASetInputLayout(m_pSkyInputLayout);
-	m_pDeviceContext->VSSetShader(m_pSkyVertexShader, nullptr, 0);
-	m_pDeviceContext->PSSetShader(m_pSkyPixelShader, nullptr, 0);
-	m_pDeviceContext->PSSetShaderResources(0, 1, &m_pSkyTextureRV);
-	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
-	m_pDeviceContext->RSSetState(m_SkyboxRS);
-
-	cube->Draw(m_pDeviceContext, false);
-	//m_pDeviceContext->DrawIndexed(m_nCubeIndices, 0, 0);
-
 	// ----- 모델 렌더링 -----
 
 	// 쉐도우맵 패스
 	// 렌더타겟 설정
 	m_pDeviceContext->OMSetRenderTargets(0, nullptr, m_pShadowDSV.Get());
 	m_pDeviceContext->ClearDepthStencilView(m_pShadowDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-	m_pDeviceContext->RSSetViewports(1, &m_ShadowViewport);
+    m_pDeviceContext->OMSetDepthStencilState(m_pDepthWriteState, 1);
+    m_pDeviceContext->RSSetViewports(1, &m_ShadowViewport);
 	m_pDeviceContext->PSSetShader(nullptr, nullptr, 0);
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
 	m_pDeviceContext->RSSetState(m_defaultRS);
@@ -202,15 +190,62 @@ void ToneApp::Render()
         skeletal_models[i]->model.ShadowDraw(m_pDeviceContext, buffers, 4, m_pShadowMapRSV.Get());
     }
 
-	//// 메인 패스
+    // ----- 스카이박스 렌더링 -----
 
-	// PBR 렌더링
-	//m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
-    m_pDeviceContext->OMSetRenderTargets(1, &m_pHDRRTV, m_pDepthStencilView);
+    // 스카이박스용 렌더타겟 설정
+    m_pDeviceContext->OMSetRenderTargets(1, &m_pHDRRTV, nullptr);
+    //m_pDeviceContext->OMSetDepthStencilState(m_pDepthReadState, 1);
     m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
 
-	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
-	m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
+    // 스카이박스 렌더링
+    m_pDeviceContext->IASetInputLayout(m_pSkyInputLayout);
+    m_pDeviceContext->VSSetShader(m_pSkyVertexShader, nullptr, 0);
+    m_pDeviceContext->PSSetShader(m_pSkyPixelShader, nullptr, 0);
+    m_pDeviceContext->PSSetShaderResources(0, 1, &m_pSkyTextureRV);
+    m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
+    m_pDeviceContext->RSSetState(m_SkyboxRS);
+
+    cube->Draw(m_pDeviceContext, false);
+
+    // G버퍼 렌더링
+    {
+
+        m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
+
+        m_pDeviceContext->IASetInputLayout(m_pInputLayout);
+        m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
+        m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
+        m_pDeviceContext->RSSetState(m_defaultRS);
+        m_pDeviceContext->OMSetBlendState(m_pAlphaBS, nullptr, 0xFFFFFFFF);
+
+        ID3D11RenderTargetView* rtvs[] = { m_pBaseColorRTV.Get(), m_pARMRTV.Get(), m_pNormalRTV.Get(), m_pPosRTV.Get() };
+
+        m_pDeviceContext->OMSetRenderTargets(4, rtvs, m_pDepthStencilView);
+        m_pDeviceContext->PSSetShader(m_pGbufferPS.Get(), nullptr, 0);
+
+        // 객체 렌더링
+        for (int i = 0; i < models.size(); i++) {
+            tb.mWorld = XMMatrixTranspose(models[i]->transform.m_World);
+            tb.mNormalMatrix = XMMatrixInverse(nullptr, models[i]->transform.m_World);
+            m_pDeviceContext->UpdateSubresource(m_pTransBuffer, 0, nullptr, &tb, 0, 0);
+            models[i]->model.Draw(m_pDeviceContext);
+        }
+
+        for (int i = 0; i < skeletal_models.size(); i++) {
+            tb.mWorld = XMMatrixTranspose(skeletal_models[i]->transform.m_World);
+            tb.mNormalMatrix = XMMatrixInverse(nullptr, skeletal_models[i]->transform.m_World);
+            m_pDeviceContext->UpdateSubresource(m_pTransBuffer, 0, nullptr, &tb, 0, 0);
+            skeletal_models[i]->model.SetResources(&mb, &bb);
+            skeletal_models[i]->model.Draw(m_pDeviceContext, buffers, 3, 1);
+        }
+    }
+
+	// PBR 렌더링
+    m_pDeviceContext->OMSetRenderTargets(1, &m_pHDRRTV, nullptr);
+    m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
+
+	m_pDeviceContext->IASetInputLayout(m_quadInputLayout);
+	m_pDeviceContext->VSSetShader(m_pToneVS, nullptr, 0);
 	m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
 	m_pDeviceContext->RSSetState(m_defaultRS);
 	m_pDeviceContext->OMSetBlendState(m_pAlphaBS, nullptr, 0xFFFFFFFF);
@@ -221,35 +256,28 @@ void ToneApp::Render()
 	ID3D11ShaderResourceView* resources[3] = { m_pSkyEnvRV, m_pSkyIBLRV, m_pLUTRV };
 	m_pDeviceContext->PSSetShaderResources(7, 3, resources);
 
-	// 객체 렌더링
-	for (int i = 0; i < models.size(); i++) {
-		tb.mWorld = XMMatrixTranspose(models[i]->transform.m_World);
-		tb.mNormalMatrix = XMMatrixInverse(nullptr, models[i]->transform.m_World);
-		m_pDeviceContext->UpdateSubresource(m_pTransBuffer, 0, nullptr, &tb, 0, 0);
-		models[i]->model.Draw(m_pDeviceContext);
-	}
+    ID3D11ShaderResourceView* gbuffers[4] = { m_pBaseColorSRV.Get(), m_pARMSRV.Get(), m_pNormalSRV.Get(), m_pPosSRV.Get() };
+    m_pDeviceContext->PSSetShaderResources(10, 4, gbuffers);
 
-    for (int i = 0; i < skeletal_models.size(); i++) {
-        tb.mWorld = XMMatrixTranspose(skeletal_models[i]->transform.m_World);
-        tb.mNormalMatrix = XMMatrixInverse(nullptr, skeletal_models[i]->transform.m_World);
-        m_pDeviceContext->UpdateSubresource(m_pTransBuffer, 0, nullptr, &tb, 0, 0);
-        skeletal_models[i]->model.SetResources(&mb, &bb);
-        skeletal_models[i]->model.Draw(m_pDeviceContext, buffers, 3, 1);
-    }
+    // 쿼드 렌더링
+    UINT stride = sizeof(QuadVertex);
+    UINT offset = 0;
+    m_pDeviceContext->IASetIndexBuffer(m_quadIndices, DXGI_FORMAT_R32_UINT, 0);
+    m_pDeviceContext->IASetVertexBuffers(0, 1, &m_quadBuffer, &stride, &offset);
+    m_pDeviceContext->DrawIndexed(6, 0, 0);
 
     // LDR 변환
     m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, NULL);
     m_pDeviceContext->UpdateSubresource(m_pToneBuffer, 0, nullptr, &tnb, 0, 0);
     m_pDeviceContext->PSSetConstantBuffers(0, 1, &m_pToneBuffer);
     m_pDeviceContext->IASetInputLayout(m_quadInputLayout);
+    m_pDeviceContext->RSSetState(m_defaultRS);
 
     m_pDeviceContext->VSSetShader(m_pToneVS, nullptr, 0);
     m_pDeviceContext->PSSetShader(m_pTonePS, nullptr, 0);
     m_pDeviceContext->PSSetShaderResources(0, 1, m_pHDRRSV.GetAddressOf());
 
     // 쿼드 렌더링
-    UINT stride = sizeof(QuadVertex);
-    UINT offset = 0;
     m_pDeviceContext->IASetIndexBuffer(m_quadIndices, DXGI_FORMAT_R32_UINT, 0);
     m_pDeviceContext->IASetVertexBuffers(0, 1, &m_quadBuffer, &stride, &offset);
     m_pDeviceContext->DrawIndexed(6, 0, 0);
@@ -261,7 +289,7 @@ void ToneApp::Render()
 	m_pSwapChain->Present(0, 0);
 }
 
-bool ToneApp::InitD3D()
+bool DefApp::InitD3D()
 {
 	// 스왑체인 속성 설정 구조체 생성.
 	DXGI_SWAP_CHAIN_DESC swapDesc = {};
@@ -286,29 +314,76 @@ bool ToneApp::InitD3D()
 	HR_T(D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, creationFlags, NULL, NULL,
 		D3D11_SDK_VERSION, &swapDesc, &m_pSwapChain, &m_pDevice, NULL, &m_pDeviceContext));
 
-    // HDR 렌더타겟 만들기
-    D3D11_TEXTURE2D_DESC texDesc = {};
-    texDesc.Width = m_ClientWidth;
-    texDesc.Height = m_ClientHeight;
-    texDesc.MipLevels = 1;
-    texDesc.ArraySize = 1;
-    texDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; // HDR 포맷
-    texDesc.SampleDesc.Count = 1;       // 멀티샘플링 없으면 1
-    texDesc.SampleDesc.Quality = 0;
-    texDesc.Usage = D3D11_USAGE_DEFAULT;
-    texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-    texDesc.CPUAccessFlags = 0;
-    texDesc.MiscFlags = 0;
+    // 톤맵핑 관련
+    {
+        // HDR 렌더타겟 만들기
+        D3D11_TEXTURE2D_DESC texDesc = {};
+        texDesc.Width = m_ClientWidth;
+        texDesc.Height = m_ClientHeight;
+        texDesc.MipLevels = 1;
+        texDesc.ArraySize = 1;
+        texDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; // HDR 포맷
+        texDesc.SampleDesc.Count = 1;       // 멀티샘플링 없으면 1
+        texDesc.SampleDesc.Quality = 0;
+        texDesc.Usage = D3D11_USAGE_DEFAULT;
+        texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+        texDesc.CPUAccessFlags = 0;
+        texDesc.MiscFlags = 0;
 
-    HR_T(m_pDevice->CreateTexture2D(&texDesc, nullptr, &m_pSceneHDR));
-    HR_T(m_pDevice->CreateRenderTargetView(m_pSceneHDR.Get(), nullptr, &m_pHDRRTV));
+        HR_T(m_pDevice->CreateTexture2D(&texDesc, nullptr, &m_pSceneHDR));
+        HR_T(m_pDevice->CreateRenderTargetView(m_pSceneHDR.Get(), nullptr, &m_pHDRRTV));
 
-    // HDR 리소스뷰 생성
-    D3D11_SHADER_RESOURCE_VIEW_DESC hdrSRV = {};
-    hdrSRV.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-    hdrSRV.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    hdrSRV.Texture2D.MipLevels = 1;
-    HR_T(m_pDevice->CreateShaderResourceView(m_pSceneHDR.Get(), &hdrSRV, m_pHDRRSV.GetAddressOf()));
+        // HDR 리소스뷰 생성
+        D3D11_SHADER_RESOURCE_VIEW_DESC hdrSRV = {};
+        hdrSRV.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+        hdrSRV.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+        hdrSRV.Texture2D.MipLevels = 1;
+        HR_T(m_pDevice->CreateShaderResourceView(m_pSceneHDR.Get(), &hdrSRV, m_pHDRRSV.GetAddressOf()));
+    }
+
+    // 디퍼드 렌더링 관련
+    {
+        // 디퍼드용 렌더타겟 만들기
+        D3D11_TEXTURE2D_DESC texDesc = {};
+        texDesc.Width = m_ClientWidth;
+        texDesc.Height = m_ClientHeight;
+        texDesc.MipLevels = 1;
+        texDesc.ArraySize = 1;
+        texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // SDR 포맷
+        texDesc.SampleDesc.Count = 1;       // 멀티샘플링 없으면 1
+        texDesc.SampleDesc.Quality = 0;
+        texDesc.Usage = D3D11_USAGE_DEFAULT;
+        texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+        texDesc.CPUAccessFlags = 0;
+        texDesc.MiscFlags = 0;
+
+        HR_T(m_pDevice->CreateTexture2D(&texDesc, nullptr, &m_pBaseColorTex));
+        HR_T(m_pDevice->CreateRenderTargetView(m_pBaseColorTex.Get(), nullptr, &m_pBaseColorRTV));
+
+        HR_T(m_pDevice->CreateTexture2D(&texDesc, nullptr, &m_pARMTex));
+        HR_T(m_pDevice->CreateRenderTargetView(m_pARMTex.Get(), nullptr, &m_pARMRTV));
+
+        HR_T(m_pDevice->CreateTexture2D(&texDesc, nullptr, &m_pNormalTex));
+        HR_T(m_pDevice->CreateRenderTargetView(m_pNormalTex.Get(), nullptr, &m_pNormalRTV));
+
+        texDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;    // POS 포맷
+
+        HR_T(m_pDevice->CreateTexture2D(&texDesc, nullptr, &m_pPosTex));
+        HR_T(m_pDevice->CreateRenderTargetView(m_pPosTex.Get(), nullptr, &m_pPosRTV));
+
+        // 리소스뷰 생성
+        D3D11_SHADER_RESOURCE_VIEW_DESC descSRV = {};
+        descSRV.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        descSRV.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+        descSRV.Texture2D.MipLevels = 1;
+        HR_T(m_pDevice->CreateShaderResourceView(m_pBaseColorTex.Get(), &descSRV, &m_pBaseColorSRV));
+        HR_T(m_pDevice->CreateShaderResourceView(m_pARMTex.Get(), &descSRV, &m_pARMSRV));
+        HR_T(m_pDevice->CreateShaderResourceView(m_pNormalTex.Get(), &descSRV, &m_pNormalSRV));
+
+        descSRV.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;    // POS 포멧
+        HR_T(m_pDevice->CreateShaderResourceView(m_pPosTex.Get(), &descSRV, &m_pPosSRV));
+
+    }
 
     // 렌더타겟 생성
     ID3D11Texture2D* pBackBuffer = nullptr;
@@ -345,12 +420,44 @@ bool ToneApp::InitD3D()
 	HR_T(m_pDevice->CreateTexture2D(&descDepth, nullptr, &textureDepthStencil));
 
 	// 스탠실 뷰 생성
-	D3D11_DEPTH_STENCIL_VIEW_DESC dsv = {};
-	dsv.Format = descDepth.Format;
-	dsv.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	dsv.Texture2D.MipSlice = 0;
-	HR_T(m_pDevice->CreateDepthStencilView(textureDepthStencil, &dsv, &m_pDepthStencilView));
-	SAFE_RELEASE(textureDepthStencil);
+    D3D11_DEPTH_STENCIL_VIEW_DESC dsv = {};
+    dsv.Format = descDepth.Format;
+    dsv.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    dsv.Texture2D.MipSlice = 0;
+    HR_T(m_pDevice->CreateDepthStencilView(textureDepthStencil, &dsv, &m_pDepthStencilView));
+    SAFE_RELEASE(textureDepthStencil);
+
+    // 스텐실 속성 생성
+    D3D11_DEPTH_STENCIL_DESC dsw = {};
+    dsw.DepthEnable = TRUE;
+    dsw.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+    dsw.DepthFunc = D3D11_COMPARISON_LESS;
+    dsw.StencilEnable = FALSE;
+    dsw.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+    dsw.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+    dsw.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+    dsw.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    dsw.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    dsw.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+    dsw.BackFace = dsw.FrontFace;
+
+    m_pDevice->CreateDepthStencilState(&dsw, &m_pDepthWriteState);
+
+    D3D11_DEPTH_STENCIL_DESC dsr = {};
+    dsr.DepthEnable = FALSE;
+    dsr.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;   // 깊이 쓰기 금지
+    dsr.DepthFunc = D3D11_COMPARISON_ALWAYS;
+    dsr.StencilEnable = TRUE;
+    dsr.StencilReadMask = 0xFF;
+    dsr.StencilWriteMask = 0x00;                        // 스텐실 쓰기 금지
+    dsr.FrontFace.StencilFunc = D3D11_COMPARISON_LESS; // 기존 스텐실 값과 비교
+    dsr.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    dsr.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    dsr.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+    dsr.BackFace = dsr.FrontFace;
+
+    m_pDevice->CreateDepthStencilState(&dsr, &m_pDepthReadState);
+
 
 	// 래스터라이저 속성 생성
 	D3D11_RASTERIZER_DESC skyRsDesc = {};
@@ -435,7 +542,7 @@ bool ToneApp::InitD3D()
 	return true;
 }
 
-void ToneApp::UninitD3D()
+void DefApp::UninitD3D()
 {
 	SAFE_RELEASE(m_pDevice);
 	SAFE_RELEASE(m_pDeviceContext);
@@ -444,7 +551,7 @@ void ToneApp::UninitD3D()
 	SAFE_RELEASE(m_pComparisonSampler);
 }
 
-bool ToneApp::InitScene()
+bool DefApp::InitScene()
 {
 	// 버텍스 쉐이더 컴파일
 	ID3D10Blob* vertexShader = nullptr;
@@ -500,7 +607,7 @@ bool ToneApp::InitScene()
 		pixelShader->GetBufferSize(), NULL, &m_pSkyPixelShader));
 	SAFE_RELEASE(pixelShader);
 
-	HR_T(CompileShaderFromFile(L"BRDFShader.hlsl", "main", "ps_5_0", &pixelShader));
+	HR_T(CompileShaderFromFile(L"Deferred_BRDFShader.hlsl", "main", "ps_5_0", &pixelShader));
 	HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
 		pixelShader->GetBufferSize(), NULL, &m_pBRDFShader));
 	SAFE_RELEASE(pixelShader);
@@ -508,6 +615,11 @@ bool ToneApp::InitScene()
     HR_T(CompileShaderFromFile(L"TonePS.hlsl", "main", "ps_4_0", &pixelShader));
     HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
         pixelShader->GetBufferSize(), NULL, &m_pTonePS));
+    SAFE_RELEASE(pixelShader);
+
+    HR_T(CompileShaderFromFile(L"Deferred_GBufferPS.hlsl", "main", "ps_5_0", &pixelShader));
+    HR_T(m_pDevice->CreatePixelShader(pixelShader->GetBufferPointer(),
+        pixelShader->GetBufferSize(), NULL, &m_pGbufferPS));
     SAFE_RELEASE(pixelShader);
 
 	// Render() 에서 파이프라인에 바인딩할 상수 버퍼 생성
@@ -659,7 +771,7 @@ bool ToneApp::InitScene()
 	return true;
 }
 
-void ToneApp::UninitScene()
+void DefApp::UninitScene()
 {
 	
 	SAFE_RELEASE(m_pSkyVertexShader);
@@ -678,7 +790,7 @@ void ToneApp::UninitScene()
 	SAFE_RELEASE(m_pInputLayout);
 }
 
-bool ToneApp::InitImGUI()
+bool DefApp::InitImGUI()
 {
 	/*
 		ImGui 초기화.
@@ -697,7 +809,7 @@ bool ToneApp::InitImGUI()
 	return true;
 }
 
-void ToneApp::UninitImGUI()
+void DefApp::UninitImGUI()
 {
 	// Cleanup
 	ImGui_ImplDX11_Shutdown();
@@ -705,7 +817,7 @@ void ToneApp::UninitImGUI()
 	ImGui::DestroyContext();
 }
 
-void ToneApp::RenderGUI()
+void DefApp::RenderGUI()
 {
 	//아래부터는 ImGUI
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -778,13 +890,13 @@ void ToneApp::RenderGUI()
 		ImGui::PopID();
 		ImGui::NewLine();
 
-		ImGui::PushID(4);
-		ImGui::SeparatorText("Animation");
+		//ImGui::PushID(4);
+		//ImGui::SeparatorText("Animation");
 
-		// 디버깅용
-		//ImGui::Text(std::to_string(skeletal_models[0]->model.animIdx).c_str());
+		//// 디버깅용
+		////ImGui::Text(std::to_string(skeletal_models[0]->model.animIdx).c_str());
 
-		ImGui::PopID();
+		//ImGui::PopID();
 		ImGui::End();
 	}
 
@@ -822,6 +934,40 @@ void ToneApp::RenderGUI()
         ImGui::End();
     }
 
+    {
+        // G버퍼
+        ImGui::Begin("G-Buffer");
+        ImGui::PushID(1);
+
+        ImGui::BeginGroup();
+        ImGui::Text("BaseColor");
+        ImGui::Image((ImTextureID)m_pBaseColorSRV.Get(), ImVec2(128.0f, 128.0f));
+        ImGui::EndGroup();
+
+        ImGui::SameLine();
+
+        ImGui::BeginGroup();
+        ImGui::Text("ARMColor");
+        ImGui::Image((ImTextureID)m_pARMSRV.Get(), ImVec2(128.0f, 128.0f));
+        ImGui::EndGroup();
+
+        ImGui::BeginGroup();
+        ImGui::Text("NormalColor");
+        ImGui::Image((ImTextureID)m_pNormalSRV.Get(), ImVec2(128.0f, 128.0f));
+        ImGui::EndGroup();
+
+        ImGui::SameLine();
+
+        ImGui::BeginGroup();
+        ImGui::Text("PosColor");
+        ImGui::Image((ImTextureID)m_pPosSRV.Get(), ImVec2(128.0f, 128.0f));
+        ImGui::EndGroup();
+
+        ImGui::PopID();
+
+        ImGui::End();
+    }
+
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
@@ -829,7 +975,7 @@ void ToneApp::RenderGUI()
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-LRESULT CALLBACK ToneApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK DefApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
 		return true;

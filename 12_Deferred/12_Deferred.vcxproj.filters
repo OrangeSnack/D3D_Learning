@@ -37,9 +37,18 @@
     <Filter Include="Shader\Tonemap">
       <UniqueIdentifier>{5e4370c0-0a69-499e-8260-59a51a8e64b3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader\Deferred">
+      <UniqueIdentifier>{ca3120bc-817f-4fb4-86ba-0b3e6b762286}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader\Deferred\PS">
+      <UniqueIdentifier>{2ebe0fd3-ca74-4c15-ab45-f35405fd0fde}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader\Deferred\VS">
+      <UniqueIdentifier>{e973c5b2-82e2-4079-9c70-a8ba114fb823}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ToneApp.cpp">
+    <ClCompile Include="DefApp.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="WinMain.cpp">
@@ -53,7 +62,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ToneApp.h">
+    <ClInclude Include="DefApp.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="StaticMesh.h">
@@ -102,6 +111,12 @@
     </FxCompile>
     <FxCompile Include="TonePS.hlsl">
       <Filter>Shader\Tonemap</Filter>
+    </FxCompile>
+    <FxCompile Include="Deferred_GBufferPS.hlsl">
+      <Filter>Shader\Deferred\PS</Filter>
+    </FxCompile>
+    <FxCompile Include="Deferred_BRDFShader.hlsl">
+      <Filter>Shader\Deferred\PS</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

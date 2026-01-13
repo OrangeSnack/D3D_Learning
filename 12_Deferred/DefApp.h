@@ -33,11 +33,11 @@ struct Object
 	Transform transform;
 };
 
-class ToneApp : public GameApp
+class DefApp : public GameApp
 {
 public:
-	ToneApp(HINSTANCE hInstance);
-	~ToneApp();
+	DefApp(HINSTANCE hInstance);
+	~DefApp();
 
 	Vector4 m_ClearColor = Vector4(0.45f, 0.55f, 0.60f, 1.00f);
 
@@ -82,6 +82,26 @@ public:
 	IDXGISwapChain* m_pSwapChain = nullptr;					// 스왑체인
 	ID3D11RenderTargetView* m_pRenderTargetView = nullptr;	// 렌더링 타겟뷰
 	ID3D11DepthStencilView* m_pDepthStencilView = nullptr;  // 깊이값 처리를 위한 뎊스스텐실 뷰
+    ID3D11DepthStencilState* m_pDepthWriteState = nullptr;   // 깊이값 읽기전용 설정
+    ID3D11DepthStencilState* m_pDepthReadState = nullptr;   // 깊이값 읽기전용 설정
+
+    // 디퍼드 렌더링용
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> m_pBaseColorTex;    //R8G8B8A8 Texture
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> m_pARMTex;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> m_pNormalTex;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> m_pPosTex;          //R32G32B32A32 Texture
+
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_pBaseColorSRV;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_pARMSRV;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_pNormalSRV;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_pPosSRV;
+
+    Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_pBaseColorRTV;
+    Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_pARMRTV;
+    Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_pNormalRTV;
+    Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_pPosRTV;
+
+    Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pGbufferPS;
 
     // 톤맵핑용 (ToneMapping)
     Microsoft::WRL::ComPtr<ID3D11Texture2D> m_pSceneHDR = nullptr;         // HDR 저장용 렌더타겟
@@ -146,7 +166,6 @@ public:
 	float shadowNearZ = 30.0f;
 	float shadowFarZ = 150.0f;
 	float shadowFov = 1.0f;
-
 
 	bool Initialize(UINT Width, UINT Height) override;
 	void Update() override;
