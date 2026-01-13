@@ -137,13 +137,11 @@ void DefApp::Render()
     tnb.exposure = m_exposure;
 
     m_pDeviceContext->UpdateSubresource(m_pTransBuffer, 0, nullptr, &tb, 0, 0);
-    m_pDeviceContext->UpdateSubresource(m_pLightBuffer, 0, nullptr, &lb, 0, 0);
     m_pDeviceContext->UpdateSubresource(m_pMatBuffer, 0, nullptr, &mb, 0, 0);
     m_pDeviceContext->UpdateSubresource(m_pBoneBuffer, 0, nullptr, &bb, 0, 0);
-    m_pDeviceContext->UpdateSubresource(m_pShadowBuffer, 0, nullptr, &sb, 0, 0);
 
     // 배경컬러 설정
-    float color[4] = { 0.0f, 0.5f, 0.5f, 1.0f };
+    float color[4] = { 0.5f, 0.5f, 0.5f, 1.0f };
 
 	// Clear 
 	m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView, color);
@@ -153,7 +151,7 @@ void DefApp::Render()
     m_pDeviceContext->ClearRenderTargetView(m_pNormalRTV.Get(), color);
     m_pDeviceContext->ClearRenderTargetView(m_pPosRTV.Get(), color);
 
-	m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	// Render Setting
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -162,13 +160,29 @@ void DefApp::Render()
 	m_pDeviceContext->VSSetConstantBuffers(0, 5, buffers);
 	m_pDeviceContext->PSSetConstantBuffers(0, 5, buffers);
 
+    // ----- 스카이박스 렌더링 -----
+
+    // 스카이박스용 렌더타겟 설정
+    m_pDeviceContext->OMSetRenderTargets(1, &m_pHDRRTV, nullptr);
+    m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
+
+    // 스카이박스 렌더링
+    m_pDeviceContext->IASetInputLayout(m_pSkyInputLayout);
+    m_pDeviceContext->VSSetShader(m_pSkyVertexShader, nullptr, 0);
+    m_pDeviceContext->PSSetShader(m_pSkyPixelShader, nullptr, 0);
+    m_pDeviceContext->PSSetShaderResources(0, 1, &m_pSkyTextureRV);
+    m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
+    m_pDeviceContext->RSSetState(m_SkyboxRS);
+
+    cube->Draw(m_pDeviceContext, false);
+
 	// ----- 모델 렌더링 -----
 
 	// 쉐도우맵 패스
 	// 렌더타겟 설정
 	m_pDeviceContext->OMSetRenderTargets(0, nullptr, m_pShadowDSV.Get());
-	m_pDeviceContext->ClearDepthStencilView(m_pShadowDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
     m_pDeviceContext->OMSetDepthStencilState(m_pDepthWriteState, 1);
+	m_pDeviceContext->ClearDepthStencilView(m_pShadowDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
     m_pDeviceContext->RSSetViewports(1, &m_ShadowViewport);
 	m_pDeviceContext->PSSetShader(nullptr, nullptr, 0);
 	m_pDeviceContext->IASetInputLayout(m_pInputLayout);
@@ -190,23 +204,6 @@ void DefApp::Render()
         skeletal_models[i]->model.ShadowDraw(m_pDeviceContext, buffers, 4, m_pShadowMapRSV.Get());
     }
 
-    // ----- 스카이박스 렌더링 -----
-
-    // 스카이박스용 렌더타겟 설정
-    m_pDeviceContext->OMSetRenderTargets(1, &m_pHDRRTV, nullptr);
-    //m_pDeviceContext->OMSetDepthStencilState(m_pDepthReadState, 1);
-    m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
-
-    // 스카이박스 렌더링
-    m_pDeviceContext->IASetInputLayout(m_pSkyInputLayout);
-    m_pDeviceContext->VSSetShader(m_pSkyVertexShader, nullptr, 0);
-    m_pDeviceContext->PSSetShader(m_pSkyPixelShader, nullptr, 0);
-    m_pDeviceContext->PSSetShaderResources(0, 1, &m_pSkyTextureRV);
-    m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
-    m_pDeviceContext->RSSetState(m_SkyboxRS);
-
-    cube->Draw(m_pDeviceContext, false);
-
     // G버퍼 렌더링
     {
 
@@ -216,11 +213,12 @@ void DefApp::Render()
         m_pDeviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
         m_pDeviceContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
         m_pDeviceContext->RSSetState(m_defaultRS);
-        m_pDeviceContext->OMSetBlendState(m_pAlphaBS, nullptr, 0xFFFFFFFF);
+        //m_pDeviceContext->OMSetBlendState(m_pAlphaBS, nullptr, 0xFFFFFFFF);
 
         ID3D11RenderTargetView* rtvs[] = { m_pBaseColorRTV.Get(), m_pARMRTV.Get(), m_pNormalRTV.Get(), m_pPosRTV.Get() };
 
         m_pDeviceContext->OMSetRenderTargets(4, rtvs, m_pDepthStencilView);
+        m_pDeviceContext->OMSetDepthStencilState(m_pDepthWriteState, 1);
         m_pDeviceContext->PSSetShader(m_pGbufferPS.Get(), nullptr, 0);
 
         // 객체 렌더링
@@ -241,7 +239,11 @@ void DefApp::Render()
     }
 
 	// PBR 렌더링
-    m_pDeviceContext->OMSetRenderTargets(1, &m_pHDRRTV, nullptr);
+    m_pDeviceContext->UpdateSubresource(m_pLightBuffer, 0, nullptr, &lb, 0, 0);
+    m_pDeviceContext->UpdateSubresource(m_pShadowBuffer, 0, nullptr, &sb, 0, 0);
+
+    m_pDeviceContext->OMSetRenderTargets(1, &m_pHDRRTV, m_pDepthStencilView);
+    m_pDeviceContext->OMSetDepthStencilState(m_pDepthReadState, 1);
     m_pDeviceContext->RSSetViewports(1, &m_defaultViewport);
 
 	m_pDeviceContext->IASetInputLayout(m_quadInputLayout);
@@ -432,11 +434,11 @@ bool DefApp::InitD3D()
     dsw.DepthEnable = TRUE;
     dsw.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
     dsw.DepthFunc = D3D11_COMPARISON_LESS;
-    dsw.StencilEnable = FALSE;
+    dsw.StencilEnable = TRUE;
     dsw.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
     dsw.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
     dsw.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-    dsw.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    dsw.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
     dsw.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
     dsw.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
     dsw.BackFace = dsw.FrontFace;
@@ -445,12 +447,10 @@ bool DefApp::InitD3D()
 
     D3D11_DEPTH_STENCIL_DESC dsr = {};
     dsr.DepthEnable = FALSE;
-    dsr.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;   // 깊이 쓰기 금지
-    dsr.DepthFunc = D3D11_COMPARISON_ALWAYS;
     dsr.StencilEnable = TRUE;
     dsr.StencilReadMask = 0xFF;
-    dsr.StencilWriteMask = 0x00;                        // 스텐실 쓰기 금지
-    dsr.FrontFace.StencilFunc = D3D11_COMPARISON_LESS; // 기존 스텐실 값과 비교
+    dsr.StencilWriteMask = 0x00;
+    dsr.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
     dsr.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
     dsr.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
     dsr.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
@@ -675,10 +675,11 @@ bool DefApp::InitScene()
     m_pDevice->CreateBuffer(&bd, &subData, &m_quadIndices);
 
 	// 스카이박스 텍스쳐 로딩
-	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/HDRI/ParkingEnvHDR.dds", nullptr, &m_pSkyTextureRV));
-	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/HDRI/ParkingDiffuseHDR.dds", nullptr, &m_pSkyIBLRV));
-	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/HDRI/ParkingSpecularHDR.dds", nullptr, &m_pSkyEnvRV));
-	HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/HDRI/ParkingBRDF.dds", nullptr, &m_pLUTRV));
+    HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/HDRI/ParkingEnvHDR.dds", nullptr, &m_pSkyTextureRV));
+    HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/HDRI/ParkingDiffuseHDR.dds", nullptr, &m_pSkyIBLRV));
+    HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/HDRI/ParkingSpecularHDR.dds", nullptr, &m_pSkyEnvRV));
+    HR_T(CreateDDSTextureFromFile(m_pDevice, L"../Resources/HDRI/ParkingBRDF.dds", nullptr, &m_pLUTRV));
+
 
 	// 일반 텍스처 샘플러
 	D3D11_SAMPLER_DESC sampDesc = {};
@@ -963,6 +964,19 @@ void DefApp::RenderGUI()
         ImGui::Image((ImTextureID)m_pPosSRV.Get(), ImVec2(128.0f, 128.0f));
         ImGui::EndGroup();
 
+        ImGui::PopID();
+
+        ImGui::End();
+    }
+
+    {
+        // 출력물
+        ImGui::Begin("OUTPUT");
+        ImGui::PushID(1);
+        ImGui::BeginGroup();
+        ImGui::Text("PosColor");
+        ImGui::Image((ImTextureID)m_pHDRRSV.Get(), ImVec2(128.0f, 128.0f));
+        ImGui::EndGroup();
         ImGui::PopID();
 
         ImGui::End();

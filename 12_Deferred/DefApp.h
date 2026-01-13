@@ -39,7 +39,7 @@ public:
 	DefApp(HINSTANCE hInstance);
 	~DefApp();
 
-	Vector4 m_ClearColor = Vector4(0.45f, 0.55f, 0.60f, 1.00f);
+	Vector4 m_ClearColor = Vector4(0.45f, 0.55f, 0.60f, 0.4f);
 
 	// Directional 라이트
 	XMFLOAT4 m_LightColors = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);				// 라이트 색상

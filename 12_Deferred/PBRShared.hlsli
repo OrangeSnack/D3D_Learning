@@ -10,8 +10,8 @@ TextureCube _irradiance : register(t8);
 Texture2D _brdflut : register(t9);
 
 Texture2D _defAlbedo : register(t10);
-Texture2D _defNormal : register(t11);
-Texture2D _defARM : register(t12);
+Texture2D _defARM : register(t11);
+Texture2D _defNormal : register(t12);
 Texture2D _defPos : register(t13);
 
 SamplerState _sp0 : register(s0);

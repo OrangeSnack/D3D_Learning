@@ -45,7 +45,8 @@ float4 main(PS_DEFINPUT input) : SV_TARGET
 {   
     // 위치 샘플링
     float3 W_Pos = _defPos.Sample(_sp0, input.uv).rgb;
-    float4 S_Pos;
+    float4 S_Pos = mul(float4(W_Pos.xyz, 1.0f), ShadowView);;
+    S_Pos = mul(S_Pos, ShadowProjection);
     
     // 텍스처 샘플링
     float3 albedo = _defAlbedo.Sample(_sp0, input.uv).rgb;
@@ -96,32 +97,31 @@ float4 main(PS_DEFINPUT input) : SV_TARGET
    
     float3 amibentIBL = (diffuseIBL + specularIBL) * ao;
     
-     // 쉐도우맵 처리
-    //float currentShadowDepth = input.S_Pos.z / input.S_Pos.w; // 쉐도우맵 기준 NDC Z좌표
-    //float2 shadowUV = input.S_Pos.xy / input.S_Pos.w;
+    // 쉐도우맵 처리
+    float currentShadowDepth = S_Pos.z / S_Pos.w; // 쉐도우맵 기준 NDC Z좌표
+    float2 shadowUV = S_Pos.xy / S_Pos.w;
     
-    //shadowUV.y *= -1.0f;
-    //shadowUV = (shadowUV * 0.5f) + 0.5f;
+    shadowUV.y *= -1.0f;
+    shadowUV = (shadowUV * 0.5f) + 0.5f;
     
-    //float shadowFactor = 1.0f;
+    float shadowFactor = 1.0f;
     
-    //if (shadowUV.x >= 0.0f && shadowUV.x <= 1.0f && shadowUV.y >= 0.0f && shadowUV.y <= 1.0f)
-    //{
-    //    // Normal
-    //    {
-    //        float sampleShadowDepth = _shadowmap.Sample(_sp0, shadowUV).r;
+    if (shadowUV.x >= 0.0f && shadowUV.x <= 1.0f && shadowUV.y >= 0.0f && shadowUV.y <= 1.0f)
+    {
+        // Normal
+        {
+            float sampleShadowDepth = _shadowmap.Sample(_sp0, shadowUV).r;
         
-    //        if (currentShadowDepth > sampleShadowDepth + 0.001f)
-    //        {
-    //            shadowFactor = 0.0f;
-    //        }
-    //    }
-    //}
+            if (currentShadowDepth > sampleShadowDepth + 0.001f)
+            {
+                shadowFactor = 0.0f;
+            }
+        }
+    }
     
     float3 light = mLightColor.rgb;
     float3 direct = (diffuse + specular) * light * NL;
-    float3 color = direct + amibentIBL;
-    //float3 color = (direct * shadowFactor) + amibentIBL;
+    float3 color = (direct * shadowFactor) + amibentIBL;
     //float4 finalColor = float4(pow(color, 1.0f / 2.2f), 1.0f);
     
     return float4(color, 1.0f);

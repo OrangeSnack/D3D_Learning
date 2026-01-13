@@ -18,7 +18,7 @@ PS_GOUTPUT main(PS_INPUT input)
     _out.albedo = texColor;
     
     // ARM
-    float ao = mUseOverride ? mAoStrength : _ambientOcclusion.Sample(_sp0, input.Tex).r;
+    float ao = mUseOverride ? mAoStrength : _ambientOcclusion.Sample(_sp0, input.Tex).r * mAoStrength;
     float roughness = mUseOverride ? mRoughness : _roughness.Sample(_sp0, input.Tex).r;
     float metalic = mUseOverride ? mMetalic : _metalic.Sample(_sp0, input.Tex).r;
     _out.arm = float4(ao, roughness, metalic, 1.0f);
